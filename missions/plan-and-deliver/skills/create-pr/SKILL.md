@@ -181,9 +181,53 @@ Announce that **create-pr** is waiting for the deploy-walk result and stop. Do n
 When Mission Control delivers the **`deploy-walk`** result:
 
 1. Copy `deployStatus`, `beforeDeployStatus`, `afterDeployStatus`, `deployTodoStatus`, `remainingTasks`, `activeLanes`, and `openLedgerEntries` into this skill's result.
-2. If deploy status is `done`, report `continuationStatus: "terminal"` for the PR lifecycle and surface `plan-reconcile` as the next branch.
+2. If deploy status is `done`, verify that `plan-reconcile` prerequisites are ready and propose reconciliation to the developer. Do not spawn `plan-reconcile` automatically.
 3. If deploy is blocked, skipped, partial, or active, keep this lane active and propagate the blocking status upstream.
 4. Silence or missing deploy metadata is not completion; return `partial` with `continuationStatus: "active"`.
+
+### Propose plan-reconcile after deploy done
+
+When `deploy-walk` reports `deployStatus: "done"` and `deployTodoStatus: "done"`, verify reconcile prerequisites:
+
+1. PR state is `merged`.
+2. PR plan path or slug is known.
+3. Deploy status is `done`.
+4. Deploy capstone todo is `done`.
+
+If all prerequisites are ready, ask the developer with **AskQuestion** before spawning. Required options:
+
+1. **Run plan-reconcile now**
+2. **Defer reconcile**
+3. **Check status again**
+4. **More details for option _**
+
+Only when the developer chooses **Run plan-reconcile now**, emit exactly one child-spawn request for:
+
+`.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md`
+
+Inputs must include:
+
+- `targetPlanPath`
+- `targetPlanSlug`
+- `prUrl`
+- `prNumber`
+- `prState: "merged"`
+- `deployStatus: "done"`
+- `deployTodoStatus: "done"`
+- `ledgerParent`
+- `upstreamSkill: "create-pr"`
+
+Announce that **create-pr** is waiting for the plan-reconcile result and stop.
+
+If the developer defers reconcile, return `continuationStatus: "active"` with `remainingTasks` naming deferred `plan-reconcile`; do not close the PR lifecycle ledger entry.
+
+### Reconcile result aggregation
+
+When Mission Control delivers the **`plan-reconcile`** result:
+
+1. Copy `archivedSlugs`, `flaggedSlugs`, `postponedSlugs`, `followUpsIntegrated`, `remainingTasks`, `activeLanes`, and `openLedgerEntries` into this skill's result.
+2. If reconcile status is terminal with no remaining tasks, report `continuationStatus: "terminal"` for the PR lifecycle.
+3. If reconcile is active or partial, keep this lane active and propagate remaining choices upstream.
 
 Extend spawned result outputs with:
 
@@ -195,3 +239,7 @@ Extend spawned result outputs with:
 - `outputs.beforeDeployStatus`
 - `outputs.afterDeployStatus`
 - `outputs.deployTodoStatus`
+- `outputs.reconcileStatus`
+- `outputs.archivedSlugs`
+- `outputs.flaggedSlugs`
+- `outputs.postponedSlugs`
