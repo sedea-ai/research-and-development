@@ -9,6 +9,38 @@ description: >-
   links follow **new-plan** indexed spawn; bodies follow **phase-plan**. Target
   resolved per planning-target-resolution. Use under mission dispatch, **delivery-phases**
   protocol branch, or natural language (decompose phases, draft delivery phases).
+timeoutMs: 1800000
+warmUpRules:
+  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
+inputs:
+  targetPlanPath:
+    type: string
+    description: Absolute or workspace-relative path to the Master Plan or Phase plan being decomposed.
+    required: true
+  targetPlanSlug:
+    type: string
+    description: Slug for the target plan.
+    required: true
+  parentAgentRole:
+    type: string
+    description: Upstream owner that spawned this skill, usually master-plan-agent.
+    required: false
+  ledgerParent:
+    type: string
+    description: Slug/path of the ledger parent entry the Squad Leader tracks.
+    required: false
+  complexityBand:
+    type: string
+    description: Plan-scope complexity band copied from the upstream plan, when available.
+    required: false
+  complexityScore:
+    type: number
+    description: Plan-scope complexity score copied from the upstream plan, when available.
+    required: false
+  decompositionAssessment:
+    type: string
+    description: Current Decomposition assessment block from the upstream plan.
+    required: false
 ---
 
 # Delivery phases — mode #2 decomposition
@@ -132,19 +164,21 @@ End with:
 2. A one-line summary: *Drafted `## <N>. Delivery phases` with **K** child rows.*
 3. **Numbered options** (adapt labels; offer **AskQuestion** when it clarifies). After drafting **K** rows, keep **K** visible in the summary so the developer knows how many indexed children exist.
 
-   1. **Spawn phase children (`new-plan`, indexed)** — For each list index **1** through **K**, the **initiating agent** ignites the **`new-plan`** protocol branch with this plan as parent and that index (digit-only **N** per session contract in **`new-plan`** § *Indexed child spawn*). Each run creates the child stub and wires the parent **`Plan:`** line when the flow completes.
+   1. **Spawn phase children (`new-plan`, indexed)** — For each list index **1** through **K**, this agent can emit a child-spawn request for the **`new-plan`** protocol branch with this plan as parent and that index (digit-only **N** per session contract in **`new-plan`** § *Indexed child spawn*). Each run creates the child stub and wires the parent **`Plan:`** line when the flow completes.
    2. **`phase-plan` on a child** — After a child `.plan.md` exists, ignite **`phase-plan`** on that path to draft §§ 1–4 and **`### Decomposition assessment`**.
    3. **Revise this `Delivery phases` section** — The developer gives free-text feedback; you apply one focused `StrReplace` on the list and echo the result.
    4. **Switch to `pr-breakdown`** — If work should skip the phase layer after all, hand off to **`pr-breakdown`** (do not silently change the heading unless step 4 already chose PR breakdown or the developer explicitly asks here).
    5. **Commit when ready** — Remind the developer to commit; this skill does **not** run `git`.
 
-Re-offer the same structure after iteration. **Stop** after this block — wait for the developer’s next message. Do **not** run **`new-plan`** or **`phase-plan`** inside this turn unless mission dispatch explicitly continues.
+When running as a spawned downstream agent under `master-plan`, mission dispatch **does** explicitly continue: after drafting the phase list, emit one child-spawn request per phase row for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md`. Inputs must include `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-plan"`, `requestedPopulatorSkill: "phase-plan"`, `ledgerParent`, and `upstreamSkill: "delivery-phases"`. Announce that this agent is waiting for the indexed child results and stop.
+
+For standalone/non-spawned use, re-offer the same structure after iteration and stop after this block — wait for the developer’s next message.
 
 ## Step 6a — Follow-up turns
 
 When the developer asks to revise the **`Delivery phases`** list, re-read that section, apply edits via `StrReplace`, echo the result, and return to the step 6 menu pattern.
 
-When they choose to spawn or populate a child, that work runs under **`new-plan`** / **`phase-plan`** in a **separate** protocol step — do not impersonate those skills’ full procedures in the same turn.
+When the developer chooses to spawn or populate a child in standalone use, emit child-spawn requests for **`new-plan`** / **`phase-plan`** instead of impersonating those skills’ full procedures in the same turn. Stop after spawning if the result is needed for the next step.
 
 ## One primary choice per turn — surface observations
 
@@ -154,6 +188,8 @@ Match the discipline in **`master-plan`** and **`phase-plan`**: perform exactly 
 
 **Owns:** the parent plan’s dual-title **`Delivery phases`** section only (heading + list body for mode #2); decision gate when still `_TBD_`; echo for review.
 
-**Out of scope:** spawning or renaming child plans (**`new-plan`**); filling phase bodies (**`phase-plan`**); PR breakdown content (**`pr-breakdown`**); edits outside the dual-title section; extra H2 phase headings in the parent; `git` / commit automation; roadmap topics and PR plans (step 1 stops).
+**Out of scope:** renaming child plans after **`new-plan`** creates them; filling phase bodies inline (**`phase-plan`** owns the body); PR breakdown content (**`pr-breakdown`**); edits outside the dual-title section; extra H2 phase headings in the parent; `git` / commit automation; roadmap topics and PR plans (step 1 stops).
 
-Stop after the step 6 handoff block.
+**Result contract when spawned:** end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.decompositionKind: "delivery-phases"`, `outputs.childCount`, `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "delivery-phases-agent"`, and `outputs.continuationStatus` (`active` while child creation/population remains, `terminal` when all child rows are closed, deferred, or out of scope).
+
+Stop after the step 6 handoff block or after spawning and announcing the wait state.

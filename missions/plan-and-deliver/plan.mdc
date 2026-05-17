@@ -189,10 +189,10 @@ Related (optional):
 - **Target agent role:** Master Plan agent
 - **Assigned skill:** `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/master-plan/SKILL.md`
 - **Required rule context:** Sedea center always-apply rules, this mission plan, `development-process.md`, planning target resolution rule, and the `master-plan` skill.
-- **Expected output:** Child agent result with `status: success` or `partial`, `outputs.masterPlanPath`, `outputs.masterPlanSlug`, `outputs.complexityBand`, `outputs.complexityScore`, and any recommended next action.
+- **Expected output:** Child agent result with `status: success` or `partial`, `outputs.masterPlanPath`, `outputs.masterPlanSlug`, `outputs.complexityBand`, `outputs.complexityScore`, `outputs.continuationOwner`, `outputs.continuationStatus`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.spawnedPlans`, `outputs.remainingTasks`, and any recommended next action.
 - **Next-step resolution:**
-  - Child result `success` with Master Plan path and low/medium complexity → continue to the next protocol step for post-master routing.
-  - Child result `success` with high complexity → stop foregrounding decomposition; route to scope narrowing / split decision in the next protocol step.
+  - Child result `success` with Master Plan path and low/medium complexity plus active continuation ownership → continue to status acknowledgement and ledger tracking; the **Master Plan agent** owns downstream route prompts/spawns.
+  - Child result `success` with high complexity → acknowledge scope narrowing / split guidance and keep the **Master Plan agent** lane open; do not foreground decomposition from the **Squad Leader** lane.
   - Child result `partial` with usable Master Plan path → surface gaps and continue only if they do not block routing.
   - Child result `failure`, `aborted`, `abandoned`, or no plan path → stop and ask whether to retry, revise seed, or abandon.
 
@@ -202,7 +202,7 @@ Related (optional):
 2. Emit exactly one `AGENT_RUN_REQUEST_V1` request for the **Master Plan agent** using the `master-plan` skill path and compiled seed.
 3. Announce that the **Squad Leader** is waiting because later protocol steps need the produced plan path and complexity result.
 4. Stop protocol execution until Mission Control delivers `AGENT_RESULT_RESPONSE_V1` for the same `correlationId`.
-5. Validate that returned outputs include a readable Master Plan path and complexity band before continuing.
+5. Validate that returned outputs include a readable Master Plan path, complexity band, continuation owner/status, and ledger-shaped arrays (`activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`) before continuing.
 
 ### 6. Acknowledge Master Plan status
 

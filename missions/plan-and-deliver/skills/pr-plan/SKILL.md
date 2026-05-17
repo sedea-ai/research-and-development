@@ -10,6 +10,34 @@ description: >-
   development-process.md. Target resolved per planning-target-resolution. Use under
   mission dispatch, **pr-plan** protocol branch, natural language, or after **new-plan**
   ignition on a `PR breakdown` child stub.
+timeoutMs: 1800000
+warmUpRules:
+  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
+inputs:
+  targetPlanPath:
+    type: string
+    description: Path to the PR plan stub to populate.
+    required: true
+  targetPlanSlug:
+    type: string
+    description: Slug for the PR plan stub.
+    required: true
+  parentPlanPath:
+    type: string
+    description: Path to the parent plan containing the PR list row.
+    required: true
+  parentPlanSlug:
+    type: string
+    description: Slug for the parent plan.
+    required: true
+  parentIndex:
+    type: number
+    description: One-based PR list index that produced this child.
+    required: true
+  ledgerParent:
+    type: string
+    description: Ledger parent slug/path copied from the upstream agent.
+    required: false
 ---
 
 # PR plan: §§ 1–4 from the parent plan
@@ -263,3 +291,5 @@ Perform exactly what was chosen. List short **numbered observations** for gaps (
 **Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); spawning children; `git`; Master / Phase templates (**`master-plan`**, **`phase-plan`**).
 
 Stop after the step 5 handoff block.
+
+When spawned, end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "pr-plan-agent"`, and `outputs.continuationStatus` (`active` while PR planning or coding-session handoff remains, `terminal` when the PR plan has no remaining planning work).

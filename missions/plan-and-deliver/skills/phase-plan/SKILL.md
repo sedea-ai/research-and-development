@@ -10,6 +10,34 @@ description: >-
   planning-target-resolution. Use under mission dispatch, **`phase-plan`** protocol
   branch, natural language, or after **`new-plan`** ignition on a `Delivery phases`
   child stub.
+timeoutMs: 1800000
+warmUpRules:
+  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
+inputs:
+  targetPlanPath:
+    type: string
+    description: Path to the phase plan stub to populate.
+    required: true
+  targetPlanSlug:
+    type: string
+    description: Slug for the phase plan stub.
+    required: true
+  parentPlanPath:
+    type: string
+    description: Path to the parent plan containing the Delivery phases row.
+    required: true
+  parentPlanSlug:
+    type: string
+    description: Slug for the parent plan.
+    required: true
+  parentIndex:
+    type: number
+    description: One-based Delivery phases index that produced this child.
+    required: true
+  ledgerParent:
+    type: string
+    description: Ledger parent slug/path copied from the upstream agent.
+    required: false
 ---
 
 # Phase plan: §§ 1–4 from the parent plan
@@ -291,7 +319,7 @@ Suggested options (adapt labels to context):
 
 When the developer asks to revise § N, re-read that section and apply edits via `StrReplace`; echo the result; offer the same numbered menu.
 
-When they choose decomposition (options 1 or 2), the **initiating agent** starts the chosen **protocol branch** with an **ignition prompt** that names the target plan path. Do **not** impersonate the other skill's full procedure in the same turn.
+When they choose decomposition (options 1 or 2), emit one child-spawn request for the chosen **protocol branch** with inputs `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, `ledgerParent`, and the current `### Decomposition assessment`. Do **not** impersonate the other skill's full procedure in the same turn; announce that this agent is waiting if the result is needed to keep the mission ledger current.
 
 ## One choice per turn — surface observations
 
@@ -310,3 +338,5 @@ This skill writes the **body** of the target phase plan — replacing the **`new
 Wrong template stops live in step 1a — use **`master-plan`** or **`pr-plan`** protocol branches when the file is a Master Plan or PR plan.
 
 Stop after the handoff block in step 5.
+
+When spawned, end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.decompositionAssessment`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "phase-plan-agent"`, and `outputs.continuationStatus` (`active` while downstream decomposition remains, `terminal` when the phase plan has no remaining planning work).

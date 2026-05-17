@@ -10,6 +10,38 @@ description: >-
   initiating-agent ignition when those skills exist. Use under mission dispatch or
   when the developer asks for a new plan / sub-plan / indexed child from a
   numbered dual-title list.
+timeoutMs: 900000
+warmUpRules:
+  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
+inputs:
+  parentPlanPath:
+    type: string
+    description: Parent plan path when creating an indexed child.
+    required: false
+  parentPlanSlug:
+    type: string
+    description: Parent plan slug when creating an indexed child.
+    required: false
+  index:
+    type: number
+    description: One-based child index from the parent's Delivery phases or PR list.
+    required: false
+  childKind:
+    type: string
+    description: Expected child body type, usually phase-plan or pr-plan.
+    required: false
+  requestedPopulatorSkill:
+    type: string
+    description: Optional populator skill to spawn after the child stub is wired.
+    required: false
+  ledgerParent:
+    type: string
+    description: Ledger parent slug/path copied from the upstream decomposition agent.
+    required: false
+  upstreamSkill:
+    type: string
+    description: Skill that requested this child creation.
+    required: false
 ---
 
 # New plan
@@ -151,7 +183,7 @@ Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **t
 
 2. **Link the child** using an absolute `file://` URL to the real path under `.sedea/operations/.../plans/...` so the developer can open it.
 
-3. **Populator handoff (indexed spawn only).** If the parent heading is **`Delivery phases`**, the next step is the **`phase-plan`** protocol branch on the new child; if **`PR breakdown`**, the **`pr-plan`** protocol branch. The **initiating agent** ignites that **protocol branch** with an **ignition prompt** that names the child path (per **sedea-center-artifact-migration** platform rules). **`pr-breakdown`**, nested decomposition, and **`plan-reconcile`** happen in their own mission steps after this skill finishes. If a center populator `SKILL.md` is ever absent, end after stub + parent link and point at **`development-process.md`**.
+3. **Populator handoff (indexed spawn only).** If the parent heading is **`Delivery phases`**, the next step is the **`phase-plan`** protocol branch on the new child; if **`PR breakdown`**, the **`pr-plan`** protocol branch. When this skill was spawned with `requestedPopulatorSkill`, emit exactly one child-spawn request for that populator skill after the child stub and parent `Plan:` line are written. Inputs must include `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, `parentIndex`, `ledgerParent`, and `upstreamSkill: "new-plan"`. Announce that this agent is waiting for the populator result and stop. **`pr-breakdown`**, nested decomposition, and **`plan-reconcile`** happen in their own mission steps after this skill finishes. If a center populator `SKILL.md` is ever absent, end after stub + parent link and point at **`development-process.md`**.
 
 4. **Non-indexed spawns:** no populator handoff table — suggest filling stubs or choosing the next **protocol branch** via mission / numbered options.
 
@@ -159,6 +191,8 @@ Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **t
 
 ## Scope guard
 
-This skill writes `.plan.md` + `.state.yaml`, optionally updates one `Plan:` line under the parent’s dual-title list (indexed spawn), and may **describe** ignition handoff to **`phase-plan`** / **`pr-plan`**. Worktree creation, PR prompts, archive bullets, and expanding the dual-title list beyond the chosen item **N** sit in **`coding-session`**, **`plan-reconcile`**, **`delivery-phases`**, and **`pr-breakdown`** as applicable.
+This skill writes `.plan.md` + `.state.yaml`, optionally updates one `Plan:` line under the parent’s dual-title list (indexed spawn), and may spawn the requested **`phase-plan`** / **`pr-plan`** populator. Worktree creation, PR prompts, archive bullets, and expanding the dual-title list beyond the chosen item **N** sit in **`coding-session`**, **`plan-reconcile`**, **`delivery-phases`**, and **`pr-breakdown`** as applicable.
 
-Stop after write + parent confirmation (when required) + parent `Plan:` update (indexed) + optional ignition handoff when downstream skills exist.
+When spawned, end with a child result containing `outputs.planPath`, `outputs.planSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "new-plan-agent"`, and `outputs.continuationStatus` (`active` while a populator lane is running, `terminal` when the child stub and optional populator handoff are complete).
+
+Stop after write + parent confirmation (when required) + parent `Plan:` update (indexed) + optional populator spawn / wait state when downstream skills exist.
