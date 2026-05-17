@@ -341,6 +341,16 @@ When this skill is running as a spawned child and `autoContinue` is not `false`,
 - `delivery-phases` → spawn `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md`
 - `pr-breakdown` → spawn `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`
 
+Before spawning, present the drafted phase plan body and the route signal to the developer via **AskQuestion**. Required options:
+
+- **Approve phase plan and route**
+- **Revise phase plan first**
+- **Choose a different route**
+- **Defer downstream decomposition**
+- **More details for option _**
+
+Only **Approve phase plan and route** authorizes the child-spawn request. Do not treat agreement between parent hint and assessment as developer approval.
+
 Inputs must include `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "phase-plan-agent"`, `ledgerParent`, `decompositionAssessment`, and `routeLock` (`"delivery-phases"` or `"pr-breakdown"`). For `pr-breakdown`, also include `prBreakdownShape` (`"single"` or `"multi"`) when known.
 
 After emitting the child-spawn request, announce that the **Phase plan agent** is waiting for the downstream decomposition result and stop. Do not return terminal success upstream while the downstream lane is active.
@@ -396,4 +406,4 @@ Wrong template stops live in step 1a — use **`master-plan`** or **`pr-plan`** 
 
 Stop after the handoff block in step 5, or after spawning the next decomposition branch and announcing the wait state.
 
-When spawned, end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.decompositionAssessment`, `outputs.routeDecision` (`delivery-phases` | `pr-breakdown` | `needs-user-decision`), `outputs.prBreakdownShape` (`single` | `multi` | `unknown`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "phase-plan-agent"`, and `outputs.continuationStatus` (`active` while downstream decomposition remains or route choice is unresolved, `terminal` when the phase plan has no remaining planning work).
+When spawned, end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.decompositionAssessment`, `outputs.routeDecision` (`delivery-phases` | `pr-breakdown` | `needs-user-decision`), `outputs.routeApprovalStatus`, `outputs.prBreakdownShape` (`single` | `multi` | `unknown`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "phase-plan-agent"`, and `outputs.continuationStatus` (`active` while route approval, downstream decomposition, or route choice remains unresolved, `terminal` when the phase plan has no remaining planning work).

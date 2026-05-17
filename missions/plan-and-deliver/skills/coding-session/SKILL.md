@@ -26,6 +26,10 @@ inputs:
     type: boolean
     description: Readiness signal from pr-plan. Required for spawned implementation handoff.
     required: false
+  developerApprovedImplementation:
+    type: boolean
+    description: True only when the developer explicitly approved this PR plan for implementation handoff.
+    required: false
   repoPath:
     type: string
     description: Absolute path to the product repo primary checkout for a single-repo coding session.
@@ -70,9 +74,20 @@ When this skill is spawned from `pr-plan`, treat implementation handoff as plan-
 
 1. `targetPlanPath` and `targetPlanSlug`.
 2. `readyForImplementation: true`.
-3. At least one repo target (`repoPath` or `repoPaths`).
+3. `developerApprovedImplementation: true`.
+4. At least one repo target (`repoPath` or `repoPaths`).
 
 If `readyForImplementation` is false or missing, stop before worktree creation and return `partial` with `remainingTasks` copied from the upstream PR plan readiness reasons. Do not create worktrees, attach folders, or emit a coding prompt from an unready PR plan.
+
+If `developerApprovedImplementation` is false or missing, stop before worktree creation and ask the developer with **AskQuestion**. Required options:
+
+- **Approve implementation handoff now**
+- **Revise PR plan first**
+- **Defer implementation**
+- **Abandon this PR plan**
+- **More details for option _**
+
+Only **Approve implementation handoff now** authorizes worktree creation, sidecar session writes, MCP worktree attach, and coding-agent prompt emission.
 
 If repo targets are missing, stop and ask the developer with **AskQuestion** to choose or provide the implementation repo(s). Do not infer from focused files alone.
 
@@ -99,6 +114,18 @@ Otherwise:
 
 **Multi-repo:** run the script **once** on the shared plan before creating any worktrees.
 
+## Start implementation approval gate
+
+After readiness, repo selection, and plan completeness checks pass, but before any `git worktree add`, sidecar session write, Mission Control worktree attach, or coding-agent prompt emission, ask the developer for explicit start approval with **AskQuestion**. Required options:
+
+- **Start implementation now**
+- **Revise PR plan first**
+- **Change repo or branch settings**
+- **Defer implementation**
+- **More details for option _**
+
+Only **Start implementation now** authorizes worktree creation and session-state mutation. This gate applies to both spawned and standalone `coding-session` runs; earlier readiness or repo-selection answers are not approval to mutate worktrees or sidecars.
+
 ## Copy/paste-safe prompt output (required)
 
 When you emit the final session prompt for the user to paste into **a coding agent** session:
@@ -109,7 +136,7 @@ When you emit the final session prompt for the user to paste into **a coding age
 
 ## Generic flow (single repo)
 
-Run only **after** the [Plan completeness gate](#plan-completeness-gate-before-any-worktree) passes or is skipped / bypassed.
+Run only **after** the [Plan completeness gate](#plan-completeness-gate-before-any-worktree) passes or is skipped / bypassed and the [Start implementation approval gate](#start-implementation-approval-gate) is approved.
 
 1. Create a worktree on a fresh branch from `origin/main`:
    ```bash
@@ -194,8 +221,8 @@ Spawn `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skill
 
 When Mission Control delivers the **`pre-pr-review`** result:
 
-1. Copy `blockers`, `flags`, `followUpsAppended`, `codingAgentHandback`, `requiresDeveloperApproval`, `remainingTasks`, `activeLanes`, and `openLedgerEntries` into the coding-session result.
-2. If recommendation is `go`, **coding-session** spawns **`create-pr`** because it owns the implementation context, worktree path, branch, diff summary, PR plan path, and reviewer result. Do not make **`pre-pr-review`** spawn `create-pr`.
+1. Copy `blockers`, `flags`, `proposedFollowUps`, `followUpsAppended`, `codingAgentHandback`, `requiresDeveloperApproval`, `remainingTasks`, `activeLanes`, and `openLedgerEntries` into the coding-session result.
+2. If recommendation is `go`, **coding-session** presents the approval gate in **Create-PR handoff after go** because it owns the implementation context, worktree path, branch, diff summary, PR plan path, and reviewer result. Do not make **`pre-pr-review`** spawn `create-pr`.
 3. If recommendation is `no-go`, keep the implementation lane active and route back to coding-session fix work **only after developer approval**; do not proceed to PR creation.
 4. If review failed, was aborted, or was abandoned, keep the ledger entry blocked until the developer retries, defers, or abandons the review.
 
@@ -203,7 +230,7 @@ When Mission Control delivers the **`pre-pr-review`** result:
 
 When **`pre-pr-review`** returns `recommendation: "no-go"` or any `blockers`:
 
-1. Present the review summary to the developer: blockers, `Must`, `Should`, `Defer`, and any follow-ups appended to the PR plan.
+1. Present the review summary to the developer: blockers, `Must`, `Should`, `Defer`, and any proposed follow-ups for the PR plan.
 2. Use **AskQuestion** before making any code or plan edits. Required options:
    - **Apply Must fixes** — coding-session may edit only blocker / `Must` items.
    - **Apply Must + Should fixes** — coding-session may edit blocker / `Must` and `Should` items.
@@ -219,9 +246,17 @@ When **`pre-pr-review`** returns `recommendation: "no-go"` or any `blockers`:
 When **`pre-pr-review`** returns `recommendation: "go"`:
 
 1. Verify the worktree branch is pushed or pushable per **efficient-pr-shipping**. Do not open the PR directly from coding-session.
-2. Emit exactly one child-spawn request for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/create-pr/SKILL.md`.
-3. Inputs must include `targetPlanPath`, `targetPlanSlug`, `worktreePath`, `branchName`, `baseRef`, `repoUrl`, `diffSummary`, `prePrReviewRecommendation: "go"`, `prePrReviewFlags`, `followUpsAppended`, `ledgerParent`, and `upstreamSkill: "coding-session"`.
-4. Announce that **coding-session** is waiting for the PR-creating agent result and stop. Do not continue to `pr-review` or deploy until `create-pr` reports a PR URL/number or a blocking failure.
+2. Present the reviewer `go` summary, non-blocking flags, and any proposed follow-ups to the developer, then use **AskQuestion** before plan follow-up mutation or PR creation. Required options:
+   - **Approve follow-ups and create PR now**
+   - **Create PR without appending proposed follow-ups**
+   - **Revise code or plan first**
+   - **Defer PR creation**
+   - **Abandon this implementation**
+   - **More details for option _**
+3. Only **Approve follow-ups and create PR now** authorizes appending proposed follow-ups before PR creation. **Create PR without appending proposed follow-ups** authorizes only PR creation. Do not treat `pre-pr-review` `go` as developer approval to mutate the plan or open/prepare a PR.
+4. Emit exactly one child-spawn request for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/create-pr/SKILL.md`.
+5. Inputs must include `targetPlanPath`, `targetPlanSlug`, `worktreePath`, `branchName`, `baseRef`, `repoUrl`, `diffSummary`, `prePrReviewRecommendation: "go"`, `prePrReviewFlags`, `followUpsAppended`, `ledgerParent`, and `upstreamSkill: "coding-session"`.
+6. Announce that **coding-session** is waiting for the PR-creating agent result and stop. Do not continue to `pr-review` or deploy until `create-pr` reports a PR URL/number or a blocking failure.
 
 When Mission Control delivers the **`create-pr`** result, copy `prUrl`, `prNumber`, `branchName`, `prState`, `reviewState`, `mergeSha`, `mergedAt`, `deployStatus`, `deployTodoStatus`, `remainingTasks`, `activeLanes`, and `openLedgerEntries` into the coding-session result. If the PR was created, keep the mission lane active for inline `pr-review`, merge tracking, and deploy verification. If `create-pr` reports deploy-walk active or blocked, propagate that status upstream without closing the coding-session ledger entry.
 
@@ -255,6 +290,8 @@ When this skill runs as a spawned child, end with a child result containing at l
 - `outputs.targetPlanPath`
 - `outputs.targetPlanSlug`
 - `outputs.readyForImplementation`
+- `outputs.developerApprovedImplementation`
+- `outputs.startImplementationApprovalStatus`
 - `outputs.repoPaths`
 - `outputs.worktrees` (array of `{repo, path, branch, attached}`)
 - `outputs.branchName`
@@ -262,8 +299,10 @@ When this skill runs as a spawned child, end with a child result containing at l
 - `outputs.prePrReviewStatus`
 - `outputs.prePrReviewRecommendation`
 - `outputs.reviewBlockers`
+- `outputs.proposedFollowUps`
 - `outputs.reviewLoopCount`
 - `outputs.developerApprovalStatus`
+- `outputs.prCreationApprovalStatus`
 - `outputs.createPrStatus`
 - `outputs.prUrl`
 - `outputs.prNumber`

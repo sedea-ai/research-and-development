@@ -158,7 +158,12 @@ If `{note}` is omitted in `dep <N> done`, append `*(YYYY-MM-DD: done.)*` (litera
 After the edit, **check whether step N was the last `[ ]` in the active sub-section**:
 
 - If `### Before deploy` is now fully `[x]` and Status is `drafted`, the confirmation reply ends with: *"All Before-deploy steps complete. When you've actually deployed, reply `dep deployed` (or `dep deployed: {note}`) to flip status and unlock After-deploy steps."*
-- If `### After deploy` is now fully `[x]` and Status is `deployed`, **also** auto-flip Status `deployed → done` (one extra `StrReplace` on the Status line — append `*(YYYY-MM-DD: All deploy steps verified.)*` and replace `deployed` with `done`). **Then** run the **Frontmatter capstone** `StrReplace` (§ *Frontmatter capstone — `pending` → `done`*) so todo `deploy-test-plan-verified` flips to `done` in the same turn. Confirmation reply: *"Marked After-deploy step N done. **All deploy steps verified.** Status flipped: `deployed → done`. Frontmatter todo `deploy-test-plan-verified` → `done`. Deploy checklist is closed — invoke **plan-reconcile** when you want merge-driven reconcile/archive (not auto-run; independent of merge timing)."*
+- If `### After deploy` is now fully `[x]` and Status is `deployed`, stop after marking the step and ask the developer for explicit closure approval with **AskQuestion**. Required options:
+  - **Approve deploy checklist closure**
+  - **Review deploy checklist first**
+  - **Leave status deployed**
+  - **More details for option _**
+  Only **Approve deploy checklist closure** authorizes the Status `deployed → done` flip and the **Frontmatter capstone** `deploy-test-plan-verified` `pending → done` mutation. Do not treat the final step's `done` command as approval for the larger deploy lifecycle closeout.
 - Otherwise, append the next-step hint: *"Marked {Before or After}-deploy step N done. Next: step N+1 — \"{verbatim next unchecked step line}\". Reply `start dep <N+1>` when ready."*
 
 ### `dep <N> skip: <reason>` — strike + flip
@@ -188,7 +193,12 @@ Confirmation: *"Marked {Before or After}-deploy step N blocked: \"{reason}\". Bo
 Pre-conditions:
 
 - Status must currently be `drafted`. If `deployed` or `done`, reply: *"Status is already `{current}`. To override, reply `dep deployed force` (**developer** escape hatch — only use if the plan's lifecycle drifted from reality)."* (Skill's `force` branch is identical to the normal branch; the gate is the **developer**'s confirmation.)
-- If any `[ ]` boxes remain in `### Before deploy`, surface them as a flag **after** applying the edit (don't block on this — the **developer** is in control). The flag form: *"Note: Before-deploy steps {list of unchecked indexes} are still `[ ]`. They were not run, or the box-flip didn't apply. If those checks were genuinely deferred, that's fine; if it's an oversight, run `start dep before <N>` to verify. Leaving them `[ ]` records silent omissions."*
+- If any `[ ]` boxes remain in `### Before deploy`, do **not** flip status yet. Use **AskQuestion** to confirm whether the developer wants to deploy with unchecked Before-deploy steps. Required options:
+  - **Proceed to deployed with unchecked Before-deploy steps**
+  - **Review Before-deploy steps first**
+  - **Block deploy transition**
+  - **More details for option _**
+  Only **Proceed to deployed with unchecked Before-deploy steps** authorizes the status mutation. If approved, include a note listing unchecked indexes in the confirmation so the omission is auditable.
 
 `StrReplace` on the Status line:
 
@@ -197,7 +207,7 @@ Pre-conditions:
 
 Confirmation reply also previews the first After-deploy step: *"Status flipped: `drafted → deployed` at {YYYY-MM-DD HH:MM}. After-deploy now active. First step: \"{verbatim first step line}\". Reply `start dep 1` when ready."*
 
-If `### After deploy` has no `[ ]` items at all (it's empty by design or already all `[x]` — unusual), reply: *"Status flipped: `drafted → deployed`. No `### After deploy` steps remain. Auto-flipping `deployed → done`. PR plan fully closed out."* and chain into the same Status + **Frontmatter capstone** sequence as the last After-deploy `done` branch.
+If `### After deploy` has no `[ ]` items at all (it's empty by design or already all `[x]` — unusual), reply: *"Status flipped: `drafted → deployed`. No `### After deploy` steps remain. Deploy checklist closure still requires approval."* Then run the same **Approve deploy checklist closure** gate used by the last After-deploy `done` branch before flipping `deployed → done` or changing `deploy-test-plan-verified` to `done`.
 
 ### `dep status` — read-only summary
 
@@ -282,7 +292,7 @@ History is **append-only**. Never overwrite or compact prior `*(YYYY-MM-DD: ...)
 
 PR plans carry a YAML todo whose `id` is **`deploy-test-plan-verified`** (see [`development-process.md`](../../../../docs/development-process.md) § *Per-PR plan template* § 7 — Frontmatter capstone). It stays `pending` until every Before-deploy and After-deploy checkbox is `[x]` **and** the deploy section's `**Status:**` reads `done`.
 
-Whenever a command in this skill sets `**Status:**` from `deployed` → `done` (last After-deploy checkbox, or the empty-After-deploy chain from `dep deployed`), **immediately** apply a second `StrReplace` on frontmatter using this **exact** `old_string` / `new_string` pair (byte-identical to [`pr-plan`](../pr-plan/SKILL.md) § 4a-bis and on-disk plans — do not paraphrase the `content: >-` body):
+Only after the developer approves **Approve deploy checklist closure**, when this skill sets `**Status:**` from `deployed` → `done` (last After-deploy checkbox, or the empty-After-deploy chain from `dep deployed`), **immediately** apply a second `StrReplace` on frontmatter using this **exact** `old_string` / `new_string` pair (byte-identical to [`pr-plan`](../pr-plan/SKILL.md) § 4a-bis and on-disk plans — do not paraphrase the `content: >-` body):
 
 ```
 old_string:

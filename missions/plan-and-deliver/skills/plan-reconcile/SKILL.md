@@ -81,19 +81,37 @@ Plans and sidecars live only under the **`.sedea/operations/`** union — **`.se
 
 ## Flow
 
-### 1. Run reconcile (PR-tracked path)
+### 1. Preview reconcile (PR-tracked path)
+
+```bash
+node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs reconcile --dry-run
+```
+
+This queries **`gh pr view`** for every sidecar **`prs[]`** entry without moving files or appending parent bullets. The printed report has three buckets:
+
+- **`archived`** — every PR for that plan is **`MERGED`**; in dry-run this means **`plan-state`** would move the plan + sidecar and append a bullet under **`## Child plans`** on the parent (when applicable). No mutation has happened yet.
+- **`flagged`** — at least one PR closed without merge, mixed merged/open, unknown repo, or **`gh`** error. Needs judgement (step 3).
+- **`skipped`** — still-open PRs, or no **`prs[]`** (the script’s way of saying “not this path”). Step 2 covers the no-**`prs[]`** subset via **`list-candidates`**.
+
+Optional flags: **`--prune-worktrees`** is only allowed after the developer approves the mutation pass below (see script **`--help`**).
+
+### 1b. Approve PR-tracked reconcile mutations
+
+Present the dry-run report to the developer and use **AskQuestion** before running non-dry-run reconcile. Required options:
+
+1. **Approve PR-tracked reconcile mutations**
+2. **Skip PR-tracked reconcile this pass**
+3. **Review flagged entries first**
+4. **Abort reconcile**
+5. **More details for option _**
+
+Only **Approve PR-tracked reconcile mutations** authorizes:
 
 ```bash
 node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs reconcile
 ```
 
-This queries **`gh pr view`** for every sidecar **`prs[]`** entry. The printed report has three buckets:
-
-- **`archived`** — every PR for that plan is **`MERGED`**; **`plan-state`** moved the plan + sidecar and appended a bullet under **`## Child plans`** on the parent (when applicable). Nothing more for these in step 1.
-- **`flagged`** — at least one PR closed without merge, mixed merged/open, unknown repo, or **`gh`** error. Needs judgement (step 3).
-- **`skipped`** — still-open PRs, or no **`prs[]`** (the script’s way of saying “not this path”). Step 2 covers the no-**`prs[]`** subset via **`list-candidates`**.
-
-Optional flags: **`--dry-run`**, **`--prune-worktrees`** (see script **`--help`**).
+If the developer skips PR-tracked reconcile, do not run non-dry-run `reconcile`; continue only to read-only `list-candidates` and developer-selected archive work. If the developer aborts, stop with `continuationStatus: "active"` and no archive mutations.
 
 ### 2. Run list-candidates (non-PR path)
 
@@ -146,7 +164,7 @@ Per **`.sedea/centers/sedea-centers--development/docs/development-process.md`** 
 **Scope**
 
 - **User-selected plans** from step 3 (candidates the user picked + flagged plans they opted to archive). Files are still at their **active** **`.sedea/operations/.../plans/`** paths for this pass (not yet archived here).
-- **Reconcile-auto-archived plans** from step 1 (**`archived`** list). **`plan-state`** **`reconcile`** may have moved each **`.plan.md`** within the same operations scope — **do not** assume its former path. **Re-resolve** each slug’s **`.plan.md`** under **`.sedea/operations/`** (for example **`plan-state resolve`** or a search for **`<slug>.plan.md`** under that scope) after step 1. For this set, **Postpone** below is **not** offered — the plan is already archived; only **Integrate** and **Drop** apply.
+- **Reconcile-auto-archived plans** from approved step 1b (**`archived`** list). **`plan-state`** **`reconcile`** may have moved each **`.plan.md`** within the same operations scope — **do not** assume its former path. **Re-resolve** each slug’s **`.plan.md`** under **`.sedea/operations/`** (for example **`plan-state resolve`** or a search for **`<slug>.plan.md`** under that scope) after the approved mutation run. For this set, **Postpone** below is **not** offered — the plan is already archived; only **Integrate** and **Drop** apply.
 
 If a plan in scope has no **`## Follow-ups`** section, or the section is empty, skip it silently.
 

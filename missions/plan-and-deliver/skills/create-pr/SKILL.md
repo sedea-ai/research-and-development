@@ -157,7 +157,14 @@ If PR status is `closed` without merge, return `partial` or `abandoned` accordin
 
 ### Spawn deploy-walk after merge
 
-When `autoDeployAfterMerge` is not `false` and PR status is `merged`, emit exactly one child-spawn request for:
+When `autoDeployAfterMerge` is not `false` and PR status is `merged`, verify deploy-walk prerequisites, then ask the developer with **AskQuestion** before spawning deploy verification. Required options:
+
+1. **Start deploy verification now**
+2. **Defer deploy verification**
+3. **Check PR status again**
+4. **More details for option _**
+
+Only when the developer chooses **Start deploy verification now**, emit exactly one child-spawn request for:
 
 `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/deploy-walk/SKILL.md`
 
@@ -175,6 +182,8 @@ Inputs must include:
 - `upstreamSkill: "create-pr"`
 
 Announce that **create-pr** is waiting for the deploy-walk result and stop. Do not propose plan reconciliation until deploy-walk reports terminal completion or the developer explicitly defers deploy verification.
+
+If the developer defers deploy verification, keep `continuationStatus: "active"` with `remainingTasks` naming deferred `deploy-walk`; do not close the PR lifecycle ledger entry.
 
 ### Deploy result aggregation
 
@@ -236,6 +245,7 @@ Extend spawned result outputs with:
 - `outputs.mergeSha`
 - `outputs.mergedAt`
 - `outputs.deployStatus`
+- `outputs.deployApprovalStatus`
 - `outputs.beforeDeployStatus`
 - `outputs.afterDeployStatus`
 - `outputs.deployTodoStatus`

@@ -310,7 +310,7 @@ End with:
    1. **Revise § *N*** — The **developer** names the section and feedback; one focused `StrReplace`; echo.
    2. **Pre-fill § 5 / § 6 / § 7 / § 8 (sketch)** — Draft a *starting* sketch from parent + § 3 context; label it speculative; § 7 must use numbered GFM **`1. [ ]`** lists and **`**Status:** drafted`** opener; apply **development-process.md** § 7 *What NOT to include* and the italic fallback when empty; for § 7 exclusions use the baseline path **`.sedea/centers/development/docs/baseline-verify-after-changes.md`** where the doc points. After accepting a § 7 sketch, run **4a-bis** if the capstone todo is still missing.
    3. **Commit when ready** — Remind the **developer** to commit; this skill does **not** run `git`.
-   4. **Continue in `coding-session`** — Implementation fills §§ 5–7 before merge cadence per **`development-process.md`**; **`deploy-walk`** drives § 7 checkbox lifecycle.
+   4. **Approve for implementation and continue in `coding-session`** — This is the developer approval gate for implementation handoff. Implementation fills §§ 5–7 before merge cadence per **`development-process.md`**; **`deploy-walk`** drives § 7 checkbox lifecycle.
 
 **Stop** after this block — do not run **`coding-session`** inside this turn.
 
@@ -332,10 +332,10 @@ Perform exactly what was chosen. List short **numbered observations** for gaps (
 
 Stop after the step 5 handoff block.
 
-When spawned, end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.parentPlanLinkStatus` (`linked` | `blocked` | `unknown`), `outputs.readyForImplementation`, `outputs.implementationReadinessReasons`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "pr-plan-agent"`, and `outputs.continuationStatus`.
+When spawned, end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.parentPlanLinkStatus` (`linked` | `blocked` | `unknown`), `outputs.readyForImplementation`, `outputs.implementationReadinessReasons`, `outputs.implementationApprovalStatus` (`pending` until the developer explicitly chooses implementation handoff), `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "pr-plan-agent"`, and `outputs.continuationStatus`.
 
 Set `outputs.continuationStatus` as follows:
 
-- `terminal` when `readyForImplementation: true`, parent link is trusted, and no blocking `remainingTasks` remain.
+- `terminal` when `readyForImplementation: true`, parent link is trusted, implementation approval is explicitly granted or out of scope for this run, and no blocking `remainingTasks` remain.
 - `active` when the plan is drafted but parent link repair, explicit fill sketches, or implementation handoff decision remains.
 - `terminal` with `readyForImplementation: false` only when the upstream agent or developer explicitly marks the PR plan deferred, abandoned, or out of scope.

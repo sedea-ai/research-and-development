@@ -179,10 +179,16 @@ End with:
 When running as a spawned downstream agent under `master-plan`, mission dispatch **does** explicitly continue:
 
 1. After drafting the phase list, count the numbered rows as **K**.
-2. Emit one child-spawn request per phase row for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md`.
-3. Each request's inputs must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-plan"`, `requestedPopulatorSkill: "phase-plan"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, and `decompositionKind: "delivery-phases"`.
-4. Record each spawned child as an open ledger entry keyed by correlation id plus `(parentPlanSlug, index)` with status `active`.
-5. Announce that this agent is waiting for **K** indexed child results and stop. Do not return terminal success upstream until every spawned `new-plan` lane has returned terminal status or the developer explicitly defers/abandons the remaining rows.
+2. Present the drafted `Delivery phases` section to the developer and use **AskQuestion** before creating child plans. Required options:
+   - **Approve phase list and spawn children**
+   - **Revise phase list first**
+   - **Defer child plan creation**
+   - **Abandon this branch**
+   - **More details for option _**
+3. Only when the developer chooses **Approve phase list and spawn children**, emit one child-spawn request per phase row for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md`.
+4. Each request's inputs must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-plan"`, `requestedPopulatorSkill: "phase-plan"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, and `decompositionKind: "delivery-phases"`.
+5. Record each spawned child as an open ledger entry keyed by correlation id plus `(parentPlanSlug, index)` with status `active`.
+6. Announce that this agent is waiting for **K** indexed child results and stop. Do not return terminal success upstream until every spawned `new-plan` lane has returned terminal status or the developer explicitly defers/abandons the remaining rows.
 
 If **K = 0**, treat that as a drafting failure: do not spawn children; return failure or partial with an error explaining that no phase rows were created.
 
@@ -217,6 +223,6 @@ Match the discipline in **`master-plan`** and **`phase-plan`**: perform exactly 
 
 **Out of scope:** renaming child plans after **`new-plan`** creates them; filling phase bodies inline (**`phase-plan`** owns the body); PR breakdown content (**`pr-breakdown`**); edits outside the dual-title section; extra H2 phase headings in the parent; `git` / commit automation; roadmap topics and PR plans (step 1 stops).
 
-**Result contract when spawned:** end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.decompositionKind: "delivery-phases"`, `outputs.childCount`, `outputs.childRows` (array of `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "delivery-phases-agent"`, and `outputs.continuationStatus` (`active` while child creation/population remains, `terminal` when all child rows are closed, deferred, abandoned, or out of scope).
+**Result contract when spawned:** end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.decompositionKind: "delivery-phases"`, `outputs.childCount`, `outputs.developerApprovalStatus`, `outputs.childRows` (array of `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "delivery-phases-agent"`, and `outputs.continuationStatus` (`active` while approval, child creation, or population remains, `terminal` when all child rows are closed, deferred, abandoned, or out of scope).
 
 Stop after the step 6 handoff block or after spawning and announcing the wait state.

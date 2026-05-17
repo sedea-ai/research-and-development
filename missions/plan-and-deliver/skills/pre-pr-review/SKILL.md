@@ -3,8 +3,9 @@ name: pre-pr-review
 description: >-
   Pre-PR reviewer agent (fresh spawned lane): review a committed implementation
   diff against a PR plan or free-form scope, score plan/rules/quality categories,
-  append Code Review Follow-ups when plan-anchored, and report go/no-go before PR
-  creation. Spawned by coding-session after the implementation cut point.
+  propose Code Review Follow-ups when plan-anchored, and report go/no-go before PR
+  creation. Spawned by coding-session after the implementation cut point; coding-session
+  obtains developer approval before any follow-up mutation.
 timeoutMs: 1800000
 warmUpRules:
   - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
@@ -130,9 +131,9 @@ Verdict per row: `PASS`, `FLAG`, or `FAIL`. `FAIL` blocks PR creation or merge r
 | **F2** | Repo-rule compliance |
 | **F3** | General code quality |
 
-## Step 7 — Follow-ups
+## Step 7 — Proposed follow-ups
 
-For `plan` anchor only: append actionable `FLAG` items that are not blockers to `## Follow-ups` in the PR plan.
+For `plan` anchor only: collect actionable `FLAG` items that are not blockers as **proposed** `## Follow-ups` for the PR plan. Do **not** mutate the plan file from this reviewer lane; the active **`coding-session`** agent must present these proposed follow-ups to the developer and receive explicit approval before appending them.
 
 Rules:
 
@@ -140,7 +141,7 @@ Rules:
 2. Prefix with bracketed category tag, e.g. `[C § 3]`.
 3. Add optional `(target: ...)` routing hints.
 4. Do not append `FAIL` items; blockers stay in the report.
-5. Create `## Follow-ups` at EOF if missing.
+5. Return proposed follow-ups in `outputs.proposedFollowUps`; leave `outputs.followUpsAppended` empty unless the invocation context explicitly includes prior developer approval for this exact mutation.
 
 For `free-form`, skip file writes.
 
@@ -167,6 +168,7 @@ End with a child result containing:
 - `outputs.recommendation` (`go` | `no-go`)
 - `outputs.blockers`
 - `outputs.flags`
+- `outputs.proposedFollowUps`
 - `outputs.followUpsAppended`
 - `outputs.codingAgentHandback`
 - `outputs.requiresDeveloperApproval`

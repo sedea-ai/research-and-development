@@ -137,11 +137,13 @@ For each **new** (not filtered in Step 2) comment, verify it against the **curre
 - **Must fix** — issue is valid, actionable, and blocks the PR before merge.
 - **Should fix** — issue is valid and worth addressing in this PR if the developer approves the extra fix pass.
 - **Skipped (no follow-up)** — issue is already fixed in the working tree, factually wrong, or pure noise (e.g. linter chatter the project doesn't enforce). Nothing to track.
-- **Skipped → follow-up** — issue is *valid* but *out of scope* for this PR's single concern. Strategy #6 forbids silently expanding the PR; capture as a `## Follow-ups` bullet in Step 3a so the item isn't lost.
+- **Skipped → follow-up** — issue is *valid* but *out of scope* for this PR's single concern. Strategy #6 forbids silently expanding the PR; propose a `## Follow-ups` bullet in Step 3a so the item isn't lost.
 
 Do **not** apply fixes yet. First report the classification and wait for explicit developer approval through `coding-session`.
 
 ### Step 3b — Developer approval gate
+
+Run this gate only after Step 3a has prepared proposed follow-ups and Step 4 has reported the full classification to the developer.
 
 Before applying any code, plan, or GitHub changes, **coding-session** must ask the developer with **AskQuestion**. Required options:
 
@@ -153,23 +155,25 @@ Before applying any code, plan, or GitHub changes, **coding-session** must ask t
 
 No source edits, plan edits, commits, pushes, GitHub replies, resolves, minimizes, or review re-requests may happen until the developer chooses an approval option.
 
+When the approved scope includes **Follow-ups only** or includes any **Skipped → follow-up** comments, append only those approved bullets to the linked PR plan's `## Follow-ups` section before Step 5. If the developer rejects a proposed follow-up, do not mutate the plan or mention it as captured in GitHub reconciliation.
+
 After approved fixes are applied, stop for developer review before commit/push. Do not commit or push silently.
 
-### Step 3a — Capture out-of-scope flags as follow-ups
+### Step 3a — Propose out-of-scope flags as follow-ups
 
 Per [`development-process.md`](../../../../docs/development-process.md) § *Cadence — Feedback Collection*, items surfaced by **a reviewer-agent (Slink or Code Rabbit)** during PR review that aren't worth blocking the PR on land in the PR plan's `## Follow-ups` section as **Code Review Follow-ups** (Strategy #6 forbids the silent scope expansion; the follow-up is the safe escape valve). This step mirrors `pre-pr-review` runner Step 6 — same section, same bullet shape, same routing semantics — so `pl` can drain both sources at archive time without distinguishing.
 
 **Skip this step entirely** when Step 0's sub-step returned no slug (`resolve` exited non-zero, or no PR plan is linked yet). Acknowledge once: *"No plan linked to this PR; skipping follow-ups capture. Out-of-scope flags surface in the Step 4 report only — copy anything actionable into a new plan or follow-up issue if needed."*
 
-Otherwise, for every comment marked **Skipped → follow-up** in Step 3, append a one-sentence bullet to the linked PR plan file **`planPath`** from Step 0 (`…/.sedea/operations/joint/plans/<slug>.plan.md` or `…/.sedea/operations/<operations-user-id>/plans/<slug>.plan.md`) in its `## Follow-ups` section using `StrReplace`. Each bullet:
+Otherwise, for every comment marked **Skipped → follow-up** in Step 3, prepare a one-sentence bullet for the linked PR plan file **`planPath`** from Step 0 (`…/.sedea/operations/joint/plans/<slug>.plan.md` or `…/.sedea/operations/<operations-user-id>/plans/<slug>.plan.md`). Do **not** append yet. The Step 3b developer approval gate must approve follow-up capture before any plan mutation. Each proposed bullet:
 
 - Paraphrases the comment's substantive concern in one sentence — do **not** quote the GitHub body verbatim (the comment thread already preserves it).
 - Carries an optional `(target: <hint>)` suffix when routing is obvious — `Master Plan`, `current phase plan`, `sibling plan`, `new plan`, `drop`.
-- Lives at the bottom of the file. If the PR plan has no `## Follow-ups` section yet, **add one** at the bottom (after § 7 Caveats, or after § 6 if § 7 is omitted) using a single `StrReplace` that inserts the header + the new bullets in one shot — same shape as `pre-pr-review` step 6.
+- Will live at the bottom of the file if approved. If the PR plan has no `## Follow-ups` section yet, the approved mutation adds one at the bottom (after § 7 Caveats, or after § 6 if § 7 is omitted) using a single `StrReplace` that inserts the header + the new bullets in one shot.
 
 Do **not** include `Must fix`, `Should fix`, or `Skipped (no follow-up)` items here — those don't survive the PR as follow-up planning items (`Must` / `Should` land in the diff after approval; `Skipped (no follow-up)` is noise by definition).
 
-Acknowledge: *"Appended <K> Code Review Follow-ups to `<slug>.plan.md` § Follow-ups."*
+Acknowledge: *"Prepared <K> Code Review Follow-ups for `<slug>.plan.md` § Follow-ups; awaiting developer approval before appending."*
 
 Plan files live under **`.sedea/operations/`** on the hosting checkout. In the Sedea `app` monorepo, see `.cursor/rules/operations-structure.mdc`: that tree is often its **own** git repository, gitignored from the monorepo. Edits to `*.plan.md` / `*.state.yaml` therefore may **not** appear in the implementation repo's `git status`. Sync plan changes through whatever workflow owns the operations checkout (for example a dedicated `operations` commit), not only the `app` PR — Step 5's `cp` flow still commits implementation-repo source changes as usual.
 
@@ -180,11 +184,11 @@ Print **every** comment in its original form (quote the body). For each one, sta
 - **Must fix** — why it blocks and what edit is proposed or applied after approval.
 - **Should fix** — why it is useful and what edit is proposed or applied after approval.
 - **Skipped (no follow-up)** — why it doesn't apply (already fixed, factually wrong, pure noise).
-- **Skipped → follow-up** — paraphrase the planning concern + the `(target: …)` hint (if any) that was appended to the plan in Step 3a. Reference the slug so the user can audit: *"Captured to `<slug>.plan.md` § Follow-ups."*
+- **Skipped → follow-up** — paraphrase the planning concern + the `(target: …)` hint (if any) proposed in Step 3a. Reference the slug so the user can approve or reject: *"Proposed for `<slug>.plan.md` § Follow-ups."*
 
 Do **not** reply to, resolve, or minimize any threads yet. Wait for the user to review the changes first.
 
-If there are code changes to review, wait for the user before committing. If all comments were skipped (no code changes), proceed directly to Step 5.
+If there are code changes to review, wait for the user before committing. If all comments were skipped (no code changes), proceed to Step 5 only after the developer approves the skipped dispositions and any proposed follow-ups.
 
 Tell the user explicitly: after local fixes look good, say **`cp`** — `efficient-pr-shipping.mdc` § *cp* step 3 requires **this skill’s Step 5 (GitHub only)** in the **same turn** as commit/push when a `pr` triage finished at Step 4 here, so threads close without a second **`pr`**.
 

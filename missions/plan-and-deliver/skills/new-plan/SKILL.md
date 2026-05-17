@@ -209,7 +209,16 @@ Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **t
 
 2. **Link the child** using an absolute `file://` URL to the real path under `.sedea/operations/.../plans/...` so the developer can open it.
 
-3. **Populator handoff (indexed spawn only).** If the parent heading is **`Delivery phases`**, the next step is the **`phase-plan`** protocol branch on the new child; if **`PR breakdown`**, the **`pr-plan`** protocol branch. When this skill was spawned with `requestedPopulatorSkill`, emit exactly one child-spawn request for that populator skill after the child stub and parent `Plan:` line are written and verified.
+3. **Populator approval gate (indexed spawn only).** If this skill was spawned with `requestedPopulatorSkill`, present the created child stub and verified parent `Plan:` link to the developer before spawning the populator. Use **AskQuestion** with required options:
+   - **Approve child stub and populate now**
+   - **Revise child stub first**
+   - **Defer population**
+   - **Abandon this child**
+   - **More details for option _**
+
+   Only **Approve child stub and populate now** authorizes a populator spawn. If the developer defers, return `partial` or `success` with `continuationStatus: "active"` and a `remainingTasks` item naming the deferred populator.
+
+4. **Populator handoff (indexed spawn only).** If the parent heading is **`Delivery phases`**, the next step is the **`phase-plan`** protocol branch on the new child; if **`PR breakdown`**, the **`pr-plan`** protocol branch. When this skill was spawned with `requestedPopulatorSkill` and the developer approved the populator gate, emit exactly one child-spawn request for that populator skill after the child stub and parent `Plan:` line are written and verified.
 
    Populator skill paths:
 
@@ -218,21 +227,21 @@ Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **t
 
    Inputs must include `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, `parentIndex`, `ledgerParent`, and `upstreamSkill: "new-plan"`. Announce that this agent is waiting for the populator result and stop. **`pr-breakdown`**, nested decomposition, and **`plan-reconcile`** happen in their own mission steps after this skill finishes. If a center populator `SKILL.md` is ever absent, end after stub + parent link and point at **`development-process.md`**.
 
-4. **Aggregate populator result.** When Mission Control delivers the populator child result, match by correlation id first, then by `outputs.targetPlanPath` / `outputs.targetPlanSlug`.
+5. **Aggregate populator result.** When Mission Control delivers the populator child result, match by correlation id first, then by `outputs.targetPlanPath` / `outputs.targetPlanSlug`.
 
    - `success` with no remaining tasks → set this `new-plan` result to `terminal`; include the child plan in `spawnedPlans`.
    - `partial` → keep this `new-plan` result `active`; copy the populator `remainingTasks`, `activeLanes`, and `openLedgerEntries`.
    - `failure`, `aborted`, or `abandoned` → return the same status upstream with the child stub path and the populator errors; the upstream decomposition agent decides retry/defer/abandon for that row.
    - Missing or malformed populator outputs → return `partial` and keep the row open; silence is not completion.
 
-5. **Non-indexed spawns:** no populator handoff table — suggest filling stubs or choosing the next **protocol branch** via mission / numbered options.
+6. **Non-indexed spawns:** no populator handoff table — suggest filling stubs or choosing the next **protocol branch** via mission / numbered options.
 
-6. **Worktrees, broad `git` operations, and `## Child plans` on the parent** — owned by **`coding-session`**, **`plan-reconcile`**, and other cadence steps after this skill completes.
+7. **Worktrees, broad `git` operations, and `## Child plans` on the parent** — owned by **`coding-session`**, **`plan-reconcile`**, and other cadence steps after this skill completes.
 
 ## Scope guard
 
 This skill writes `.plan.md` + `.state.yaml`, optionally updates one `Plan:` line under the parent’s dual-title list (indexed spawn), and may spawn the requested **`phase-plan`** / **`pr-plan`** populator. Worktree creation, PR prompts, archive bullets, and expanding the dual-title list beyond the chosen item **N** sit in **`coding-session`**, **`plan-reconcile`**, **`delivery-phases`**, and **`pr-breakdown`** as applicable.
 
-When spawned, end with a child result containing `outputs.planPath`, `outputs.planSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.childKind`, `outputs.decompositionKind`, `outputs.parentPlanLinkStatus` (`linked` | `already_linked` | `blocked`), `outputs.populatorSkill`, `outputs.populatorStatus`, `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "new-plan-agent"`, and `outputs.continuationStatus` (`active` while a populator lane is running or row repair remains, `terminal` when the child stub, parent link, and optional populator handoff are complete).
+When spawned, end with a child result containing `outputs.planPath`, `outputs.planSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.childKind`, `outputs.decompositionKind`, `outputs.parentPlanLinkStatus` (`linked` | `already_linked` | `blocked`), `outputs.populatorSkill`, `outputs.populatorApprovalStatus`, `outputs.populatorStatus`, `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "new-plan-agent"`, and `outputs.continuationStatus` (`active` while populator approval, a populator lane, or row repair remains, `terminal` when the child stub, parent link, and optional populator handoff are complete).
 
 Stop after write + parent confirmation (when required) + parent `Plan:` update (indexed) + optional populator spawn / wait state when downstream skills exist.

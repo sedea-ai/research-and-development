@@ -240,10 +240,16 @@ End with:
 When running as a spawned downstream agent under `master-plan`, mission dispatch **does** explicitly continue:
 
 1. After drafting the PR list, count the numbered rows under `### PR list` as **K**. `K = 1` is valid only for the single-PR path.
-2. Emit one child-spawn request per PR row for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md`.
-3. Each request's inputs must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `ledgerParent`, `upstreamSkill: "pr-breakdown"`, and `decompositionKind: "pr-breakdown"`.
-4. Record each spawned child as an open ledger entry keyed by correlation id plus `(parentPlanSlug, index)` with status `active`.
-5. Announce that this agent is waiting for **K** indexed child results and stop. Do not return terminal success upstream until every spawned `new-plan` lane has returned terminal status or the developer explicitly defers/abandons the remaining rows.
+2. Present the drafted `PR breakdown` section to the developer and use **AskQuestion** before creating child PR plans. Required options:
+   - **Approve PR breakdown and spawn PR plans**
+   - **Revise PR breakdown first**
+   - **Defer child PR plan creation**
+   - **Abandon this branch**
+   - **More details for option _**
+3. Only when the developer chooses **Approve PR breakdown and spawn PR plans**, emit one child-spawn request per PR row for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md`.
+4. Each request's inputs must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `ledgerParent`, `upstreamSkill: "pr-breakdown"`, and `decompositionKind: "pr-breakdown"`.
+5. Record each spawned child as an open ledger entry keyed by correlation id plus `(parentPlanSlug, index)` with status `active`.
+6. Announce that this agent is waiting for **K** indexed child results and stop. Do not return terminal success upstream until every spawned `new-plan` lane has returned terminal status or the developer explicitly defers/abandons the remaining rows.
 
 If **K = 0**, treat that as a drafting failure: do not spawn children; return failure or partial with an error explaining that no PR rows were created.
 
@@ -278,6 +284,6 @@ Match the discipline in **`master-plan`**, **`delivery-phases`**, and **`phase-p
 
 **Out of scope:** renaming child plans after **`new-plan`** creates them; per-PR §§ 1–4 inline (**`pr-plan`** owns the body); later per-PR sections and worktrees (**`coding-session`**, **`plan-reconcile`** per **`development-process.md`**); edits outside the dual-title block (except the assessment insert in **3.5**); `git` / commit automation; **`Delivery phases`** list body (**`delivery-phases`**); roadmap topics and PR plans (step 1 stops).
 
-**Result contract when spawned:** end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.decompositionKind: "pr-breakdown"`, `outputs.childCount`, `outputs.childRows` (array of `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "pr-breakdown-agent"`, and `outputs.continuationStatus` (`active` while child creation/population remains, `terminal` when all PR rows are closed, deferred, abandoned, or out of scope).
+**Result contract when spawned:** end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.decompositionKind: "pr-breakdown"`, `outputs.childCount`, `outputs.developerApprovalStatus`, `outputs.childRows` (array of `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "pr-breakdown-agent"`, and `outputs.continuationStatus` (`active` while approval, child creation, or population remains, `terminal` when all PR rows are closed, deferred, abandoned, or out of scope).
 
 Stop after the step 6 handoff block or after spawning and announcing the wait state.
