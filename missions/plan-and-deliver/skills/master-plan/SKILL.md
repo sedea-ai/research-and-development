@@ -443,7 +443,7 @@ Do **not** draft section 6 (`Delivery phases | PR breakdown`) or section 7 (Cave
 
 You know the state of the plan: §§ 1–5 are drafted (including **`### Complexity score`**), § 6 and § 7 still carry `_TBD_`. Surface concrete shortcut moves so the user doesn't have to remember what's pending or how to phrase the next instruction.
 
-§ 6 is owned by spawned `delivery-phases` / `pr-breakdown` agents; § 7 is drafted inline here. The handoff menu reflects that split — **`6` is a routing shortcut** (it prompts for `dp` vs `pb`, then spawns the chosen downstream agent), **`7` is a draft shortcut** (this skill drafts § 7 in a follow-up turn).
+§ 6 is owned by spawned **Delivery phases** / **PR breakdown** agents; § 7 is drafted inline here. The handoff menu reflects that split — **`6` opens the decomposition route choice** (Delivery phases vs PR breakdown, then spawns the chosen downstream agent), **`7` drafts Caveats** in a follow-up turn.
 
 **Continuation ownership.** When this skill runs as a spawned **Master Plan agent** under the `create new plan` mission, this lane owns post-master planning continuation and downstream agent spawning. The **Squad Leader** only acknowledges status and maintains the closure ledger; it must not present a duplicate route menu for Delivery phases, PR breakdown, or Caveats. Include `continuationOwner: "master-plan-agent"` and `continuationStatus: "active"` in the terminal result while any follow-up choice remains on this lane.
 
@@ -455,10 +455,10 @@ End your reply with exactly this block (plan path filled in; first line must ech
 
 > Drafted §§ 1–5 (Background, Benefits, Related features, Architectural design, Changes — including **`### Decomposition assessment`** and **`### Complexity score`**) into [.sedea/operations/<operationsUserId>/plans/<slug>.plan.md](file:///Users/<you>/<workspace>/.sedea/operations/<operationsUserId>/plans/<slug>.plan.md). **Complexity: <low|medium> (overall score = <n>).** Review **`### Decomposition assessment`** before routing. What's next?
 >
-> - **`6`** — draft § 6 **list** by spawning **`delivery-phases`** (`dp`) for child phases, or **`pr-breakdown`** (`pb`) for PRs. **`pb`** asks **Delivery phases** vs **multi-PR PR breakdown** vs **single-PR PR breakdown** (one-item `### PR list` is valid). Reply `6` to be prompted for `dp` vs `pb`, or pick the skill explicitly. Prefer aligning with **`### Decomposition assessment`** when you pick.
+> - **`6`** — choose the § 6 decomposition route: **Delivery phases** (child phase plans) or **PR breakdown** (one or more PR plans). PR breakdown may be **single-PR** or **multi-PR**. Prefer aligning with **`### Decomposition assessment`** when you pick.
 > - **`7`** — draft § 7 Caveats (often more useful once § 6 is settled, but available now).
 > - **`iterate § N: <feedback>`** — revise an already-drafted section (e.g. `iterate § 4: also show the Pub/Sub topic`).
-> - **`ccp plans`** — commit (and push to the plans repo) when the plan reads cleanly.
+> - **Commit plans** — commit and push plan changes when the plan reads cleanly.
 > - Free-form feedback or any other instruction also works.
 
 ### Step 7b — When complexity is **high** (C > 20)
@@ -469,10 +469,10 @@ Do **not** use the Step 7a block. The user journey split bullets from Step 6c mu
 >
 > - **`iterate § 4` / `iterate § 5`** — shrink diagrams and change bullets until the **overall score** is no longer **high**; then re-run Step 6c in the next turn and **StrReplace** the whole `### Complexity score` subsection.
 > - **`7`** — still available if caveats help you decide how to split (optional).
-> - **`ccp plans`** — commit the diagnostic draft to the plans repo if you want it saved before splitting.
+> - **Commit plans** — commit the diagnostic draft to the plans repo if you want it saved before splitting.
 > - Free-form feedback or any other instruction also works.
 >
-> **Do not reply `6` for `dp`/`pb` on this plan until complexity is no longer high** — unless you explicitly accept the risk of an oversized § 6; if the user insists, flag it and route once.
+> **Do not choose § 6 decomposition on this plan until complexity is no longer high** — unless you explicitly accept the risk of an oversized § 6; if the user insists, flag it and route once.
 
 Stop. Do not act on these shortcuts in this turn — wait for the user's reply. Do not run `ccp plans`.
 
@@ -487,9 +487,9 @@ Agents have a strong bias toward doing more than was asked — "while I'm in the
 
 #### Don't act silently
 
-When the user replies with `6`, prompt for `dp` vs `pb` and stop — do **not** draft § 6 inline, and do **not** load `delivery-phases` or `pr-breakdown` from inside this skill in the same turn. When the user replies with `7`, draft only § 7 and stop. The following are all forbidden as **silent actions** — but if you notice any of them, surface as a flag (see below):
+When the user chooses `6`, ask for **Delivery phases** vs **PR breakdown** and stop — do **not** draft § 6 inline, and do **not** load the downstream skill in the same turn. When the user chooses `7`, draft only § 7 and stop. The following are all forbidden as **silent actions** — but if you notice any of them, surface as a flag (see below):
 
-- Drafting § 6 inline rather than routing to `dp` / `pb` (the routing is the contract — § 6 is owned by `delivery-phases` and `pr-breakdown`, not this skill).
+- Drafting § 6 inline rather than routing to **Delivery phases** or **PR breakdown** (the routing is the contract — § 6 is owned by those downstream skills, not this skill).
 - Drafting § 7 too because "they're related" or "it'll save a turn".
 - Polishing § 4's diagram because you noticed a small issue while re-reading the file.
 - Running `ccp plans` because the plan looks complete.
@@ -513,7 +513,7 @@ Or for something tiny:
 
 Or for a next-step suggestion outside this skill's scope:
 
-> *Flag 3: the plan looks fully drafted (no `_TBD_` left). If you're ready to commit, reply `ccp plans`; if you want to start a coding session, reply `ws`.*
+> *Flag 3: the plan looks fully drafted (no `_TBD_` left). If you're ready to commit, choose **Commit plans**; if you want to start implementation, choose the coding/worktree branch.*
 
 After flagging, continue with the regular shortcut menu so the user can pick the next move. The same discipline applies to `iterate § N`: fix only that section, even when a sibling section would obviously need a follow-up edit — flag the sibling, don't touch it.
 
@@ -521,30 +521,30 @@ After flagging, continue with the regular shortcut menu so the user can pick the
 
 When the user replies with one of the shortcuts (or free-form feedback) and you draft more, end *that* reply with a **fresh** shortcut menu reflecting the new state of the plan:
 
-- Re-read the plan file (or remember it from this turn) and list only the section numbers still marked `_TBD_` *in this skill's territory* (§§ 1–5 and § 7) as draft shortcuts. § 6 stays in the menu as `6` (a router) regardless of whether it's still `_TBD_` or already drafted by `dp` / `pb` — the router is always available and lands users in the right skill if they want to revisit the decomposition. **Exception:** if `### Complexity score` says **high**, foreground **`iterate § 4` / `iterate § 5`** and de-emphasize or omit **`6`** until the **overall score** is **≤ 20** (recompute after edits).
-- For every section already drafted *in this skill's territory* (§§ 1–5 and § 7), offer an `iterate § N: <feedback>` option. **Do not list `iterate § 6`** — § 6 is owned by `delivery-phases` / `pr-breakdown`, and iterating it happens in those skills' sessions; the chat-shortcuts dispatcher routes `iterate § 6` there if the user types it explicitly.
+- Re-read the plan file (or remember it from this turn) and list only the section numbers still marked `_TBD_` *in this skill's territory* (§§ 1–5 and § 7) as draft shortcuts. § 6 stays in the menu as `6` (the decomposition route choice) regardless of whether it's still `_TBD_` or already drafted by a downstream decomposition skill — the route choice is always available if the user wants to revisit decomposition. **Exception:** if `### Complexity score` says **high**, foreground **`iterate § 4` / `iterate § 5`** and de-emphasize or omit **`6`** until the **overall score** is **≤ 20** (recompute after edits).
+- For every section already drafted *in this skill's territory* (§§ 1–5 and § 7), offer an `iterate § N: <feedback>` option. **Do not list `iterate § 6`** — § 6 is owned by **Delivery phases** / **PR breakdown**, and iterating it happens in those skills' sessions; the chat-shortcuts dispatcher routes `iterate § 6` there if the user types it explicitly.
 - When the user asks to **`iterate § 4`** or **`iterate § 5`**, after applying the edit **re-run Step 6c** (recompute the three counts, overall score, band) and **StrReplace** the entire `### Complexity score (plan-scope signal)` subsection so the file stays truthful. End with Step **7a** or **7b** according to the new band.
-- **`6` is a router and spawn point, not an inline draft.** When the user replies `6`, prompt them — *"For § 6, reply `dp` (child phase plans) or `pb` (PR breakdown — `pb` offers **Delivery phases**, **multi-PR PR breakdown**, or **single-PR PR breakdown**)."* — and stop. When the user replies `dp` or `pb`, emit exactly one child-spawn request for the selected skill:
-  - `dp` uses `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md`.
-  - `pb` uses `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`.
-  - Inputs include `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "master-plan-agent"`, `ledgerParent: <masterPlanSlug>`, `complexityBand`, `complexityScore`, `decompositionAssessment`, and `routeLock` (`"delivery-phases"` for `dp`, `"pr-breakdown"` for `pb`).
+- **`6` is a route choice and spawn point, not an inline draft.** When the user chooses `6`, prompt them: *"For § 6, choose **Delivery phases** (child phase plans) or **PR breakdown** (one or more PR plans)."* Then stop. When the user chooses a route, emit exactly one child-spawn request for the selected skill:
+  - **Delivery phases** uses `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md`.
+  - **PR breakdown** uses `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`.
+  - Inputs include `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "master-plan-agent"`, `ledgerParent: <masterPlanSlug>`, `complexityBand`, `complexityScore`, `decompositionAssessment`, and `routeLock` (`"delivery-phases"` for Delivery phases, `"pr-breakdown"` for PR breakdown).
   - Announce that the **Master Plan agent** is waiting for the downstream result and stop; do not continue with more planning actions in the same turn.
   - When Mission Control delivers the downstream result, update the result contract you return upstream: add/close `activeLanes`, `openLedgerEntries`, `spawnedPlans`, and `remainingTasks` from the child outputs before ending.
-- **`7` IS drafted inline by this skill** — there's no dedicated Caveats skill, and § 7 is short and cheap to draft from the PRD plus drafted §§ 1–5 (and from § 6 if it has been drafted by `dp` / `pb` in a prior turn).
-- Once the spawned `dp` / `pb` agent drafts § 6, that agent reports whether child plan spawning is pending, active, or terminal. This skill stays focused on §§ 1–5 + § 7 and mission-level continuation accounting for its own downstream lane.
-- If everything in §§ 1–5 + § 7 is drafted (no `_TBD_` left in this skill's territory), the menu collapses to `iterate § N`, `6` (still useful as a router any time the decomposition needs revisiting), `ccp plans`, and free-form feedback.
+- **`7` IS drafted inline by this skill** — there's no dedicated Caveats skill, and § 7 is short and cheap to draft from the PRD plus drafted §§ 1–5 (and from § 6 if it has been drafted by a downstream decomposition skill in a prior turn).
+- Once the spawned decomposition agent drafts § 6, that agent reports whether child plan spawning is pending, active, or terminal. This skill stays focused on §§ 1–5 + § 7 and mission-level continuation accounting for its own downstream lane.
+- If everything in §§ 1–5 + § 7 is drafted (no `_TBD_` left in this skill's territory), the menu collapses to `iterate § N`, `6` (still useful any time decomposition needs revisiting), **Commit plans**, and free-form feedback.
 - Keep the menu in the same blockquote-with-bullets shape so the user's eye knows where to look every turn.
 
-The job between turns is to keep proposing the obvious next moves and, once the user chooses a downstream route, to spawn and wait for that route's agent. The user shouldn't have to remember which section is pending or how to phrase "draft delivery phases now" — `6` should always route them to `dp` / `pb`, and `7` should always work for caveats.
+The job between turns is to keep proposing the obvious next moves and, once the user chooses a downstream route, to spawn and wait for that route's agent. The user shouldn't have to remember internal aliases — `6` should always ask for **Delivery phases** vs **PR breakdown**, and `7` should always work for Caveats.
 
 ## Scope guard
 
-This skill writes the Master Plan file (`<slug>.plan.md` + `<slug>.state.yaml`) and populates §§ 1 through 5 in the initial turn (**§ 5 includes `### Decomposition assessment` and `### Complexity score (plan-scope signal)`**), computes the **plan-scope complexity table** per Step 6c, and when the **overall score** is **> 20** recommends user-journey splits before foregrounding **`6`**. It also drafts § 7 (Caveats) in a follow-up turn via the `7` shortcut, and it spawns the selected § 6 downstream agent after the user chooses `dp` or `pb`. It does **not**:
+This skill writes the Master Plan file (`<slug>.plan.md` + `<slug>.state.yaml`) and populates §§ 1 through 5 in the initial turn (**§ 5 includes `### Decomposition assessment` and `### Complexity score (plan-scope signal)`**), computes the **plan-scope complexity table** per Step 6c, and when the **overall score** is **> 20** recommends user-journey splits before foregrounding **`6`**. It also drafts § 7 (Caveats) in a follow-up turn via the `7` shortcut, and it spawns the selected § 6 downstream agent after the user chooses **Delivery phases** or **PR breakdown**. It does **not**:
 
-- Create worktrees (that is `ws`).
+- Create worktrees or start implementation.
 - Modify code or content in the selected repos. Step 3b is the only repo touch this skill makes — it runs `git status --porcelain`, `git checkout <default-branch>`, and `git pull --ff-only` to sync each selected repo's primary checkout to its default branch before loading architectural rules. It refuses to run on a dirty tree or a linked worktree, never stashes / commits / discards, and never falls back to a non-fast-forward pull.
-- Run `ccp plans` or any commit / push flow on the plans repo. (Plan scaffolds often need a few iterations before they are worth committing; let the user run `ccp plans` explicitly once the body stabilises.)
-- Draft section 6 (`Delivery phases | PR breakdown`) inline — that section is owned by the spawned `delivery-phases` (`dp`) and `pr-breakdown` (`pb`) agents.
+- Run commit / push flow on the plans repo. (Plan scaffolds often need a few iterations before they are worth committing; let the user choose **Commit plans** explicitly once the body stabilises.)
+- Draft section 6 (`Delivery phases | PR breakdown`) inline — that section is owned by the spawned **Delivery phases** and **PR breakdown** agents.
 - Spawn child phase or PR plan stubs itself after § 6 lands. The downstream § 6 agent reports the child list and may coordinate further child-spawn requests per its own contract.
 
 When running as a spawned child, end with `AGENT_RESULT_RESPONSE_V1` containing at least:

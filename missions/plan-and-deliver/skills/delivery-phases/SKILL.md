@@ -104,7 +104,7 @@ Acknowledge the state in one line.
 
 ## Step 4 — Decision gate (when section is `_TBD_`)
 
-When the skill was spawned with `routeLock: "delivery-phases"` (or with `parentAgentRole: "master-plan-agent"` after the developer chose `dp`), the decision is already made upstream. Acknowledge *"Route locked: Delivery phases."* and skip directly to Step 5. Do not ask the developer to choose `Delivery phases` vs `PR breakdown` again.
+When the skill was spawned with `routeLock: "delivery-phases"` (or with `parentAgentRole: "master-plan-agent"` after the developer chose **Delivery phases**), the decision is already made upstream. Acknowledge *"Route locked: Delivery phases."* and skip directly to Step 5. Do not ask the developer to choose `Delivery phases` vs `PR breakdown` again.
 
 When no upstream route lock exists, use the **AskQuestion** tool (or an equivalent numbered choice) to ask:
 

@@ -119,7 +119,7 @@ Do **not** remove an existing assessment authored by **`phase-plan`** / **`maste
 
 Run this step **only** when the dual-title heading is still the **dual** form and the list body is `_TBD_` (after step 3.5).
 
-When the skill was spawned with `routeLock: "pr-breakdown"` (or with `parentAgentRole: "master-plan-agent"` after the developer chose `pb`), the route family is already decided upstream. Do not offer **Delivery phases** as a normal choice. Instead:
+When the skill was spawned with `routeLock: "pr-breakdown"` (or with `parentAgentRole: "master-plan-agent"` after the developer chose **PR breakdown**), the route family is already decided upstream. Do not offer **Delivery phases** as a normal choice. Instead:
 
 - If `### Decomposition assessment` recommends `PR breakdown` single-PR, use `pr_breakdown_single`.
 - If it recommends `PR breakdown` multi-PR, or the recommendation is ambiguous but PR-ready, use `pr_breakdown_multi`.
