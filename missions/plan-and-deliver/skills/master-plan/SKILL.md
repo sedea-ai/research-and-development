@@ -527,7 +527,7 @@ When the user replies with one of the shortcuts (or free-form feedback) and you 
 - **`6` is a router and spawn point, not an inline draft.** When the user replies `6`, prompt them — *"For § 6, reply `dp` (child phase plans) or `pb` (PR breakdown — `pb` offers **Delivery phases**, **multi-PR PR breakdown**, or **single-PR PR breakdown**)."* — and stop. When the user replies `dp` or `pb`, emit exactly one child-spawn request for the selected skill:
   - `dp` uses `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md`.
   - `pb` uses `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`.
-  - Inputs include `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "master-plan-agent"`, `ledgerParent: <masterPlanSlug>`, `complexityBand`, `complexityScore`, and `decompositionAssessment`.
+  - Inputs include `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "master-plan-agent"`, `ledgerParent: <masterPlanSlug>`, `complexityBand`, `complexityScore`, `decompositionAssessment`, and `routeLock` (`"delivery-phases"` for `dp`, `"pr-breakdown"` for `pb`).
   - Announce that the **Master Plan agent** is waiting for the downstream result and stop; do not continue with more planning actions in the same turn.
   - When Mission Control delivers the downstream result, update the result contract you return upstream: add/close `activeLanes`, `openLedgerEntries`, `spawnedPlans`, and `remainingTasks` from the child outputs before ending.
 - **`7` IS drafted inline by this skill** — there's no dedicated Caveats skill, and § 7 is short and cheap to draft from the PRD plus drafted §§ 1–5 (and from § 6 if it has been drafted by `dp` / `pb` in a prior turn).

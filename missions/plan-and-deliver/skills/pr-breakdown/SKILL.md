@@ -42,6 +42,10 @@ inputs:
     type: string
     description: Current Decomposition assessment block from the upstream plan.
     required: false
+  routeLock:
+    type: string
+    description: Optional upstream-selected route. When set to pr-breakdown, do not route back to delivery-phases unless the assessment creates a blocking conflict.
+    required: false
 ---
 
 # PR breakdown — mode #3 decomposition
@@ -54,7 +58,7 @@ The procedure below is a hard contract — do **not** skip steps, re-order them,
 
 - Mission dispatch or explicit request to run the **`pr-breakdown`** protocol branch.
 - Natural language: decompose into PRs, draft PR breakdown, PR breakdown.
-- After **`master-plan`** when the developer has already chosen **`PR breakdown`** for § 6 — **`master-plan`** may route in-session; this skill is the **standalone** path for any plan when mode #3 still needs to run or iterate.
+- After **`master-plan`** when the developer has already chosen **`PR breakdown`** for § 6 — **`master-plan`** spawns this skill; this skill drafts § 6 and owns indexed PR-child spawning for that branch.
 
 The **developer** picks the next move via **AskQuestion** or a **numbered** list you present.
 
@@ -115,7 +119,13 @@ Do **not** remove an existing assessment authored by **`phase-plan`** / **`maste
 
 Run this step **only** when the dual-title heading is still the **dual** form and the list body is `_TBD_` (after step 3.5).
 
-Use the **AskQuestion** tool (or an equivalent numbered choice) to ask:
+When the skill was spawned with `routeLock: "pr-breakdown"` (or with `parentAgentRole: "master-plan-agent"` after the developer chose `pb`), the route family is already decided upstream. Do not offer **Delivery phases** as a normal choice. Instead:
+
+- If `### Decomposition assessment` recommends `PR breakdown` single-PR, use `pr_breakdown_single`.
+- If it recommends `PR breakdown` multi-PR, or the recommendation is ambiguous but PR-ready, use `pr_breakdown_multi`.
+- If it strongly recommends `Delivery phases`, stop and surface the conflict to the developer: continue with PR breakdown anyway, switch to `delivery-phases`, or revise the assessment. Do not silently bounce to `delivery-phases`.
+
+When no upstream route lock exists, use the **AskQuestion** tool (or an equivalent numbered choice) to ask:
 
 > How should this plan recurse next? Use **`### Decomposition assessment`** as the default if you agree with it.
 
@@ -223,7 +233,15 @@ End with:
    4. **Switch to `delivery-phases`** — If the work needs a phase layer first, hand off to **`delivery-phases`**; do **not** rewrite the parent heading from inside this skill — that protocol branch owns the **`Delivery phases`** heading and list.
    5. **Commit when ready** — Remind the **developer** to commit; this skill does **not** run `git`.
 
-When running as a spawned downstream agent under `master-plan`, mission dispatch **does** explicitly continue: after drafting the PR list, emit one child-spawn request per PR row for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md`. Inputs must include `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `ledgerParent`, and `upstreamSkill: "pr-breakdown"`. Announce that this agent is waiting for the indexed child results and stop.
+When running as a spawned downstream agent under `master-plan`, mission dispatch **does** explicitly continue:
+
+1. After drafting the PR list, count the numbered rows under `### PR list` as **K**. `K = 1` is valid only for the single-PR path.
+2. Emit one child-spawn request per PR row for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md`.
+3. Each request's inputs must include `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `ledgerParent`, `upstreamSkill: "pr-breakdown"`, and `decompositionKind: "pr-breakdown"`.
+4. Record each spawned child as an open ledger entry keyed by correlation id plus `(parentPlanSlug, index)` with status `active`.
+5. Announce that this agent is waiting for **K** indexed child results and stop. Do not return terminal success upstream until every spawned `new-plan` lane has returned terminal status or the developer explicitly defers/abandons the remaining rows.
+
+If **K = 0**, treat that as a drafting failure: do not spawn children; return failure or partial with an error explaining that no PR rows were created.
 
 For standalone/non-spawned use, re-offer the same structure after iteration and stop after this block — wait for the **developer**’s next message.
 
@@ -232,6 +250,19 @@ For standalone/non-spawned use, re-offer the same structure after iteration and 
 When the **developer** asks to revise the **`PR breakdown`** block, re-read that section, apply edits via `StrReplace`, echo the result, and return to the step 6 menu pattern.
 
 When the **developer** chooses spawn or populate children in standalone use, emit child-spawn requests for **`new-plan`** / **`pr-plan`** instead of impersonating those skills’ full procedures in the same turn. Stop after spawning if the result is needed for the next step.
+
+## Step 6b — Aggregate indexed child results
+
+When Mission Control delivers a child result from a spawned **`new-plan`** lane:
+
+1. Match it to the ledger entry by correlation id first, then by `outputs.parentPlanSlug` + `outputs.parentIndex`.
+2. If the result reports a created child plan (`outputs.planPath` / `outputs.planSlug`), add it to `spawnedPlans` and mark that row `created`.
+3. If the result reports an active populator lane (`pr-plan`), keep the row open and add the populator lane to `activeLanes`.
+4. If the result reports terminal completion with no remaining tasks, close that row as `completed`.
+5. If the result is `partial`, keep the row open and copy its `remainingTasks`.
+6. If the result is `failure`, `aborted`, or `abandoned`, mark the row blocked and ask the developer whether to retry that row, defer it, accept partial resolution, or abandon the branch.
+
+Only return `continuationStatus: "terminal"` when every row is explicitly `completed`, `deferred`, `abandoned`, or `out_of_scope`, and no active populator lanes remain. Silence or a missing row is not completion.
 
 ## One primary choice per turn — surface observations
 
@@ -243,6 +274,6 @@ Match the discipline in **`master-plan`**, **`delivery-phases`**, and **`phase-p
 
 **Out of scope:** renaming child plans after **`new-plan`** creates them; per-PR §§ 1–4 inline (**`pr-plan`** owns the body); later per-PR sections and worktrees (**`coding-session`**, **`plan-reconcile`** per **`development-process.md`**); edits outside the dual-title block (except the assessment insert in **3.5**); `git` / commit automation; **`Delivery phases`** list body (**`delivery-phases`**); roadmap topics and PR plans (step 1 stops).
 
-**Result contract when spawned:** end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.decompositionKind: "pr-breakdown"`, `outputs.childCount`, `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "pr-breakdown-agent"`, and `outputs.continuationStatus` (`active` while child creation/population remains, `terminal` when all PR rows are closed, deferred, or out of scope).
+**Result contract when spawned:** end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.decompositionKind: "pr-breakdown"`, `outputs.childCount`, `outputs.childRows` (array of `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "pr-breakdown-agent"`, and `outputs.continuationStatus` (`active` while child creation/population remains, `terminal` when all PR rows are closed, deferred, abandoned, or out of scope).
 
 Stop after the step 6 handoff block or after spawning and announcing the wait state.
