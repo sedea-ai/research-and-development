@@ -14,7 +14,7 @@ description: >-
 
 ## Helper script
 
-Script: `.sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (reads PAT from `GH_TOKEN`, then hosting-repo **`.sedea/mcp.json`**, then `~/.sedea/mcp.json` — config only; **do not invoke the GitHub MCP** during `pr`).
+Script: `.sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (reads PAT from `GH_TOKEN`, then hosting-repo **`.sedea/mcp.json`**, then `~/.sedea/mcp.json` — config only; **do not invoke the GitHub MCP** during **`pr-review`**).
 
 The script reads input from (in order): **`PR_REVIEW_INPUT`** (absolute path to a JSON file — keeps payloads **outside** the repo).
 
@@ -63,7 +63,7 @@ Do **not** call **`user-github`** (or any other GitHub MCP) to list reviews, com
 
 ## When coding-session executes `pr-review`
 
-Optionally followed by a URL (e.g. `pr https://...`).
+Optionally followed by a PR URL (e.g. *run pr-review on https://github.com/…/pull/123*).
 
 ### Step 0 — Resolve the PR
 
@@ -76,7 +76,7 @@ Always confirm which PR is being reviewed (print URL and title) before proceedin
 
 #### Link the PR to its plan sidecar (idempotent)
 
-Before Step 1, attempt to upsert the resolved PR number into the Plan Board sidecar so `plan-reconcile` can later archive the plan when all linked PRs merge. This is the same `upsert-pr` call documented in `commit-push` step 3 of [`20_efficient-pr-shipping.mdc`](../../../../rules/20_efficient-pr-shipping.mdc) — running it here as well closes the gap when `pr` triage ends with all comments skipped (no follow-up `cp`, so `cp`'s upsert never fires) or when the PR is otherwise quiet enough that no second `cp` ever happens. The helper is idempotent, so running it on every `pr` invocation is harmless.
+Before Step 1, attempt to upsert the resolved PR number into the Plan Board sidecar so `plan-reconcile` can later archive the plan when all linked PRs merge. This is the same `upsert-pr` call documented in **commit-push** step 4 of [`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`](.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc) — running it here as well closes the gap when **`pr-review`** triage ends with all comments skipped (no follow-up **commit-push** cadence, so that upsert never fires) or when the PR is otherwise quiet enough that no second push happens. The helper is idempotent, so running it on every **`pr-review`** invocation is harmless.
 
 **`plan-state.mjs`** lives in the center tree: `.sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs`. It discovers plans only under the **union** of `.sedea/operations/joint/...` (literal `joint`) and `.sedea/operations/<operationsUserId>/...` on the **hosting repo** (parent directory of `.sedea/`). Pass the per-user scope when needed:
 
@@ -100,7 +100,7 @@ node -- "$PLAN_STATE" upsert-pr \
   --number <pull_number-from-Step-0>
 ```
 
-Skip silently when `resolve` exits non-zero (session has no plan) or when `pull_number` is unknown (Step 0 fell through every branch). Never block `pr` on a helper failure — log and continue with Step 1.
+Skip silently when `resolve` exits non-zero (session has no plan) or when `pull_number` is unknown (Step 0 fell through every branch). Never block **`pr-review`** on a helper failure — log and continue with Step 1.
 
 **Capture the resolved slug + full `planPath`** (or the lack thereof) for Step 3a. After `resolve`, parse the path segment immediately after `.sedea/operations/` — it is either **`joint`** or the **user uuid** — and edit that same `<slug>.plan.md` (sidecar `<slug>.state.yaml` sits beside it). Re-running `resolve` later only to recover the path wastes a shell call.
 
@@ -173,7 +173,7 @@ Do **not** include `Must fix`, `Should fix`, or `Skipped (no follow-up)` items h
 
 Acknowledge: *"Prepared <K> Code Review Follow-ups for `<slug>.plan.md` § Follow-ups; awaiting developer approval before appending."*
 
-Plan files live under **`.sedea/operations/`** on the hosting checkout. In the Sedea `app` monorepo, see `.sedea/centers/sedea/rules/0_hosting-checkout.mdc`: that tree is often its **own** git repository, gitignored or submodule-pinned from the monorepo. Edits to `*.plan.md` / `*.state.yaml` therefore may **not** appear in the implementation repo's `git status`. Sync plan changes through whatever workflow owns the operations checkout (for example a dedicated `operations` commit), not only the `app` PR — Step 5's `cp` flow still commits implementation-repo source changes as usual.
+Plan files live under **`.sedea/operations/`** on the hosting checkout. In the Sedea `app` monorepo, see `.sedea/centers/sedea/rules/0_hosting-checkout.mdc`: that tree is often its **own** git repository, gitignored or submodule-pinned from the monorepo. Edits to `*.plan.md` / `*.state.yaml` therefore may **not** appear in the implementation repo's `git status`. Sync plan changes through whatever workflow owns the operations checkout (for example a dedicated `operations` commit), not only the `app` PR — the **commit-push** cadence (rule **20**) still commits implementation-repo source changes as usual when the developer requests *commit* / *push* in the same message.
 
 ### Step 4 — Report
 
@@ -188,13 +188,20 @@ Do **not** reply to, resolve, or minimize any threads yet. Wait for the user to 
 
 If there are code changes to review, wait for the user before committing. If all comments were skipped (no code changes), proceed to Step 5 only after the developer approves the skipped dispositions and any proposed follow-ups.
 
-Tell the user explicitly: after local fixes look good, say **`cp`** — `20_efficient-pr-shipping.mdc` § *cp* step 3 requires **this skill’s Step 5 (GitHub only)** in the **same turn** as commit/push when a `pr` triage finished at Step 4 here, so threads close without a second **`pr`**.
+After Step 4, use **AskQuestion** (per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**) when fixes may be ready to land. Include at least:
 
-### Step 5 — GitHub reconciliation (`cp` / skipped-only)
+1. **Commit and push** (same message must say *commit* / *push* per **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`**) — when Step 4 ran in this chat, **commit-push** step 3 requires **this skill’s Step 5 (GitHub only)** in the **same agent turn** after push, before plan upsert and **create-pr** prompt.
+2. **Revise dispositions or fixes**
+3. **Defer — stay on pr-review**
+4. **More details for option _**
+
+Do **not** instruct the developer to type legacy **`cp`** or **`pr`** tokens (retired per rule **20** § *Control surface*).
+
+### Step 5 — GitHub reconciliation (after commit-push or skipped-only)
 
 **Entry points:**
 
-- **`cp` after `pr` (normal path)** — [`20_efficient-pr-shipping.mdc`](../../../../rules/20_efficient-pr-shipping.mdc) § *cp* runs **git commit + push** in steps 1–2 first. The agent handling **`cp` must then run § Step 5 — GitHub only** as **step 3** of `cp` (same user message / same agent turn), **before** plan upsert and Brin. Do **not** treat `cp` as finished at push if Step 4 ran in this chat and GitHub is still open.
+- **After commit-push (normal path)** — [`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`](.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc) § *Commit and push cadence* runs **git commit + push** in steps 1–2 first (same user message). The agent handling that cadence must then run **this skill’s Step 5 — GitHub only** as **step 3** (same agent turn), **before** plan upsert and **create-pr** prompt. Do **not** treat commit-push as finished at push if Step 4 ran in this chat and GitHub is still open.
 
 - **Skipped-only triage** — Step 3 marked every comment **Skipped (no follow-up)** with **no** code edits: run **GitHub only** immediately (no commit/push).
 
@@ -217,9 +224,9 @@ Tell the user explicitly: after local fixes look good, say **`cp`** — `20_effi
 - [~] Skipped → follow-up: extract shared retry helper (captured to `<slug>.plan.md` § Follow-ups, target: current phase plan)
 ```
 
-The `[~]` marker plus the explicit "captured to … § Follow-ups" pointer lets reviewers cross-reference what was deferred without leaving the GitHub comment thread. Use one bullet per comment, mirroring the dispositions assigned in Step 4. Replace `abc1234` with `git rev-parse --short HEAD` after **`cp`**’s push (or the commit you just pushed).
+The `[~]` marker plus the explicit "captured to … § Follow-ups" pointer lets reviewers cross-reference what was deferred without leaving the GitHub comment thread. Use one bullet per comment, mirroring the dispositions assigned in Step 4. Replace `abc1234` with `git rev-parse --short HEAD` after the **commit-push** push (or the commit you just pushed).
 
-If Step 1 payloads are **missing or stale** in context (new comments since fetch, fresh chat), re-run **Step 1**’s `pr-review.py` array for the same `owner` / `repo` / `pr`, then run **GitHub only** above — do **not** ask the user for a second **`pr`** unless you truly cannot resolve the PR identity.
+If Step 1 payloads are **missing or stale** in context (new comments since fetch, fresh chat), re-run **Step 1**’s `pr-review.py` array for the same `owner` / `repo` / `pull_number`, then run **GitHub only** above — do **not** start a second full **`pr-review`** triage unless you truly cannot resolve the PR identity.
 
 ## Inline result for coding-session
 

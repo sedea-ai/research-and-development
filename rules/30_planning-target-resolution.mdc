@@ -4,13 +4,26 @@ description: >-
   (new-plan, phase-plan, pr-plan, delivery-phases, pr-breakdown, plan-reconcile). Resolution
   is from session and chat context — not from IDE focused-file list. Covers resolution order,
   snapshot emission, and "Where we are now in the plan tree" table format for AskQuestion /
-  numbered choices (no developer-typed workflow shortcuts). **`master-plan`** handoff uses the same contract (Step 7 — AskQuestion + AGENT_RUN_REQUEST_V1).
+  numbered choices (no developer-typed workflow shortcuts on planning moves; ship cadence uses rule **20** / **`pr-review`** — see § *Scope — planning vs ship cadence*). **`master-plan`** handoff uses the same contract (Step 7 — AskQuestion + AGENT_RUN_REQUEST_V1).
 alwaysApply: true
 ---
 
 # Planning target resolution
 
 Planning protocol branches act on a specific `.plan.md` under the **`.sedea/operations/`** union. The target is resolved from **session input, chat context, and structured choices** — not from the IDE focused-file list alone (IDE state can drift from planning intent).
+
+## Scope — planning vs ship cadence
+
+The **no developer-typed shortcut** rule in § *Standard flow* applies to **planning-tree** moves (snapshots, Master Plan decomposition, **`new-plan`** index picks, and similar).
+
+It does **not** govern **implementation / ship** cadence. For that, see **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Commit and push cadence* and **`missions/plan-and-deliver/skills/pr-review/SKILL.md`**:
+
+| Intent | Use (not legacy tokens) |
+|--------|-------------------------|
+| Triage open PR review comments | **`pr-review`** protocol branch — **AskQuestion**, natural language (*triage PR comments*, *run pr-review*), or **coding-session** handoff |
+| Commit, push, plan upsert, optional **create-pr** prompt | **Commit and push cadence** in rule **20** — **AskQuestion** or same-message *commit* / *push* per **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`** |
+
+Legacy global shortcuts **`cp`** and **`pr`** are **retired** in this center — do not treat them as valid commands or snapshot hooks.
 
 ## Standard flow
 

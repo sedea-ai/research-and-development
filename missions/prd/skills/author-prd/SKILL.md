@@ -42,7 +42,7 @@ inputs:
 
 ## Purpose
 
-Gather evidence, calibrate section policy, and draft or update a Product or Feature Requirements Document that is complete and correct enough to feed the development center's `create new plan` flow. The document structure is flexible: mandatory sections define planning readiness, important sections raise visible gaps, and optional sections appear only when the feature needs them.
+Gather evidence, calibrate section policy, and draft or update a Product or Feature Requirements Document that is complete and correct enough to feed the **research-and-development** center **`plan and deliver`** mission (`.sedea/centers/research-and-development/missions/plan-and-deliver/` — Master Plan via **`master-plan`**). The document structure is flexible: mandatory sections define planning readiness, important sections raise visible gaps, and optional sections appear only when the feature needs them.
 
 ## Inputs
 
@@ -233,7 +233,7 @@ Return:
 - `openQuestions`
 - `sourceLedger`
 - `planningReadiness`: `ready`, `partial`, or `blocked`
-- `recommendedNextAction`
+- `recommendedNextAction` — when `planningReadiness` is `ready` or accepted `partial`, tell the developer to start a **new** Mission Control dispatch: center **research-and-development**, mission **`plan and deliver`**, command phrase **`plan and deliver`** (supply PRD `@path` or link in the opening message). Do **not** reference **`create new plan`** — that phrase is retired.
 
 ## Safety constraints
 

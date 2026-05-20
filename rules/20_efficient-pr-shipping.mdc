@@ -85,15 +85,25 @@ Use `origin/main`, **not** `main` — `git worktree add … main` (and `git fetc
 - Include cleanup for after PRs merge: for each retired worktree, **`sedea_remove_worktree_folder`** with that worktree's **absolute** path (Mission Control first), then **`git worktree remove`** and **`git worktree prune`**.
 - In the **Worktree setup** narrative, after each `git worktree add`, tell the Squad Leader to invoke **`sedea_add_worktree_folder`** with that worktree's **absolute** path before spawning the **coding-session** agent.
 
-## commit, push, optional PR comment reconciliation, link PR to plan, and (on first push) a PR-creating agent prompt
+## Commit and push cadence
 
-How to perform `commit-push`:
+Procedure name in docs: **commit-push** (not a user-typed command). How to run the full cadence:
+
+### Control surface (AskQuestion — not `cp` / `pr` tokens)
+
+Per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Scope — planning vs ship cadence*:
+
+- **Retired:** developer-typed shortcuts **`cp`** and **`pr`** as workflow commands anywhere in this center.
+- **PR comment triage** — run **`pr-review`** (`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md`) via **AskQuestion**, natural language (*triage PR comments*, *run pr-review*), or **coding-session** when PR context is already loaded.
+- **Commit and push** — use **AskQuestion** or natural language in the **same user message** that explicitly requests *commit* and/or *push* (per **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`**). Phrases like *commit and push*, *land the branch* are valid; **`cp`** alone is not.
+
+### Steps
 
 **Hosting repo cwd for scripts.** The `node …/plan-state.mjs` and `python3 …/pr-review.py` invocations use paths relative to the **hosting repository root** (the checkout whose root contains `.sedea/`). A sibling git worktree often does **not** contain `.sedea/`; run these commands after `cd` to the hosting root, or pass an absolute path to the script.
 
-1. `commit-push`. **Skip this step if `git status --short` is empty** — typical after the committed cut point reviewed by `pre-pr-review`. Do not amend the previous commit and do not pass `--allow-empty`; just proceed to step 2.
+1. **Commit** (step 1 of commit-push). **Skip this step if `git status --short` is empty** — typical after the committed cut point reviewed by `pre-pr-review`. Do not amend the previous commit and do not pass `--allow-empty`; just proceed to step 2.
 2. Push to remote.
-3. **PR comment reconciliation (`pr-review` → `commit-push`).** When this coding session already ran [`pr-review`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md) Steps 1–4 (per-comment dispositions in the Step 4 report) and **GitHub** reply / resolve / minimize / summary from **Step 5** has **not** run yet, **`commit-push` is incomplete** until Step 5 runs — **same agent turn**, immediately after the push succeeds (so the summary can cite `git rev-parse --short HEAD`). Load `pr-review` **Step 5 — GitHub only** and execute it via `python3 .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (two-step `PR_REVIEW_INPUT` per that skill). If thread IDs or PR identity are missing from context, re-run that skill’s **Step 1** script array for the same PR, then Step 5. If there was no `pr-review` triage in this chat, skip this step entirely.
+3. **PR comment reconciliation (`pr-review` → commit-push).** When this coding session already ran [`pr-review`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md) Steps 1–4 (per-comment dispositions in the Step 4 report) and **GitHub** reply / resolve / minimize / summary from **Step 5 — GitHub reconciliation** has **not** run yet, the **commit-push cadence is incomplete** until Step 5 runs — **same agent turn**, immediately after the push succeeds (so the summary can cite `git rev-parse --short HEAD`). Load `pr-review` **Step 5 — GitHub only** and execute it via `python3 .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (two-step `PR_REVIEW_INPUT` per that skill). If thread IDs or PR identity are missing from context, re-run that skill’s **Step 1** script array for the same PR, then Step 5. If there was no `pr-review` triage in this chat, skip this step entirely.
 4. **Link the PR to its plan sidecar.** After push (and after step 3 when applicable), attempt to upsert the PR number into the Plan Board sidecar so `plan-reconcile` can later archive the plan when all linked PRs merge. Run:
 
    ```bash
