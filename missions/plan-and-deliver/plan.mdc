@@ -1,7 +1,7 @@
 ---
 description: >-
   Plan and deliver — PRD through ship via the Sedea plan tree; Squad Leader entry
-  protocol §§1–7 plus squad-operations spawn map.
+  protocol §§1–8 plus squad-operations spawn map (planning §§1–7, ship oversight §8).
 alwaysApply: false
 ---
 
@@ -48,7 +48,7 @@ Approval gates and developer choices happen inside each skill; this line is the 
 
 ## Squad operations (`plan and deliver` dispatch)
 
-This diagram is the **dispatch ownership map**. It answers: which agent on this mission spawns whom, who waits, and what is **not** started from the Squad Leader lane. Written protocol steps **§§1–7** below cover **only** the yellow **Squad Leader** subgraph.
+This diagram is the **dispatch ownership map**. It answers: which agent on this mission spawns whom, who waits, and what is **not** started from the Squad Leader lane. Written protocol steps **§§1–8** below: **§§1–7** are yellow **Squad Leader** planning steps; **§8** is leader-lane **ship oversight** (detached branches still run on other lanes).
 
 **Roles**
 
@@ -59,7 +59,7 @@ This diagram is the **dispatch ownership map**. It answers: which agent on this 
 | **Downstream skill agents** | Further child lanes | Per skill: e.g. `new-plan` → `phase-plan` / `pr-plan`; `coding-session` → `pre-pr-review` | `MC_DISPATCH_RESOLVED_V1` |
 | **Detached branches** | Often separate session / phrase | Invoked via `development-process.md` branch names | Automatic Squad Leader spawn from §§1–5 |
 
-**Host rules:** each `AGENT_RUN_REQUEST_V1` opens a child lane; parent waits for `AGENT_RESULT_RESPONSE_V1` when the skill says so. Squad Leader **§7** tracks `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks` reported upstream — it does not re-run child skills.
+**Host rules:** each `AGENT_RUN_REQUEST_V1` opens a child lane; parent waits for `AGENT_RESULT_RESPONSE_V1` when the skill says so. Squad Leader **§7** tracks planning `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`; **§8** tracks ship rows per PR plan — it does not re-run detached child skills from the leader lane.
 
 ```mermaid
 flowchart TB
@@ -130,7 +130,7 @@ flowchart TB
 
 ## Protocol
 
-Session command phrases are declared in `mission.yaml`. **§§1–7** define Squad Leader routing for **`plan and deliver`** only. Post–Master Plan planning and all implementation/ship work follow **Squad operations** and skill contracts — not additional numbered protocol subsections here.
+Session command phrases are declared in `mission.yaml`. **§§1–7** define Squad Leader routing for **planning** on **`plan and deliver`**. **§8** defines Squad Leader **ship cadence oversight** and **dispatch resolution gates** while implementation/ship skills still execute as **detached** branches (see **Squad operations** — the Squad Leader does **not** spawn **`coding-session`**, **`pre-pr-review`**, **`create-pr`**, etc. from §§1–7).
 
 ```mermaid
 flowchart TD
@@ -149,14 +149,17 @@ flowchart TD
   SEED --> MP["§5 spawn master-plan"]:::spawn
   MP --> MPW["wait child result"]:::wait
   MPW --> ACK["§6 Acknowledge status only"]:::leader
-  ACK --> LED["§7 Closure ledger"]:::leader
-  LED --> DONE["Propose dispatch resolution"]:::leader
+  ACK --> LED["§7 Planning ledger"]:::leader
+  LED --> SHIP["§8 Ship ledger + resolution gates"]:::leader
+  SHIP --> DONE["Propose dispatch resolution"]:::leader
 ```
 
-- **§§1–7** — only steps the **Squad Leader** executes on the leader lane (see prose subsections below).
+- **§§1–7** — Squad Leader **planning** steps on the leader lane (see prose subsections below).
+- **§8** — Squad Leader **ship oversight** on the leader lane; detached skills run elsewhere.
 - **Spawn nodes** — emit `AGENT_RUN_REQUEST_V1`; stop until `AGENT_RESULT_RESPONSE_V1`.
 - **§6** — **not** decomposition routing (that lives on the **Master Plan agent** lane — **AskQuestion** + spawn in `master-plan/SKILL.md` Step 7).
-- **§7** — register downstream lanes/plans from child `outputs`; do not infer completion from silence.
+- **§7** — register **planning** downstream lanes/plans from child `outputs`; do not infer completion from silence.
+- **§8** — register **ship** progress per PR plan; **do not** propose **`resolved`** dispatch while ship rows are open unless the developer explicitly closes planning-only (see §8).
 
 ### Spawn, wait, and parent resume
 
@@ -188,7 +191,7 @@ This subsection is the **Squad Leader** contract for §§3, 5, 6, and 7. Sedea h
 1. Match by `correlationId`, then `outputs.targetPlanPath` / slug / ledger fields per the skill **`## Completion (spawned)`**.
 2. Merge `activeLanes`, `spawnedPlans`, `openLedgerEntries`, `remainingTasks` from the child result.
 3. Acknowledge without presenting planning route choices on the leader lane.
-4. Propose **`MC_DISPATCH_RESOLVED_V1`** only when the ledger rules in §7 prose are satisfied.
+4. After §7 planning entries are terminal, continue **§8** before proposing dispatch resolution (§7 alone is **not** sufficient for **`resolved`** on a full cadence dispatch).
 
 **Nested spawns.** The **Master Plan agent** (and decomposition agents) may emit further **`AGENT_RUN_REQUEST_V1`** lines on child lanes. The Squad Leader does **not** duplicate those spawns; it only consumes **terminal or updated** child results that bubble up through §7.
 
@@ -328,7 +331,7 @@ Related (optional):
 - **Expected output:** One status acknowledgement from the **Squad Leader**; no route menu.
 - **Next-step resolution:**
   - Master Plan agent reports active continuation ownership → acknowledge status and enter a resumable wait state.
-  - Master Plan agent reports terminal success and no remaining tasks → the **Squad Leader** may propose dispatch resolution.
+  - Master Plan agent reports terminal success and no remaining **planning** tasks → continue **§7** then **§8**; do **not** propose **`resolved`** dispatch from §6 alone (planning complete ≠ ship complete).
   - Master Plan agent reports failure or no usable plan path → stop and ask whether to retry, revise seed, switch PRD source, or abandon.
   - Downstream agent result arrives → resume only when the result requires mission-level action.
 
@@ -339,10 +342,10 @@ Related (optional):
 3. Do not ask the developer to choose Delivery phases, PR breakdown, or Caveats from the **Squad Leader** lane.
 4. Pause the **Squad Leader** in a resumable wait state for downstream notifications.
 
-### 7. Maintain closure ledger
+### 7. Maintain planning closure ledger
 
 - **Type:** Finish/stop logic
-- **Intent:** Track mission-level completion while downstream planning agents own the actual plan-building continuation.
+- **Intent:** Track **planning-phase** completion while downstream planning agents own plan-building continuation. Ship-phase tracking is **§8**.
 - **Inputs:** Master Plan agent result; every later downstream child result; plan path and child plan paths reported by downstream agents; continuation status; active lane identifiers; remaining task lists.
 - **Expected output:** Updated closure ledger, status acknowledgement, continued wait, or dispatch resolution proposal.
 - **Next-step resolution:**
@@ -350,20 +353,92 @@ Related (optional):
   - Downstream child result reports active continuation → acknowledge status and keep that lane open.
   - Downstream child result reports terminal completion for a registered phase or PR plan → mark that ledger entry closed.
   - Any child result reports failure, aborted, or abandoned → mark the ledger blocked and ask the developer whether to retry, revise scope, accept partial resolution, or abandon.
-  - Ledger has no open or blocked entries, every active lane is terminal, and no remaining tasks are reported → propose dispatch resolution.
+  - Planning ledger has no open or blocked entries and every planning lane is terminal → continue **§8** (do **not** propose **`resolved`** here if ship work remains).
 
-**Closure ledger rules**
+**Planning ledger rules**
 
-- The **Squad Leader** owns mission-level closure accounting; downstream agents own planning choices and child spawning.
-- Every phase or PR plan spawned from the Master Plan tree must have an explicit ledger entry.
-- The **Squad Leader** must receive terminal closure for every open ledger entry before proposing resolved dispatch.
+- The **Squad Leader** owns **planning** closure accounting; downstream agents own planning choices and child spawning.
+- Every phase or PR plan spawned from the Master Plan tree must have an explicit **planning** ledger entry.
+- The **Squad Leader** must receive terminal closure for every open **planning** entry before treating planning as complete.
 - A plan entry may close as completed, deferred, abandoned, or out of scope, but the closing status must be explicit.
 - Silence, missing metadata, or an unreported lane is not completion.
+- When a PR plan reports `readyForImplementation` / `developerApprovedImplementation` in child `outputs`, register or refresh the matching **§8 ship row** for that `targetPlanPath`.
 
 **Procedure**
 
-1. Initialize the ledger when the Master Plan agent reports a plan path and continuation ownership.
+1. Initialize the planning ledger when the Master Plan agent reports a plan path and continuation ownership.
 2. Register each downstream phase plan, PR plan, or agent lane when a child reports it was spawned or made active.
-3. On each downstream result, update the matching ledger entry by correlation id, plan path, or reported slug.
+3. On each downstream result, update the matching planning entry by correlation id, plan path, or reported slug.
 4. Acknowledge updates without presenting planning route choices from the **Squad Leader** lane.
-5. When the ledger is empty of open/blocked work and all reported lanes are terminal, propose dispatch resolution.
+5. When the planning ledger has no open/blocked work and all planning lanes are terminal, continue **§8**.
+
+### 8. Ship cadence ledger and dispatch resolution gates
+
+- **Type:** Finish/stop logic
+- **Intent:** Close the gap between **objectives** (implementation → PR → deploy → reconcile) and **Squad Leader** protocol. The Squad Leader **tracks** detached ship work and **gates** `MC_DISPATCH_RESOLVED_V1`; it does **not** spawn ship skills from this section.
+- **Inputs:** Planning ledger state from §7; developer messages on the leader lane; optional child `outputs` that report implementation handoff (`developerApprovedImplementation`, `targetPlanPath`, `readyForImplementation`); explicit developer status when ship runs on other lanes.
+- **Expected output:** Updated **ship ledger** per PR plan; status acknowledgement; **`MC_DISPATCH_RESOLVED_V1`** only when gates below allow.
+- **Next-step resolution:**
+  - No ship row yet, planning complete → **AskQuestion** once: close dispatch **planning-only** (`partial` / `resolved` with summary) vs ship continues on detached lanes (keep dispatch **active**).
+  - Ship row open → keep dispatch **active**; acknowledge phase updates; do **not** propose **`resolved`**.
+  - All ship rows **closed** (or explicitly deferred/abandoned per row) → propose dispatch resolution per **`.sedea/centers/sedea/rules/4_mission.mdc`**.
+  - Developer requests wrap-up with open ship → propose **`partial`** or **`abandoned`** with explicit remaining work in the JSON `summary`.
+
+**Detached branches (execution stays off the leader lane)**
+
+| Order | Protocol branch | Typical invoker | Skill |
+|------:|-----------------|-----------------|-------|
+| 1 | `coding-session` | Developer phrase, snapshot, or post–**pr-plan** handoff | `skills/coding-session/SKILL.md` |
+| 2 | `pre-pr-review` | **coding-session** (spawn) after committed cut point | `skills/pre-pr-review/SKILL.md` |
+| 3 | `create-pr` | **coding-session** after pre-PR **go** | `skills/create-pr/SKILL.md` |
+| 4 | `pr-review` | **coding-session** (inline) after PR exists | `skills/pr-review/SKILL.md` |
+| 5 | `deploy-walk` | Developer / **create-pr** chain | `skills/deploy-walk/SKILL.md` |
+| 6 | `plan-reconcile` | Developer / **create-pr** after merge + deploy | `skills/plan-reconcile/SKILL.md` |
+
+Procedures, gates, and spawn contracts live in those skills and in **`.sedea/centers/research-and-development/docs/development-process.md`** (**Protocol branches** table). The Squad Leader **does not** emit `AGENT_RUN_REQUEST_V1` for this table unless a future protocol step explicitly adds it.
+
+**Ship ledger row (per PR plan)**
+
+Maintain one row per in-scope **PR plan** path under `.sedea/operations/.../plans/`:
+
+| Field | Meaning |
+|-------|---------|
+| `targetPlanSlug` / `targetPlanPath` | Anchor PR plan |
+| `phase` | Latest known phase (see enum below) |
+| `status` | `open` \| `closed` \| `deferred` \| `abandoned` \| `blocked` |
+| `lastReportedBy` | `child-output` \| `developer-message` \| `inferred` (use sparingly) |
+| `remainingTasks` | Short list copied from skill outputs or developer statement |
+
+**Phase enum (happy-path order)** — update when the developer or a bubbled child result reports progress; do not skip backward without explicit correction:
+
+`not-started` → `worktree` → `implementing` → `pre-pr-review` → `pr-open` → `pr-review` → `deploy-walk` → `reconcile` → `done`
+
+**Register or refresh a ship row when any of:**
+
+1. Child `outputs` include `developerApprovedImplementation: true` and `targetPlanPath` for a PR plan.
+2. The developer on the **leader lane** names a PR plan and starts **`coding-session`** (or reports worktree/implementation started).
+3. The developer reports a milestone on the leader lane (e.g. “PR #123 open”, “deploy walk done”, “merged and reconciled”) — set `lastReportedBy: developer-message`.
+
+**Updating rows without child results on the leader lane**
+
+Detached lanes may not deliver `AGENT_RESULT_RESPONSE_V1` to the Squad Leader. When the developer returns to the **leader lane**, ask for a one-line status per open PR plan or accept their recap, then advance `phase` / `remainingTasks`. Do **not** treat silence on detached lanes as ship complete.
+
+**Dispatch resolution gates (Squad Leader only)**
+
+| Propose | When |
+|---------|------|
+| **`resolved`** | Planning ledger complete per §7 **and** every ship row is `closed` with `phase: done` (or legitimately empty ship ledger **and** developer chose planning-only close in AskQuestion). |
+| **`partial`** | Useful planning or ship work landed, but identifiable follow-up remains (open PR, deploy, reconcile, or planning debt). |
+| **`abandoned`** / **`aborted`** | Developer stops or execution cannot continue; say so in `summary`. |
+
+**Never** propose **`resolved`** when:
+
+- Any ship row is `open` or `blocked` and the developer has not explicitly chosen **planning-only** dispatch closure.
+- Only the **planning** ledger is empty — objectives 4–7 in this mission plan still imply ship unless the developer opted out via §8 AskQuestion.
+
+**Procedure**
+
+1. After §7 reports planning complete, scan for PR plans with implementation handoff signals; open a ship row for each (or confirm none — then run AskQuestion for planning-only vs active ship).
+2. On each leader-lane turn that touches ship, update rows before other protocol work.
+3. When the developer signals done on **this dispatch**, re-check all rows against the gates table; choose `resolved` / `partial` / `abandoned` accordingly.
+4. Put the recap in `MC_DISPATCH_RESOLVED_V1` **`summary`**; list open PR plans or deferred ship work when status is **`partial`**.
