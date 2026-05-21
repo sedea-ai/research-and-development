@@ -102,6 +102,7 @@ When authoring or reviewing a skill, duplicating the canonical sentence under **
 
 **Planning skills** (frontmatter `warmUpRules` on most planning skills):
 
+- `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc` — Squad Leader §§1–7 ledger, spawn/wait, §6–§7 continuation (not full §8 ship chain)
 - `.sedea/centers/research-and-development/docs/development-process.md`
 - `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`
 

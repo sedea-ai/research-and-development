@@ -43,6 +43,7 @@ inputs:
     description: Optional upstream-selected route. When set to delivery-phases, skip the decision gate.
     required: false
 warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
   - ".sedea/centers/research-and-development/docs/development-process.md"
   - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
