@@ -41,7 +41,7 @@ R&D delivery agents are governed by:
 - **Mission plans** — `missions/<missionSlug>/plan.mdc`
 - **Skills** — `missions/<missionSlug>/skills/` and the **Protocol branches** table below
 
-**Audits and gap reports** must **not** flag missing mission-level rule files under this center. To change **center** process or rules, use **`improve center rules`** on **sedea** `center-maintenance`. To change **repo** agent guidance in a product or hosting checkout, use **`.cursor/rules/*.mdc`** per **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`** and per-PR plan **§ 5. Repo rules impact**.
+**Audits and gap reports** must **not** flag missing mission-level rule files under this center. To change **this center's** process or rules, use **`improve center rules`** on **`research-and-development`** (`center-maintenance` on the **sedea** center). For **Sedea platform** governance (hosting layout, git gate, Safeguard), use **`improve center rules`** on **`sedea`**. To change **repo** agent guidance in a product or hosting checkout, use **`.cursor/rules/*.mdc`** per **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`** and per-PR plan **§ 5. Repo rules impact**.
 
 **`center.yaml` `skillEntries` sync (manifest hygiene).** Mission Control discovers skills on disk; **`skillEntries`** in **`.sedea/centers/research-and-development/center.yaml`** is for audits and maintenance. When you **add, rename, or remove** a `SKILL.md` under any mission `skills/` tree, update that mission's `skillEntries` list in the same change. From the **hosting repo root**:
 
@@ -65,6 +65,7 @@ Exit **0** when manifest and disk match; **1** prints paths only on disk or only
 
 - **GitHub** — Pull requests, diffs, and PR description fields (e.g. “Notes for the reviewer”). **A PR-creating agent** fills the body from the prompt **a coding agent** supplies.
 - **Plan board** — Where **developers** open and review planning-mode `.plan.md` files in the plans folder `.sedea/operations/**/plans/**`).
+- **Path placeholders (`...`)** — In this document and R&D governance, `` `...` `` inside path examples (e.g. `.sedea/operations/.../plans/`) denotes **omitted segments**, not a folder named `...`. Substitute **`joint`**, **`operationsUserId`**, or a real **`slug`**. See **`.sedea/centers/research-and-development/rules/31_operations-user-id.mdc`** § *Path placeholders in documentation*.
 - **`.plan.md` files** — Standalone plan files at each hierarchy level (Master Plan, phase plans, PR plans); canonical location is under `.sedea/operations/**/plans/**`.
 - **PRD** — Product (or feature) Requirements Document — the prime input for the one-shot **Master Plan** (mode #1). **Bugs and small improvements** may start as an **Ad-Hoc PRD** at **`.sedea/operations/<operationsUserId>/docs/ad_hoc_<slug>_<hex>.ad-hoc-prd.md`** (personal operations space only when using the **`ad-hoc-prd`** skill; **`joint/docs/`** is not written by that protocol — promote by moving the file if the developer wants it shared). Authoring is defined by the **`ad-hoc-prd`** protocol branch (file shape is embedded in that skill).
 - **Git worktree** — Isolated checkout used by the **`coding-session`** protocol branch when spinning up a coding agent.
@@ -111,7 +112,7 @@ Per Strategy principle #2, planning happens in three modes, applied top-down: **
 - **PR list** (mode #3 set-level § 3) — a numbered list whose item lines (the PR slug or short title, bolded) follow the short-bullet rule, but whose **Single concern** sub-bullet inherits the per-PR § 1 sentence verbatim and is therefore full prose, not 2–5 words.
 - **Reasoning** (mode #3 per-PR) — **a coding agent** (implementation + **fresh pre-PR reviewer agent session**) + **a reviewer agent**-facing; full sentences so the PR description carries faithful rationale.
 - **Deploy test plan** (mode #3 per-PR) — each step must be unambiguous for the on-call.
-- **Repo rules impact** (mode #3 per-PR § 5) — short bullets for **`.cursor/rules/*.mdc`** in the repo that receives the PR (hosting checkout or product worktree); see **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`**. **Not** Sedea center rules under **`.sedea/centers/`** — center changes use **`improve center rules`** on **sedea** `center-maintenance`. The `_None — …_` line is still short-bullet form.
+- **Repo rules impact** (mode #3 per-PR § 5) — short bullets for **`.cursor/rules/*.mdc`** in the repo that receives the PR (hosting checkout or product worktree); see **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`**. **Not** Sedea center rules under **`.sedea/centers/`** — R&D center changes use **`improve center rules`** on **`research-and-development`**; Sedea platform center rules use **`sedea`**. The `_None — …_` line is still short-bullet form.
 - **Caveats** (mode #3 per-PR only) — **a coding agent** (implementation + **fresh pre-PR reviewer agent session**) + **a reviewer agent**-facing; full sentences so the PR description carries the concern faithfully. *In modes #1 and #2 Caveats is read by the developer during plan review and follows the short-bullet rule like the other planning bullets — short, scannable, sufficient.*
 
 Each section says inline whether it follows the short-bullet rule or opts out.
@@ -486,6 +487,8 @@ On a **`plan and deliver`** Mission Control dispatch, the Squad Leader **§8** s
 - **§8 does not auto-update from detached work.** Finishing **`pre-pr-review`**, **`create-pr`**, **`deploy-walk`**, or **`plan-reconcile`** on a detached or nested lane does **not** refresh the leader §8 table by itself. Advance or register a row when the developer posts **Ship recap — plan and deliver** on the **leader dispatch** (`lastReportedBy: developer-message`), or when a parent lane forwards a child result the leader can parse (`lastReportedBy: child-output`). Until then, §8 rows stay stale even if the PR plan file or GitHub already moved on.
 
 After each ship milestone, post the **Ship recap — plan and deliver** block on the **leader dispatch** (template and phase enum: **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8 *Leader-lane ship recap*). Each ship skill § *Squad Leader bubble-up* maps **`outputs`** → **`shipPhase`**. **`pr-review`** is inline on the **`coding-session`** lane — use the same recap with `shipPhase: pr-review` (**`pr-review/SKILL.md`** § *Leader §8 recap*).
+
+- **Dispatch closure gate:** On the **plan and deliver** leader lane, do **not** propose **`MC_DISPATCH_RESOLVED_V1`** with **`resolved`** while any §8 ship row is **`open`** or **`blocked`** unless a **Ship recap** block for that row was parsed on the leader dispatch in this session, or the developer explicitly chose **planning-only** dispatch closure via **AskQuestion** (see **`plan.mdc`** §8 *Pre-resolution checklist*).
 
 #### Feedback Collection
 

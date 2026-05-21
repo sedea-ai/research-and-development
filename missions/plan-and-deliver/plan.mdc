@@ -482,6 +482,22 @@ Detached ship skills end with a nudge to post this recap when the **plan and del
 
 Do **not** treat silence on detached lanes as ship complete.
 
+**Pre-resolution checklist (mandatory on leader lane)**
+
+Before emitting **`MC_DISPATCH_RESOLVED_V1`** when the developer signals dispatch done (*done*, *wrap up*, *close*, or equivalent per **`.sedea/centers/sedea/rules/4_mission.mdc`** § *User-initiated dispatch closure signals*):
+
+1. **Re-scan §8 ship rows** — list every row with `rowStatus: open` or `blocked`, or with `phase` not paired with `rowStatus: closed` and `phase: done`.
+2. **If any such row exists** and this session has **not** parsed a **Ship recap** block (template above) that updates that row **and** the developer has **not** already chosen **planning-only** closure via **AskQuestion** in this dispatch:
+   - **Do not** emit **`MC_DISPATCH_RESOLVED_V1`** with **`resolved`** in that turn.
+   - Use **AskQuestion** once (required fields: `targetPlanPath`, `shipPhase`, `rowStatus` when they paste recap):
+     - **Paste Ship recap** (I will paste the template block next)
+     - **Planning-only close** (no ship tracking; close dispatch without ship rows)
+     - **Ship still on detached lane** (propose **`partial`**, not **`resolved`**)
+     - **More details for option _**
+   - After recap is pasted, parse it, refresh §8 rows, then continue to *Dispatch resolution gates*.
+3. **Developer done-language alone** does not satisfy step 2 — recap fields or explicit planning-only choice are required.
+4. When proposing **`resolved`**, the **`summary`** must name each tracked PR plan (path or slug) and its final `phase` + `rowStatus`.
+
 **Dispatch resolution gates (Squad Leader only)**
 
 | Propose | When |
@@ -493,12 +509,13 @@ Do **not** treat silence on detached lanes as ship complete.
 **Never** propose **`resolved`** when:
 
 - Any ship row is `open` or `blocked` and the developer has not explicitly chosen **planning-only** dispatch closure.
+- The developer signals done or wrap-up but **no** **Ship recap** block was parsed on the leader dispatch this session for rows that are still `open` or `blocked` (use *Pre-resolution checklist* **AskQuestion** first).
 - Only the **planning** ledger is empty — objectives 4–7 in this mission plan still imply ship unless the developer opted out via §8 AskQuestion.
 
 **Procedure**
 
 1. After §7 reports planning complete, scan for PR plans with implementation handoff signals; open a ship row for each (or confirm none — then run AskQuestion for planning-only vs active ship).
 2. On each leader-lane turn that touches ship, update rows before other protocol work — parse **leader-lane ship recap** blocks or child `outputs` per the tables above.
-3. When recap is missing for an `open` row, ask once using the template fields (or offer **AskQuestion**: paste recap vs no ship progress yet).
-4. When the developer signals done on **this dispatch**, re-check all rows against the gates table; choose `resolved` / `partial` / `abandoned` accordingly.
+3. When recap is missing for an `open` row, run *Pre-resolution checklist* **AskQuestion** (or ask once for template fields) before proposing dispatch resolution.
+4. When the developer signals done on **this dispatch**, run *Pre-resolution checklist* then re-check all rows against the gates table; choose `resolved` / `partial` / `abandoned` accordingly.
 5. Put the recap in `MC_DISPATCH_RESOLVED_V1` **`summary`**; list open PR plans or deferred ship work when status is **`partial`**.

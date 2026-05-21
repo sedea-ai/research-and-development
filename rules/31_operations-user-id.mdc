@@ -32,6 +32,10 @@ Per **`.sedea/centers/sedea/rules/0_hosting-checkout.mdc`**:
 
 Slug collision: the **user** tree wins over **`joint`** when both define the same slug.
 
+## Path placeholders in documentation
+
+Ellipses in path examples (for example `` `.sedea/operations/.../plans/` ``, `` `joint/...` ``) mark **omitted middle segments** — they are **not** literal directory names and are **not** valid filesystem paths. Substitute the real segment: literal **`joint`**, the Mission Control **`operationsUserId`**, or a concrete plan **`slug`**. Do not create directories named `...` or treat placeholder paths as link targets.
+
 ## Agent behavior
 
 - If **`operationsUserId`** is missing in a spawned skill that requires it, return **`partial`** with `outputs.missingFields: ["operationsUserId"]` — do not invent an id or read from focused files alone.
