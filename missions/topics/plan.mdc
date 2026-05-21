@@ -5,11 +5,13 @@ alwaysApply: false
 
 # Mission plan
 
+**Execution model:** Step 3 runs **`create-topic-plan/SKILL.md`** on the Squad Leader lane (`execution: inline`).
+
 ## Objectives
 
 1. Infer whether the user is asking to create a root-level topic plan from the opening command phrase.
 2. Resolve the topic name, description, optional objectives, and storage scope (`user` or `joint`) before writing files.
-3. Create a Sedea plan-format root topic under the selected operations plan tree with a matching `.state.yaml` sidecar and `parent: null`.
+3. Run **`create-topic-plan`** inline to write a Sedea plan-format root topic under the selected operations plan tree with a matching `.state.yaml` sidecar and `parent: null`.
 4. Stop after reporting the created plan path and any remaining review steps; do not create delivery phases, PR breakdowns, worktrees, or implementation tasks.
 
 ## Protocol
@@ -17,7 +19,7 @@ alwaysApply: false
 ```mermaid
 flowchart TD
     A[Infer command] --> B[Resolve topic fields]
-    B --> C[Create topic plan]
+    B --> C[Create topic plan inline]
     C --> D[Report result]
 ```
 
@@ -35,8 +37,8 @@ flowchart TD
 
 ### 2. Resolve topic fields
 
-- `type`: Simple skill execution.
-- `intent`: Collect and validate every input required to create the root-level topic plan.
+- `type`: Branching logic.
+- `intent`: Collect and validate every input required before running **`create-topic-plan`**.
 - `inputs`: Opening user message remainder after `create topic`, current Sedea user context (`operationsUserId`), and any user-supplied follow-up answers.
 - `expected output`: Structured topic inputs: `topicName`, `topicDescription`, `objectives`, and `storageScope`.
 - `next-step resolution`: Continue to step 3 only after all required inputs are present.
@@ -46,35 +48,27 @@ flowchart TD
   3. Ask the user for `topicName` if missing.
   4. Ask the user for `topicDescription` if missing.
   5. Ask whether `storageScope` is `user` or `joint` if missing; `user` maps to `.sedea/operations/<operationsUserId>/plans/roadmap-topics/`, and `joint` maps to `.sedea/operations/joint/plans/roadmap-topics/`. Those `roadmap-topics/` folders live in the operations checkout and are **created on the first `create topic` write** for that scope when absent — they are not shipped inside the center repo.
-  6. Accept `objectives` as optional; if none are supplied, create the plan without objective bullets.
-- `valid early-exit conditions`: Stop without writing files if the user declines to provide a topic name, description, or storage scope.
+  6. Accept `objectives` as optional; if none are supplied, pass an empty list to the skill.
+- `valid early-exit conditions`: Stop without running the skill if the user declines to provide a topic name, description, or storage scope.
 
-### 3. Create topic plan
+### 3. Create topic plan (inline skill)
 
 - `type`: Simple skill execution.
-- `intent`: Write the root-level topic plan and sidecar.
-- `target agent role`: Topics skill agent.
+- `execution`: inline.
+- `intent`: Write the root-level topic plan and sidecar by following the assigned skill on this lane.
+- `target agent role`: Topics Squad Leader (same lane).
 - `assigned skill`: [`skills/create-topic-plan/SKILL.md`](skills/create-topic-plan/SKILL.md).
 - `required rule context`: **Sedea center always-apply rules** (Mission Control session warm-up under `.sedea/centers/sedea/rules/`), [`10_plan-naming-convention.mdc`](../../rules/10_plan-naming-convention.mdc), and [`development-process.md`](../../docs/development-process.md). This mission has **no** `missions/topics/rules/*.mdc` pack — do not search for mission-scoped rule files.
-- `inputs`: `topicName`, `topicDescription`, optional `objectives`, `storageScope`, and `operationsUserId`.
-- `expected output`: A new `<slug>_<hex>.plan.md` file and matching `<slug>_<hex>.state.yaml` sidecar in the selected `roadmap-topics/` directory.
-- `next-step resolution`: Continue to step 4 after write verification.
-- `ordered actions`:
-  1. Derive a filename slug from `topicName` using lowercase words separated by underscores and append an 8-character hex suffix.
-  2. Create the selected `roadmap-topics/` directory when absent (first run for that `storageScope`).
-  3. Write `.plan.md` using Sedea plan frontmatter: `name`, `overview`, `todos`, and `isProject: false`.
-  4. Write `## Overview` from `topicDescription`.
-  5. Write `## Objectives` only when objectives were supplied.
-  6. Do not write delivery-side sections such as `Delivery phases`, `PR breakdown`, `Changes`, or `Caveats`.
-  7. Write `.state.yaml` with `parent: null`, `worktrees: []`, and `prs: []`.
-  8. Re-read both files and verify the required shape.
-- `valid early-exit conditions`: Stop without overwriting if a generated filename collision occurs after a retryable suffix generation failure; report the collision.
+- `inputs`: `topicName`, `topicDescription`, `objectives`, `storageScope`, and `operationsUserId` from step 2.
+- `expected output`: Inline skill result per **`create-topic-plan`** **`## Completion (inline)`** — `planPath`, `sidecarPath`, `storageScope`, `topicSlug`, `creationStatus`, `remainingTasks`.
+- `next-step resolution`: Continue to step 4 after the skill procedure and verification complete on this lane.
+- `valid early-exit conditions`: Stop without overwriting if the skill reports a filename collision or verification failure; report per skill **`## Completion (inline)`**.
 
 ### 4. Report result and stop
 
 - `type`: Finish/stop logic.
 - `intent`: End the mission after the topic plan has been created or a blocking condition has been reported.
-- `inputs`: Skill output from step 3.
+- `inputs`: Inline skill result from step 3.
 - `expected output`: Concise result with plan path, sidecar path, storage scope, and any remaining user review step.
 - `next-step resolution`: Terminal when files are created and verified; resumable when required inputs are missing or write verification fails.
-- `terminal vs resumable state`: `resolved` when the plan and sidecar are created and verified; `partial` when input collection or write verification is incomplete.
+- `terminal vs resumable state`: `resolved` when `creationStatus` is `created` and both files exist; `partial` when input collection or write verification is incomplete.

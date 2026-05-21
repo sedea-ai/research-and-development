@@ -27,7 +27,7 @@ inputs:
 
 # Create Topic Plan
 
-Create one root-level topic plan and its sidecar under the selected Sedea operations plan tree. This skill writes planning metadata only; it does not draft delivery phases, PR breakdowns, worktrees, or implementation tasks.
+Create one root-level topic plan and its sidecar under the selected Sedea operations plan tree. The **topics** mission runs this skill **inline** on the Squad Leader lane (**`plan.mdc`** §3). This skill writes planning metadata only; it does not draft delivery phases, PR breakdowns, worktrees, or implementation tasks.
 
 ## Inputs
 
@@ -89,16 +89,16 @@ Create one root-level topic plan and its sidecar under the selected Sedea operat
    - The plan does not include `Delivery phases`, `PR breakdown`, `Changes`, or `Caveats`.
    - The sidecar has `parent: null`, `worktrees: []`, and `prs: []`.
 
-## Output Contract
+## Completion (inline)
 
-Return a structured result with:
+The **topics** mission runs this skill on the Squad Leader lane. Report these fields in prose on that lane (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion*):
 
-- `status`: `created`, `partial`, or `failure`.
-- `planPath`: created plan path.
-- `sidecarPath`: created sidecar path.
-- `storageScope`: `user` or `joint`.
-- `topicSlug`: filename stem without extension.
-- `remainingTasks`: user or agent follow-up tasks, empty when creation is complete.
+- `creationStatus`: `created`, `partial`, or `failure`
+- `planPath`: created plan path
+- `sidecarPath`: created sidecar path
+- `storageScope`: `user` or `joint`
+- `topicSlug`: filename stem without extension
+- `remainingTasks`: follow-up items; empty when creation is complete
 
 ## Safety Constraints
 
