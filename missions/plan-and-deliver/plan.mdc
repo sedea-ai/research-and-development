@@ -362,7 +362,7 @@ Related (optional):
 - The **Squad Leader** must receive terminal closure for every open **planning** entry before treating planning as complete.
 - A plan entry may close as completed, deferred, abandoned, or out of scope, but the closing status must be explicit.
 - Silence, missing metadata, or an unreported lane is not completion.
-- When a PR plan reports `readyForImplementation` / `developerApprovedImplementation` in child `outputs`, register or refresh the matching **§8 ship row** for that `targetPlanPath`.
+- When a PR plan child reports `readyForImplementation` in planning `outputs`, record planning-handoff readiness on the **planning** ledger only. **§8 ship rows** open from **`coding-session`** (see §8), not from **`pr-plan`** child results.
 
 **Procedure**
 
@@ -376,7 +376,7 @@ Related (optional):
 
 - **Type:** Finish/stop logic
 - **Intent:** Close the gap between **objectives** (implementation → PR → deploy → reconcile) and **Squad Leader** protocol. The Squad Leader **tracks** detached ship work and **gates** `MC_DISPATCH_RESOLVED_V1`; it does **not** spawn ship skills from this section.
-- **Inputs:** Planning ledger state from §7; developer messages on the leader lane; optional child `outputs` that report implementation handoff (`developerApprovedImplementation`, `targetPlanPath`, `readyForImplementation`); explicit developer status when ship runs on other lanes.
+- **Inputs:** Planning ledger state from §7; developer messages on the leader lane; **`coding-session`** child `outputs` (especially `developerApprovedImplementation`, `targetPlanPath` after **Start implementation now**); explicit developer status when ship runs on other lanes.
 - **Expected output:** Updated **ship ledger** per PR plan; status acknowledgement; **`MC_DISPATCH_RESOLVED_V1`** only when gates below allow.
 - **Next-step resolution:**
   - No ship row yet, planning complete → **AskQuestion** once: close dispatch **planning-only** (`partial` / `resolved` with summary) vs ship continues on detached lanes (keep dispatch **active**).
@@ -417,7 +417,7 @@ Maintain one row per in-scope **PR plan** path under `.sedea/operations/.../plan
 
 | Child skill | Advance `phase` when `outputs` include |
 |-------------|----------------------------------------|
-| `coding-session` | `developerApprovedImplementation` + `targetPlanPath` → at least `implementing`; worktree ready → `worktree` |
+| `coding-session` | `developerApprovedImplementation: true` (after **Start implementation now** in that skill) + `targetPlanPath` → at least `implementing`; worktree ready → `worktree` |
 | `pre-pr-review` | `recommendation: go` (or `no-go` + blockers → `blocked`) → `pre-pr-review` |
 | `create-pr` | `prUrl` / `prNumber` → `pr-open` |
 | `pr-review` (inline in **coding-session**) | `prReviewStatus` terminal + `githubReconciliationStatus` when required → `pr-review` |
@@ -426,7 +426,7 @@ Maintain one row per in-scope **PR plan** path under `.sedea/operations/.../plan
 
 **Register or refresh a ship row when any of:**
 
-1. Child `outputs` include `developerApprovedImplementation: true` and `targetPlanPath` for a PR plan.
+1. **`coding-session`** child `outputs` include `developerApprovedImplementation: true` and `targetPlanPath` (set only after **Start implementation now** in that skill — not from **`pr-plan`**).
 2. The developer on the **leader lane** names a PR plan and starts **`coding-session`** (or reports worktree/implementation started).
 3. The developer reports a milestone on the leader lane (e.g. “PR #123 open”, “deploy walk done”, “merged and reconciled”) — set `lastReportedBy: developer-message`.
 

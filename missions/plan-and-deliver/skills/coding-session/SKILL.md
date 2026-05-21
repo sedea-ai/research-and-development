@@ -20,11 +20,11 @@ inputs:
     required: false
   readyForImplementation:
     type: boolean
-    description: Readiness signal from pr-plan. Required for spawned implementation handoff.
+    description: Optional hint from a prior **pr-plan** menu (planning handoff only). Does not authorize worktrees.
     required: false
   developerApprovedImplementation:
     type: boolean
-    description: True only when the developer explicitly approved this PR plan for implementation handoff.
+    description: Internal/output only — set true after **Start implementation now** in this skill. Not supplied by **pr-plan** spawn.
     required: false
   repoPath:
     type: string
@@ -50,7 +50,7 @@ inputs:
     required: false
   upstreamSkill:
     type: string
-    description: Skill that requested implementation handoff, usually pr-plan.
+    description: Optional context label (developer dispatch, snapshot, planning skill). **pr-plan** does not spawn this skill.
     required: false
 ---
 
@@ -64,28 +64,15 @@ Hand off a unit of work from the **initiating** session to **a coding agent** in
 
 After emitting the implementation session prompt(s), **stop** — do not `cd` into the worktree to implement. When invoked later from the coding agent lane after a committed cut point, this same skill owns spawning **`pre-pr-review`**.
 
-## Spawned implementation handoff gate
+## Plan-anchored context (optional inputs)
 
-When this skill is spawned from `pr-plan`, treat implementation handoff as plan-anchored and require:
+**`pr-plan`** ends with a menu (option 4 points at **`coding-session`**) and does **not** spawn this skill. The developer starts **`coding-session`** on a detached lane, via mission dispatch, or from a planning snapshot.
 
-1. `targetPlanPath` and `targetPlanSlug`.
-2. `readyForImplementation: true`.
-3. `developerApprovedImplementation: true`.
-4. At least one repo target (`repoPath` or `repoPaths`).
+When `targetPlanPath` / `targetPlanSlug` are known (message, `@` path, snapshot, or spawn `inputs`), use them for sidecar writes and the session prompt.
 
-If `readyForImplementation` is false or missing, stop before worktree creation and return `partial` with `remainingTasks` copied from the upstream PR plan readiness reasons. Do not create worktrees, attach folders, or emit a coding prompt from an unready PR plan.
+Optional `readyForImplementation` from a prior **`pr-plan`** run is **informational only** — it does not authorize worktrees. **`readyForImplementation: true` does not bypass the plan completeness gate below.** **`pr-plan`** may set ready when §§ 1–4 are drafted while §§ 5–8 remain `_TBD_`; **`plan-ws-completeness.mjs`** still exits **`INCOMPLETE`** until those placeholders are gone or the developer explicitly overrides.
 
-**`readyForImplementation: true` does not bypass the plan completeness gate below.** **`pr-plan`** may set ready when §§ 1–4 are drafted while §§ 5–8 remain `_TBD_`; **`plan-ws-completeness.mjs`** still exits **`INCOMPLETE`** until those placeholders are gone or the developer explicitly overrides.
-
-If `developerApprovedImplementation` is false or missing, stop before worktree creation and ask the developer with **AskQuestion**. Required options:
-
-- **Approve implementation handoff now**
-- **Revise PR plan first**
-- **Defer implementation**
-- **Abandon this PR plan**
-- **More details for option _**
-
-Only **Approve implementation handoff now** authorizes worktree creation, sidecar session writes, MCP worktree attach, and coding-agent prompt emission.
+**Implementation approval** is granted only in [Start implementation approval gate](#start-implementation-approval-gate) below (**Start implementation now**). Set `outputs.developerApprovedImplementation: true` only after that choice. Until then, emit `false` or omit the field.
 
 If repo targets are missing, stop and ask the developer with **AskQuestion** to choose or provide the implementation repo(s). Do not infer from focused files alone.
 
@@ -124,7 +111,7 @@ After readiness, repo selection, and plan completeness checks pass, but before a
 - **Defer implementation**
 - **More details for option _**
 
-Only **Start implementation now** authorizes worktree creation and session-state mutation. This gate applies to both spawned and standalone `coding-session` runs; earlier readiness or repo-selection answers are not approval to mutate worktrees or sidecars.
+Only **Start implementation now** authorizes worktree creation, session-state mutation, and `outputs.developerApprovedImplementation: true`. This gate applies to every **`coding-session`** run (spawned child or standalone). A prior **`pr-plan`** menu choice does not substitute for this gate.
 
 ## Copy/paste-safe prompt output (required)
 
@@ -147,7 +134,7 @@ Run only **after** the [Plan completeness gate](#plan-completeness-gate-before-a
    - Always branch from **`origin/main`**, not **`main`** (same failure mode as in **efficient-pr-shipping**).
    - Branch naming: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Branch naming* (hosting checkout → Sedea **`7_stacked-pr-branch-naming`**; other implementation repos → `feat/`, `improve/`, `fix/`, …).
    - Refuse dirty primary checkouts before creating a worktree: run `git status --porcelain` in each repo and stop on any output. Do not stash, commit, discard, or clean the user's WIP.
-   - If `baseBranch` input is supplied, it must be a remote branch ref such as `origin/main`; do not accept a local-only branch for spawned implementation.
+   - If `baseBranch` input is supplied, it must be a remote branch ref such as `origin/main`; do not accept a local-only branch for worktree creation.
 
 2. **Record the session on the plan** (see [Sidecar state](#sidecar-state)). From the **hosting repo root**:
    ```bash
@@ -289,8 +276,8 @@ When this skill runs as a spawned child, end with a child result containing at l
 - `outputs.targetPlanPath`
 - `outputs.targetPlanSlug`
 - `outputs.readyForImplementation`
-- `outputs.developerApprovedImplementation`
-- `outputs.startImplementationApprovalStatus`
+- `outputs.developerApprovedImplementation` — `true` only after **Start implementation now**; never inherit from **`pr-plan`**
+- `outputs.startImplementationApprovalStatus` — `approved` when **Start implementation now** was chosen
 - `outputs.repoPaths`
 - `outputs.worktrees` (array of `{repo, path, branch, attached}`)
 - `outputs.branchName`
@@ -341,7 +328,7 @@ This skill usually runs **off** the **plan and deliver** leader lane. The Squad 
 
 | Milestone in this skill | Suggested `shipPhase` | Copy from `outputs` |
 |-------------------------|----------------------|---------------------|
-| Worktrees attached + prompt emitted | `worktree` | `targetPlanPath`, `worktrees`, `remainingTasks` |
+| Worktrees attached + prompt emitted | `worktree` | `targetPlanPath`, `worktrees`, `developerApprovedImplementation: true`, `remainingTasks` |
 | Implementation / review loop in progress | `implementing` | `targetPlanPath`, `prePrReviewRecommendation`, `prReviewStatus` |
 | Pre-PR **go** | `pre-pr-review` | `targetPlanPath`, `prePrReviewRecommendation: go` |
 | PR opened | `pr-open` | `targetPlanPath`, `prUrl`, `prNumber` |

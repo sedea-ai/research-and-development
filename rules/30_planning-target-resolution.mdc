@@ -16,7 +16,7 @@ Planning protocol branches act on a specific `.plan.md` under the **`.sedea/oper
 
 **Planning-tree** moves (§ *Standard flow* below): **`AskQuestion`**, numbered options, each naming **protocol branch + target plan**.
 
-**Implementation / ship** moves: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Commit and push cadence* and **`missions/plan-and-deliver/skills/pr-review/SKILL.md`**:
+**Implementation / ship** moves: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Commit and push cadence* and **[`pr-review/SKILL.md`](../missions/plan-and-deliver/skills/pr-review/SKILL.md)**:
 
 | Intent | Control surface |
 |--------|-----------------|

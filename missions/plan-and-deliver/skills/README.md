@@ -24,7 +24,7 @@ Squad Leader steps **§3** and **§5** and downstream decomposition agents run t
 | `pr-breakdown` | Master Plan agent | Same as delivery-phases |
 | `new-plan` | decomposition agents | Register child plan path/slug per row index |
 | `phase-plan` | `new-plan` / decomposition | Populator lane; route fields for next branch |
-| `pr-plan` | `new-plan` / decomposition | `readyForImplementation`; implementation handoff pending |
+| `pr-plan` | `new-plan` / decomposition | `readyForImplementation`; points developer to **`coding-session`** (does not spawn it) |
 
 Field-level `outputs` and `continuationStatus` rules: each skill’s **`## Completion (spawned)`**.
 
@@ -34,7 +34,7 @@ These skills run on **detached** or **nested** lanes (often **not** the Squad Le
 
 | Skill | Typical spawner | Outputs section | §8 ship phase hints |
 |-------|-----------------|-----------------|---------------------|
-| `coding-session` | Developer / mission dispatch | `## Implementation handoff result` (+ **`## Completion (inline)`** if same-lane) | `worktree`, `implementing`; `developerApprovedImplementation`, `targetPlanPath` |
+| `coding-session` | Developer / mission dispatch | `## Implementation handoff result` (+ **`## Completion (inline)`** if same-lane) | `worktree`, `implementing`; `developerApprovedImplementation` after **Start implementation now** only |
 | `pre-pr-review` | `coding-session` | Step 8 — Report and result | `pre-pr-review`; `recommendation: go` |
 | `create-pr` | `coding-session` | `## Result contract` (+ lifecycle sections) | `pr-open`; `prUrl`, `prNumber` |
 | `deploy-walk` | `create-pr` (after merge, when chosen) | `## Spawned result contract` | `deploy-walk`; `deployStatus`, `deployTodoStatus` |

@@ -228,7 +228,7 @@ If Step 1 payloads are **missing or stale** in context (new comments since fetch
 
 ## Inline result for coding-session
 
-**Inline-only** — no **`## Completion (spawned)`**, no **Host protocol line**, no **`AGENT_RESULT_RESPONSE_V1`** on this lane (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`missions/plan-and-deliver/skills/README.md`** § *Inline-only*).
+**Inline-only** — no **`## Completion (spawned)`**, no **Host protocol line**, no **`AGENT_RESULT_RESPONSE_V1`** on this lane (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **[`../README.md`](../README.md)** § *Inline-only*).
 
 Return results through the active **`coding-session`** lane, not as a child-agent result. **`coding-session`** must include these fields in its spawned handoff or inline completion:
 
@@ -243,4 +243,4 @@ Return results through the active **`coding-session`** lane, not as a child-agen
 
 Keep `continuationStatus: "active"` until every PR review comment is fixed, skipped with rationale, converted to follow-up, or explicitly deferred by the developer, and GitHub reconciliation has run when required.
 
-This skill is **inline-only** on the **`plan and deliver`** mission — no **`AGENT_RUN_REQUEST_V1`**, no **`AGENT_RESULT_RESPONSE_V1`** on this lane. See **`missions/plan-and-deliver/skills/README.md`** § Inline-only.
+This skill is **inline-only** on the **`plan and deliver`** mission — no **`AGENT_RUN_REQUEST_V1`**, no **`AGENT_RESULT_RESPONSE_V1`** on this lane. See **[`../README.md`](../README.md)** § Inline-only.

@@ -295,7 +295,7 @@ Sections 1, 2, 3, 4, 6, 7, and 8 (when present) flow into the PR description tha
 | Happy-path **skill order** (planning → ship) | **Cadence reference** diagram (matches **`plan-and-deliver/plan.mdc`** *Cadence reference*) |
 | **Mission Control `plan and deliver` dispatch** — who spawns whom, §§1–8 protocol, §8 ship ledger, `MC_DISPATCH_RESOLVED_V1` gates | **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** — *Squad operations* and §8 (not duplicated here) |
 
-The large loop diagram below includes planning, **ship chain**, feedback, and plan updates. It is **not** the Squad Leader spawn map. Detached ship lanes and leader-lane recap: **`plan.mdc`** §8 and § *Leader-lane ship recap* under **Loop stages** below.
+The large loop diagram below includes planning, **ship chain**, feedback, and plan updates. It is **not** the Squad Leader spawn map. Detached ship lanes and leader-lane recap: **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8 and § *Leader-lane ship recap* under **Loop stages** below.
 
 ### Cadence reference (skill order — same as `plan.mdc`)
 
@@ -377,7 +377,7 @@ flowchart TD
     class I rose
 ```
 
-**Diagram legend.** **`coding-session`** covers worktree setup and the **coding agent** implementation pass. The nodes **`pre-pr-review`** → **`create-pr`** → **`pr-review`** → **`deploy-walk`** → **`plan-reconcile`** are the **ship chain** (same order as **Cadence reference** above and **`plan.mdc`**). Feedback and **Plan Updates** close the iteration; they are not substitutes for ship branches.
+**Diagram legend.** **`coding-session`** covers worktree setup and the **coding agent** implementation pass. The nodes **`pre-pr-review`** → **`create-pr`** → **`pr-review`** → **`deploy-walk`** → **`plan-reconcile`** are the **ship chain** (same order as **Cadence reference** above and **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`**). Feedback and **Plan Updates** close the iteration; they are not substitutes for ship branches.
 
 **One-shot setup.** PRD → **Master Plan**. The agent that drafts the **Master Plan** from a PRD is the **`master-plan`** protocol branch (path in **Development tools** § *Protocol branches*); the artefact is mode #1's **Master Plan** template above.
 
@@ -435,27 +435,27 @@ After **`pr-plan`** handoff and **`coding-session`** implementation, the happy p
 
 ##### pre-pr-review
 
-Spawned from **`coding-session`** after a committed cut point. Reviews diff + PR plan + repo rules; returns **`recommendation: go`** or blockers. Non-blockers are **`outputs.proposedFollowUps`** — **`coding-session`** presents them; plan **`## Follow-ups`** edits only after developer approval. See **`missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`**.
+Spawned from **`coding-session`** after a committed cut point. Reviews diff + PR plan + repo rules; returns **`recommendation: go`** or blockers. Non-blockers are **`outputs.proposedFollowUps`** — **`coding-session`** presents them; plan **`## Follow-ups`** edits only after developer approval. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`**.
 
 ##### create-pr
 
-Spawned from **`coding-session`** when pre-PR review is **go**. Builds reviewer-complete PR description; opens GitHub PR when authorized. Planning and coding lanes must **not** run **`gh pr create`**. May chain **`deploy-walk`** after merge when configured. See **`missions/plan-and-deliver/skills/create-pr/SKILL.md`**.
+Spawned from **`coding-session`** when pre-PR review is **go**. Builds reviewer-complete PR description; opens GitHub PR when authorized. Planning and coding lanes must **not** run **`gh pr create`**. May chain **`deploy-walk`** after merge when configured. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/create-pr/SKILL.md`**.
 
 ##### pr-review
 
-Runs **inline** on the active **`coding-session`** lane after a PR exists (not a separate spawn on **`plan and deliver`**). Triages review comments; commit/push gates per rule **20** and Sedea **6_git-commit-push-gate**. See **`missions/plan-and-deliver/skills/pr-review/SKILL.md`**.
+Runs **inline** on the active **`coding-session`** lane after a PR exists (not a separate spawn on **`plan and deliver`**). Triages review comments; commit/push gates per rule **20** and Sedea **6_git-commit-push-gate**. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md`**.
 
 ##### deploy-walk
 
-Step-by-step walk of the PR plan **`## 7. Deploy test plan`**; flips capstone todo **`deploy-test-plan-verified`** when done. Does **not** auto-run **`plan-reconcile`**. See **`missions/plan-and-deliver/skills/deploy-walk/SKILL.md`**.
+Step-by-step walk of the PR plan **`## 7. Deploy test plan`**; flips capstone todo **`deploy-test-plan-verified`** when done. Does **not** auto-run **`plan-reconcile`**. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/deploy-walk/SKILL.md`**.
 
 ##### plan-reconcile
 
-Archive candidates, follow-ups triage, merge/deploy gates. Often developer-triggered after merge; separate from deploy-walk completion. See **`missions/plan-and-deliver/skills/plan-reconcile/SKILL.md`**.
+Archive candidates, follow-ups triage, merge/deploy gates. Often developer-triggered after merge; separate from deploy-walk completion. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md`**.
 
 ##### Leader-lane ship recap (detached lanes)
 
-On a **`plan and deliver`** Mission Control dispatch, the Squad Leader **§8** ship ledger may **not** receive child **`AGENT_RESULT_RESPONSE_V1`** from detached lanes. After each ship milestone, post the **Ship recap — plan and deliver** block on the **leader dispatch** (template and phase enum: **`plan.mdc`** §8 *Leader-lane ship recap*). Each ship skill § *Squad Leader bubble-up* maps **`outputs`** → **`shipPhase`**.
+On a **`plan and deliver`** Mission Control dispatch, the Squad Leader **§8** ship ledger may **not** receive child **`AGENT_RESULT_RESPONSE_V1`** from detached lanes. After each ship milestone, post the **Ship recap — plan and deliver** block on the **leader dispatch** (template and phase enum: **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8 *Leader-lane ship recap*). Each ship skill § *Squad Leader bubble-up* maps **`outputs`** → **`shipPhase`**.
 
 #### Feedback Collection
 
