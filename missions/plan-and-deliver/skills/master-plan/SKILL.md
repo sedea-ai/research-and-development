@@ -503,7 +503,7 @@ State that the user must include *commit* (and *push* if needed) in the **same**
 
 ### Observations (numbered flags)
 
-When you notice gaps while working, list **numbered observations** in the information turn (Flag 1, Flag 2, …). On the next turn, **AskQuestion** per flag or batch: **Apply fix**, **Skip**, **More details for option _**. Do **not** use `flag N: lg` typed vocabulary.
+When you notice gaps while working, list **numbered observations** in the information turn (Flag 1, Flag 2, …). On the next turn, **AskQuestion** per flag or batch: **Apply fix**, **Skip**, **More details for option _**.
 
 After handling flags, return to **Step 7b**.
 

@@ -1,5 +1,5 @@
 ---
-description: "Ship PRs fast — parallel worktrees, one PR per worktree, single concern per PR, agent-only PR creation, never auto-PR. Loaded by a coding agent; covers `commit-push`, branch naming, comprehensive PR descriptions, and worktree setup conventions."
+description: "Ship PRs fast — parallel worktrees, one PR per worktree, single concern per PR, agent-only PR creation, never auto-PR. Loaded by a coding agent; covers commit and push cadence, branch naming, comprehensive PR descriptions, and worktree setup conventions."
 alwaysApply: true
 ---
 
@@ -87,7 +87,7 @@ Use `origin/main`, **not** `main` — `git worktree add … main` (and `git fetc
 
 ## Commit and push cadence
 
-Procedure id in docs: **commit-push**. How to run the full cadence:
+How to run the full cadence:
 
 ### User input
 
@@ -100,9 +100,9 @@ Per **[`30_planning-target-resolution.mdc`](30_planning-target-resolution.mdc)**
 
 **Hosting repo cwd for scripts.** The `node …/plan-state.mjs` and `python3 …/pr-review.py` invocations use paths relative to the **hosting repository root** (the checkout whose root contains `.sedea/`). A sibling git worktree often does **not** contain `.sedea/`; run these commands after `cd` to the hosting root, or pass an absolute path to the script.
 
-1. **Commit** (step 1 of commit-push). **Skip this step if `git status --short` is empty** — typical after the committed cut point reviewed by `pre-pr-review`. Do not amend the previous commit and do not pass `--allow-empty`; just proceed to step 2.
+1. **Commit** (step 1). **Skip this step if `git status --short` is empty** — typical after the committed cut point reviewed by `pre-pr-review`. Do not amend the previous commit and do not pass `--allow-empty`; just proceed to step 2.
 2. Push to remote.
-3. **PR comment reconciliation (`pr-review` → commit-push).** When this coding session already ran [`pr-review`](../missions/plan-and-deliver/skills/pr-review/SKILL.md) Steps 1–4 (per-comment dispositions in the Step 4 report) and **GitHub** reply / resolve / minimize / summary from **Step 5 — GitHub reconciliation** has **not** run yet, the **commit-push cadence is incomplete** until Step 5 runs — **same agent turn**, immediately after the push succeeds (so the summary can cite `git rev-parse --short HEAD`). Load `pr-review` **Step 5 — GitHub only** and execute it via `python3 .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (two-step `PR_REVIEW_INPUT` per that skill). If thread IDs or PR identity are missing from context, re-run that skill’s **Step 1** script array for the same PR, then Step 5. If there was no `pr-review` triage in this chat, skip this step entirely.
+3. **PR comment reconciliation (`pr-review` → this cadence).** When this coding session already ran [`pr-review`](../missions/plan-and-deliver/skills/pr-review/SKILL.md) Steps 1–4 (per-comment dispositions in the Step 4 report) and **GitHub** reply / resolve / minimize / summary from **Step 5 — GitHub reconciliation** has **not** run yet, the **commit and push cadence is incomplete** until Step 5 runs — **same agent turn**, immediately after the push succeeds (so the summary can cite `git rev-parse --short HEAD`). Load `pr-review` **Step 5 — GitHub only** and execute it via `python3 .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (two-step `PR_REVIEW_INPUT` per that skill). If thread IDs or PR identity are missing from context, re-run that skill’s **Step 1** script array for the same PR, then Step 5. If there was no `pr-review` triage in this chat, skip this step entirely.
 4. **Link the PR to its plan sidecar.** After push (and after step 3 when applicable), attempt to upsert the PR number into the Plan Board sidecar so `plan-reconcile` can later archive the plan when all linked PRs merge. Run:
 
    ```bash
@@ -121,9 +121,9 @@ Per **[`30_planning-target-resolution.mdc`](30_planning-target-resolution.mdc)**
      --number <number-from-gh>
    ```
 
-   Skip silently when `resolve` exits non-zero (session with no plan) or `gh pr list` returns empty (first push — the PR will appear after a PR-creating agent opens it; the **next** `commit-push` picks it up). Never block `commit-push` on a helper failure — log and continue with the remaining `commit-push` steps. **Exit code 3** from `upsert-pr` means the resolved plan is not a PR plan (the helper refuses to link PRs onto Master / Phase / top-level topic / stub plans, since sidecar `prs[]` is reconcile-tracked); surface the helper's stderr message verbatim so the user can fix the worktree → plan linkage, then continue with the remaining `commit-push` steps.
+   Skip silently when `resolve` exits non-zero (session with no plan) or `gh pr list` returns empty (first push — the PR will appear after a PR-creating agent opens it; the **next** commit-and-push pass picks it up). Never block this cadence on a helper failure — log and continue with the remaining steps. **Exit code 3** from `upsert-pr` means the resolved plan is not a PR plan (the helper refuses to link PRs onto Master / Phase / top-level topic / stub plans, since sidecar `prs[]` is reconcile-tracked); surface the helper's stderr message verbatim so the user can fix the worktree → plan linkage, then continue with the remaining steps.
 
-   The [`pr-review` protocol branch](../missions/plan-and-deliver/skills/pr-review/SKILL.md) runs the same `upsert-pr` call at its Step 0 (after the PR is resolved) as a belt-and-braces linker for cases where no follow-up `commit-push` ever happens — `pr-review` triage that ends with all comments skipped (no commit, no push), quiet PRs with zero reviewer rounds, or single-commit PRs merged straight from GitHub. `commit-push` and `pr-review` upserts are idempotent against each other.
+   The [`pr-review` protocol branch](../missions/plan-and-deliver/skills/pr-review/SKILL.md) runs the same `upsert-pr` call at its Step 0 (after the PR is resolved) as a belt-and-braces linker for cases where no follow-up commit-and-push pass ever happens — `pr-review` triage that ends with all comments skipped (no commit, no push), quiet PRs with zero reviewer rounds, or single-commit PRs merged straight from GitHub. **`pr-review`** and this cadence upserts are idempotent against each other.
 5. Check if this is the **first push** for the branch (e.g. `git push` output contains `[new branch]`, or `gh pr list` in step 4 returned empty). If so, also generate **a PR-creating agent PR prompt** via the `create-pr` protocol branch — this is mandatory, not prompted by a separate `create-pr` option from the user. The PR-creating agent prompt **replaces** any GitHub create-PR URL. The prompt’s description starter must satisfy **Comprehensive PR descriptions** (including slice boundaries and plan lineage when applicable). On subsequent pushes, only commit/push/reconcile/upsert — skip the PR-creating agent prompt.
 
 Example:
@@ -224,7 +224,7 @@ PRs are reviewed by AI agents who compare the description against the code and t
 
 The **`create-pr` protocol branch** ([`create-pr/SKILL.md`](../missions/plan-and-deliver/skills/create-pr/SKILL.md)) produces the text **a PR-creating agent** uses to open the PR. That block must give reviewer agents enough **reasoning**, not only diff facts — otherwise comments are often unactionable. **Scale length to PR size**: a small PR gets a **shorter** write-up, but it must still be **complete for one concern**.
 
-Every description starter (including on first `commit-push`) should cover, in whatever brevity fits the PR:
+Every description starter (including on the first push in this cadence) should cover, in whatever brevity fits the PR:
 
 - **Why this slice** — motivation and how it fits the larger goal (enough to judge intent vs. mistake, especially for improvement slices, guards, or "looks redundant" code).
 - **Not in this PR** — deferrals, follow-ups, or parent-epic scope left out on purpose.

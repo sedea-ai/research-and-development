@@ -67,8 +67,6 @@ Invocation context examples (mission dispatch and structured choices):
 - Natural language: scaffold a new plan file …; expand list item **N** under a parent’s `Delivery phases` or `### PR list` (then usually **`phase-plan`** or **`pr-plan`** on the child path).
 - Free-form (“I need a plan for …”) — confirm scope, then **`new-plan`** standalone or indexed-child per **30_planning-target-resolution**.
 
-**Retired tokens:** **`sub-plan`**, **`new plan`**, and typed shortcuts like `sub-plan 3` are **not** protocol branch names. Route through **`new-plan`** + **AskQuestion** / numbered list index **N**.
-
 The **developer** selects continuation via **AskQuestion** or a **numbered** option you present.
 
 ## Indexed child spawn (parent list item **N**)

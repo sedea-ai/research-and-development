@@ -25,16 +25,16 @@ If your change introduces or alters architecture, conventions, call patterns, or
 
 Per-PR plans under the **`.sedea/operations/`** union (**`.sedea/operations/<operationsUserId>/plans/`** or **`.sedea/operations/joint/plans/`**) carry **`## 5. Repo rules impact`** — list which **`.cursor/rules/*.mdc`** files in the **product repo** need a delta for that PR; keep it in sync when you touch rules outside that flow.
 
-### Plan-anchored PRs (before `commit-push`)
+### Plan-anchored PRs (before commit and push)
 
 When the work is driven by a **per-PR plan** linked from the Plan Board (or otherwise in scope for the branch):
 
 1. Read that plan's **`## 5. Repo rules impact`** (or **`## N. Repo rules impact`** if the plan uses the legacy 7-section numbering).
-2. For every bullet that names a path under **`.cursor/rules/*.mdc`** in the **product repo** (`push` multi-deployment repo, `payments-web`, etc.) and calls for an **update** / **extend** / **add**, implement that **`.mdc` change in the same PR branch** before review / **`commit-push`**, unless the bullet explicitly defers it — then **edit the plan's §5** so the deferral is honest.
+2. For every bullet that names a path under **`.cursor/rules/*.mdc`** in the **product repo** (`push` multi-deployment repo, `payments-web`, etc.) and calls for an **update** / **extend** / **add**, implement that **`.mdc` change in the same PR branch** before review / rule **20** § *Commit and push cadence*, unless the bullet explicitly defers it — then **edit the plan's §5** so the deferral is honest.
 3. Bullets that say **no file edit**, **verify only**, or **skip unless …** mean: confirm the code follows the existing rule; no `.mdc` diff required unless you discover drift.
 4. The **`.sedea/operations/.../plans/`** tree is not the product repo — rule edits belong in the repo that ships the code.
 
-See **`.sedea/centers/research-and-development/docs/development-process.md`** § *Per-PR plan template* item **5** — *Align product-repo rules before `commit-push`* — for the full contract.
+See **`.sedea/centers/research-and-development/docs/development-process.md`** § *Per-PR plan template* item **5** — *Align product-repo rules before commit and push* — for the full contract.
 
 ## Format
 
