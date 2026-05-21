@@ -5,7 +5,18 @@ alwaysApply: false
 
 # Mission plan
 
-**Execution model:** Step 3 runs **`create-topic-plan/SKILL.md`** on the Squad Leader lane (`execution: inline`).
+**Execution model:** Inline-only mission on the Squad Leader lane. Step 3 runs **`create-topic-plan/SKILL.md`** with `execution: inline`. See **Mission closure** below.
+
+## Mission closure (inline-only)
+
+Two layers on one lane:
+
+| Layer | Owner | Mechanism |
+|-------|--------|-----------|
+| Skill session | Squad Leader after **`create-topic-plan`** procedure | Report **`## Completion (inline)`** fields in prose (`creationStatus`, `planPath`, …) |
+| Dispatch | Squad Leader in step 4 | **`MC_DISPATCH_RESOLVED_V1`** per **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Dispatch resolution* |
+
+**`create-topic-plan`** closes with **`## Completion (inline)`** on this lane. Map step 3 `creationStatus` → dispatch status when the user is done — `created` → `resolved`; incomplete write or open `remainingTasks` → `partial`; user stop or hard failure → `aborted` or `abandoned` per step 4.
 
 ## Objectives
 
@@ -67,8 +78,11 @@ flowchart TD
 ### 4. Report result and stop
 
 - `type`: Finish/stop logic.
-- `intent`: End the mission after the topic plan has been created or a blocking condition has been reported.
-- `inputs`: Inline skill result from step 3.
-- `expected output`: Concise result with plan path, sidecar path, storage scope, and any remaining user review step.
-- `next-step resolution`: Terminal when files are created and verified; resumable when required inputs are missing or write verification fails.
-- `terminal vs resumable state`: `resolved` when `creationStatus` is `created` and both files exist; `partial` when input collection or write verification is incomplete.
+- `intent`: End the mission after the topic plan has been created or a blocking condition has been reported; propose dispatch resolution when the user is done on this dispatch.
+- `inputs`: Inline skill result from step 3 (`creationStatus`, `planPath`, `sidecarPath`, `storageScope`, `topicSlug`, `remainingTasks`).
+- `expected output`: Concise result with plan path, sidecar path, storage scope, and any remaining user review step; when the user signals dispatch closure, one **`MC_DISPATCH_RESOLVED_V1`** line with JSON `status` and `summary` on the same line.
+- `next-step resolution`:
+  - `creationStatus: created`, files verified, user done → propose **`MC_DISPATCH_RESOLVED_V1`** with `status: resolved`.
+  - `creationStatus: partial` or non-empty `remainingTasks` → propose **`partial`** when the user closes, or stay active for follow-up.
+  - Hard failure or user abandon → propose **`aborted`** or **`abandoned`** with explicit `summary`.
+- `terminal vs resumable state`: Mission ledger `resolved` when `creationStatus` is `created` and both files exist; `partial` when input collection or write verification is incomplete. Dispatch closes only after user confirms resolution on the **`MC_DISPATCH_RESOLVED_V1`** card (see **4_mission.mdc**).

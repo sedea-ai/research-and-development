@@ -91,14 +91,18 @@ Create one root-level topic plan and its sidecar under the selected Sedea operat
 
 ## Completion (inline)
 
-The **topics** mission runs this skill on the Squad Leader lane. Report these fields in prose on that lane (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion*):
+**Inline-only skill** for the **topics** mission (**`plan.mdc`** §3, § *Mission closure*). End the skill portion by reporting these fields in prose on the Squad Leader lane (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion*). The Squad Leader then runs **`plan.mdc`** step 4 and proposes **`MC_DISPATCH_RESOLVED_V1`** when the user closes the dispatch.
 
-- `creationStatus`: `created`, `partial`, or `failure`
-- `planPath`: created plan path
-- `sidecarPath`: created sidecar path
-- `storageScope`: `user` or `joint`
-- `topicSlug`: filename stem without extension
-- `remainingTasks`: follow-up items; empty when creation is complete
+| Field | Values | Use |
+|-------|--------|-----|
+| `creationStatus` | `created` \| `partial` \| `failure` | Skill outcome; step 4 maps to dispatch `status` |
+| `planPath` | path | Created `.plan.md` |
+| `sidecarPath` | path | Matching `.state.yaml` |
+| `storageScope` | `user` \| `joint` | Scope used |
+| `topicSlug` | stem | Filename stem without extension |
+| `remainingTasks` | strings | `[]` when complete |
+
+Set `creationStatus: created` only when steps 5–7 wrote and verified both files. Set `partial` when validation, collision, or verification blocks completion. Set `failure` when no usable files were written.
 
 ## Safety Constraints
 
