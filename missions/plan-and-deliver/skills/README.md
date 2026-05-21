@@ -35,6 +35,8 @@ Field-level `outputs` and `continuationStatus` rules: each skill’s **`## Compl
 | 1 — Planning handoff | `pr-plan` | `readyForImplementation`, `implementationHandoffStatus` — does **not** advance §8 `phase` past `not-started` |
 | 2 — Worktree open | `coding-session` | `developerApprovedImplementation` after **`plan-ws-completeness.mjs`** passes or override in the worktree-open gate |
 
+**`pr-plan` → `coding-session`:** sequential skills on **different lanes**. **`pr-plan`** drafts §§ 1–4 and may sketch §§ 5–8; **`coding-session`** owns implementation, §§ 5–8 fill, and ship execution. Step 5c option 4 is a **menu handoff** — not **`AGENT_RUN_REQUEST_V1`**. See **`pr-plan/SKILL.md`** § *Handoff to coding-session* and **`coding-session/SKILL.md`** § *Relationship to pr-plan*.
+
 ## Ship spawn (detached / coding-session chain)
 
 These skills run on **detached** or **nested** lanes (often **not** the Squad Leader). They use **domain-specific section titles** for long procedures; each dual-mode file has **`## Completion (spawned)`** (host terminal line) and **`## Completion (inline)`** (prose only, no sentinel). Detailed `outputs` lists live in the section named in the **Outputs section** column.

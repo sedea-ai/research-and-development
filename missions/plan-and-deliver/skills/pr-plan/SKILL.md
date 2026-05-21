@@ -53,9 +53,23 @@ warmUpRules:
 
 This skill drives the **per-PR planning move** under Sedea's New Feature Development Process: take a freshly-spawned PR plan stub (indexed child from the parent's **`### PR list`** under **`PR breakdown`**, typically right after the **`new-plan`** protocol branch) and populate §§ **1–4** of the **per-PR template** — Single concern, Background, Change scope, Reasoning. §§ **5–8** and the § 7 deploy scaffold stay **`_TBD_`** for **`coding-session`** and later turns unless the **developer** explicitly asks for a **fill** sketch here.
 
-The agent has enough context after step 3 to draft §§ 1–4 from the parent's **`### PR list`** row, **`### Single-concern strategy`**, **`### Sequencing`**, and earlier parent sections (diagrams / changes as *context* — PR plans do **not** embed parent diagrams in the body). § 4 is consumed by **a coding agent** (PR description) and **pre-pr-review** / **a reviewer agent**; keep sentences unambiguous. This skill reports implementation readiness, but it does **not** start coding or create a worktree.
+The agent has enough context after step 3 to draft §§ 1–4 from the parent's **`### PR list`** row, **`### Single-concern strategy`**, **`### Sequencing`**, and earlier parent sections (diagrams / changes as *context* — PR plans do **not** embed parent diagrams in the body). § 4 is consumed by **a coding agent** (PR description) and **pre-pr-review** / **a reviewer agent**; keep sentences unambiguous. This skill reports planning readiness; **worktrees and ship execution** belong to **`coding-session`** on a **separate** lane.
 
 The procedure below is a hard contract — do **not** skip steps or start drafting before the target is verified as a PR plan stub.
+
+## Handoff to `coding-session` (planning only)
+
+**`pr-plan`** and **`coding-session`** are **sequential skills on different lanes** — not parent/child spawn.
+
+| Concern | **`pr-plan`** (this skill) | **`coding-session`** |
+|---------|---------------------------|----------------------|
+| Per-PR §§ **1–4** | Draft and maintain | Read; revise only when the developer returns to planning |
+| Per-PR §§ **5–8** | Default **`_TBD_`**; optional *speculative* sketch if the developer picks step 5 option 2 | Substantive fill during implementation; final text once code paths are known |
+| `readyForImplementation` | Set in `outputs` | Read as layer-1 hint only |
+| Worktrees, session prompt, ship chain | Out of scope | Owns |
+| Start **`coding-session`** | Step 5c option 4 names the next skill — **does not** emit **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** on this lane | Developer starts via detached lane, mission dispatch, or snapshot |
+
+After step 5c option 4, **stop** this lane. The developer opens **`coding-session`** elsewhere; layer 2 worktree approval happens there (**`coding-session`** § *Implementation consent*).
 
 ## Trigger
 
@@ -293,7 +307,7 @@ Set `readyForImplementation: false` when any of those checks fail. Add each miss
 
 ### 5b — Planning completeness
 
-§§ 5–8 may remain `_TBD_` after this skill. That does **not** block **`readyForImplementation`** by itself, because **`coding-session`** owns repo rules impact, tests, deploy plan details, and caveats once code paths are concrete.
+§§ 5–8 may remain `_TBD_` after this skill. That does **not** block **`readyForImplementation`** by itself — see **Handoff to `coding-session`** for the split between speculative sketches here and substantive §§ 5–8 work in **`coding-session`**.
 
 **Two-layer readiness (do not conflate):**
 
@@ -339,7 +353,7 @@ Perform exactly what was chosen. List short **numbered observations** for gaps (
 
 **Owns:** target PR plan **body** §§ 1–4; **4a-bis** append-only capstone todo; implementation readiness assessment; optional **fill** sketches for § 5–8 when explicitly chosen.
 
-**Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); spawning children; starting `coding-session`; creating worktrees; `git`; Master / Phase templates (**`master-plan`**, **`phase-plan`**).
+**Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); **`AGENT_RUN_REQUEST_V1`** for **`coding-session`**; running **`coding-session`** on this lane; worktrees; `git`; Master / Phase templates (**`master-plan`**, **`phase-plan`**).
 
 Stop after the step 5 handoff block.
 

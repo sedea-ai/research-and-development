@@ -58,15 +58,25 @@ inputs:
 
 Hand off a unit of work from the **initiating** session to **a coding agent** in a **dedicated git worktree**, with the worktree visible in the **same Sedea workbench** (multi-root workspace), not a second editor process.
 
-**Owns:** `git worktree add`, `plan-state.mjs set-worktrees` / `set-session`, Mission Control worktree attach, pre-worktree validation + worktree-open gate, curated session prompt emission.
+**Owns:** per-PR plan §§ **5–8** during implementation (repo rules impact, tests, deploy plan, caveats); `git worktree add`, `plan-state.mjs set-worktrees` / `set-session`, Mission Control worktree attach, pre-worktree validation + worktree-open gate, curated session prompt emission; ship-chain spawns (**`pre-pr-review`**, **`create-pr`**, inline **`pr-review`**) after cut points.
 
-**Out of scope:** implementing product code in this chat; opening PRs; **`plan-reconcile`** archive cadence except where this skill references it for cleanup narrative.
+**Out of scope:** drafting per-PR §§ **1–4** ( **`pr-plan`** ); implementing product code in this chat; opening PRs from the planning lane; **`plan-reconcile`** archive cadence except where this skill references it for cleanup narrative.
 
 After emitting the implementation session prompt(s), **stop** — do not `cd` into the worktree to implement. When invoked later from the coding agent lane after a committed cut point, this same skill owns spawning **`pre-pr-review`**.
 
+## Relationship to `pr-plan`
+
+| Concern | **`pr-plan`** | **`coding-session`** (this skill) |
+|---------|--------------|-----------------------------------|
+| §§ **1–4** | Drafted on the planning lane | Read for prompts and review; edit only when the developer revises the plan |
+| §§ **5–8** | **`_TBD_`** or optional speculative sketch | Substantive fill during implementation |
+| Handoff | Step 5c option 4 + `outputs.readyForImplementation` | Developer starts this skill on a **separate** lane — **`pr-plan`** does not emit **`AGENT_RUN_REQUEST_V1`** here |
+
+See **`pr-plan/SKILL.md`** § *Handoff to coding-session*.
+
 ## Plan-anchored context (optional inputs)
 
-**`pr-plan`** ends with a menu (option 4 points at **`coding-session`**) and does **not** spawn this skill. The developer starts **`coding-session`** on a detached lane, via mission dispatch, or from a planning snapshot.
+The developer starts **`coding-session`** on a detached lane, via mission dispatch, or after **`pr-plan`** step 5c option 4 (menu handoff only — not a spawn from **`pr-plan`**).
 
 When `targetPlanPath` / `targetPlanSlug` are known (message, `@` path, snapshot, or spawn `inputs`), use them for sidecar writes and the session prompt.
 
