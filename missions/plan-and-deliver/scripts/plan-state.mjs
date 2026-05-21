@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Single writer for Plan Board sidecars + plan archival.
-// Invoked by: coding-session skill, plan-reconcile, efficient-pr-shipping / commit-push flow, product automation.
+// Invoked by: coding-session skill, plan-reconcile, efficient-pr-shipping commit-and-push cadence, product automation.
 // Design contract: Sedea `.sedea/operations/` plan union (joint + optional per-user namespace).
 
 import * as fs from 'node:fs/promises';
@@ -94,25 +94,9 @@ function spawnGitOutput(cwd, args) {
   });
 }
 
-async function readOperationsUserIdFromFile(repoRoot) {
-  const p = path.join(repoRoot, '.sedea', 'local', 'operations-user-id');
-  if (!(await fileExists(p))) return null;
-  const line = (await fs.readFile(p, 'utf8')).split(/\r?\n/)[0]?.trim() || null;
-  return line && line.length > 0 ? line : null;
-}
-
-async function readOperationsUserIdFromGitConfig(repoRoot) {
-  const r = await spawnGitOutput(repoRoot, ['config', '--local', '--get', 'sedea.operationsUserId']);
-  if (!r.ok || !r.stdout) return null;
-  const v = r.stdout.trim();
-  return v.length > 0 ? v : null;
-}
-
-async function resolveEffectiveOperationsUserId(repoRoot, cliId) {
+async function resolveEffectiveOperationsUserId(_repoRoot, cliId) {
   if (cliId && cliId.length > 0) return cliId;
-  const fromFile = await readOperationsUserIdFromFile(repoRoot);
-  if (fromFile) return fromFile;
-  return readOperationsUserIdFromGitConfig(repoRoot);
+  return null;
 }
 
 async function buildPlanDirs(repoRoot, operationsUserId) {
@@ -129,7 +113,7 @@ async function buildPlanDirs(repoRoot, operationsUserId) {
   else if (!SEDEA_MISSING_OPERATIONS_USER_ID_WARNED) {
     SEDEA_MISSING_OPERATIONS_USER_ID_WARNED = true;
     process.stderr.write(
-      'plan-state: no --operations-user-id and no .sedea/local/operations-user-id or git config sedea.operationsUserId — only operations/joint plans are visible\n',
+      'plan-state: no --operations-user-id — only operations/joint plans are visible\n',
     );
   }
   await pushScope('joint');
@@ -504,14 +488,14 @@ async function detectPlanKind(planPath) {
 }
 
 // `upsert-pr --slug <slug> --repo <basename> --number <n>` — appends
-// `{repo, number}` to `prs:` only if not already present. Idempotent so `cp`
-// can call it on every push without duplicating entries. Refuses (exit 3) when
-// the resolved plan is not a PR plan: sidecar prs[] feeds reconcile, which
-// auto-archives a plan when every entry is MERGED. Linking an unrelated merged
-// PR onto a Master / Phase / roadmap-topic plan — typical when `cp` runs from
-// a worktree that has an unrelated branch checked out — would silently archive
-// a still-active planning container. Exit 3 lets `cp` log + continue without
-// blocking the push (per efficient-pr-shipping.mdc § cp step 3).
+// `{repo, number}` to `prs:` only if not already present. Idempotent so rule 20
+// § Commit and push cadence (step 4) can call it on every push without duplicating entries.
+// Refuses (exit 3) when the resolved plan is not a PR plan: sidecar prs[] feeds reconcile,
+// which auto-archives a plan when every entry is MERGED. Linking an unrelated merged PR onto
+// a Master / Phase / roadmap-topic plan — typical when upsert runs from a worktree whose
+// resolve target is a planning container with an unrelated branch — would silently archive
+// a still-active planning container. Exit 3 lets the cadence log + continue without blocking
+// the push (per efficient-pr-shipping.mdc § Commit and push cadence step 4).
 async function cmdUpsertPr(flags) {
   const slug = requireString(flags, 'slug');
   const repo = requireString(flags, 'repo');
@@ -527,8 +511,8 @@ async function cmdUpsertPr(flags) {
       `upsert-pr: plan "${slug}" has kind "${kind}", not a PR plan (mode #3 — body section "## 1. Single concern"). ` +
         `Sidecar prs[] is reconcile-tracked; linking ${repo}#${number} here risks auto-archiving a still-active container ` +
         `if that PR ever merges. Refusing the upsert. ` +
-        `Likely cause: \`cp\` ran inside a worktree whose owning plan is a Master / Phase plan with an unrelated branch checked out. ` +
-        `Fix: link the PR to the matching child PR plan instead, or run \`cp\` from that PR plan's worktree.`,
+        `Likely cause: commit-and-push upsert ran from a worktree whose resolve target is a Master / Phase plan with an unrelated branch checked out. ` +
+        `Fix: link the PR to the matching child PR plan instead, or run upsert from that PR plan's worktree.`,
       3,
     );
   }
@@ -643,7 +627,7 @@ function pathTargeted(candidate, target) {
 // ---------- subcommand: reconcile ----------
 
 // `reconcile [--dry-run] [--prune-worktrees]` — iterate every active plan
-// (Sedea `.sedea/operations/{joint|<operations-user-id>}/plans/` and roadmap subdirs),
+// (Sedea `.sedea/operations/{joint|<operationsUserId>}/plans/` and roadmap subdirs),
 // query `gh pr view` for every PR listed in the sidecar, and:
 //   all MERGED   → set frontmatter `archived: true` on <slug>.plan.md,
 //                  and append a bullet under `## Child plans` in the parent plan body.
@@ -1182,7 +1166,7 @@ async function setPlanArchivedFlag(planPath, value, { dryRun } = {}) {
 // ---------- subcommand: archive ----------
 
 // `archive --slug <slug> --signal "<text>" [--parent <target>|--clear] [--dry-run]`
-// — mechanical archive for one plan. Used by the `pl` skill after the user
+// — mechanical archive for one plan. Used by the plan-reconcile skill after the user
 // picks candidates via AskQuestion, and by the Plan Board drag-drop
 // controller when archiving on drop. One slug per call (agent loops) so
 // each failure is isolated and logs are readable. Idempotent: archiving an
@@ -1411,7 +1395,7 @@ async function removeChildBullet(parent, childSlug, dryRun) {
 // Idempotent: re-runs after a successful run report `alreadyMigrated`
 // for every plan and write nothing. Intended for one-off migration on
 // `.sedea/operations/.../plans/` trees. Output: JSON summary on stdout so the
-// `pl`-style caller can inspect `.conflicts.length` for red-flag audit.
+// plan-reconcile-style caller can inspect `.conflicts.length` for red-flag audit.
 async function cmdMigrateParentToSidecar(flags) {
   const dryRun = flags['dry-run'] === true;
   const plans = await listAllPlans();
@@ -1765,12 +1749,11 @@ Global:
   --operations-user-id <id>
                        Per-user plan tree: .sedea/operations/<id>/plans/
                        (<id> is an opaque operations user id.) Union with
-                       .sedea/operations/joint/plans/. Optional when
-                       .sedea/local/operations-user-id exists or git config
-                       --local sedea.operationsUserId is set. If omitted and
-                       unset, only joint plans are searched (stderr warns
-                       once). Same slug in user + joint: user tree wins
-                       (listed first).
+                       .sedea/operations/joint/plans/. Required for the
+                       per-user tree when not using Mission Control host
+                       context. If omitted, only joint plans are searched
+                       (stderr warns once). Same slug in user + joint: user
+                       tree wins (listed first).
 
 Subcommands:
   resolve --cwd <path>

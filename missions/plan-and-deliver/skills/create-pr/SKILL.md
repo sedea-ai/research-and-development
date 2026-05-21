@@ -3,7 +3,6 @@ name: create-pr
 description: >-
   PR-creating agent: create or prepare a GitHub PR from a reviewed implementation
   branch using coding-session context, PR plan lineage, and pre-pr-review result.
-timeoutMs: 900000
 inputs:
   targetPlanPath:
     type: string
@@ -60,11 +59,21 @@ inputs:
     description: When true, wait for merge status and spawn deploy-walk after the PR is merged.
     required: false
     default: true
+warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Create PR
 
 This skill is run by **a PR-creating agent** spawned by **`coding-session`** after **`pre-pr-review`** returns `recommendation: "go"`.
+
+## Relationship to rule 20 (`gh pr create`)
+
+**`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** forbids **`gh pr create`** on coding, planning, and review lanes. **This skill is the exception:** **a PR-creating agent** on this lane **may** call `gh pr create` (or equivalent) when gates pass and push/creation is authorized. Other agents must spawn this skill instead of opening a PR themselves.
 
 ## Gate
 
@@ -76,7 +85,7 @@ Before creating or preparing a PR:
 4. Verify the committed diff exists: `git diff <baseRef>...HEAD` is non-empty.
 5. Verify the branch is pushed or push it only if the developer / upstream coding-session explicitly authorized push. If push is not authorized, emit a copy-pasteable PR-creating prompt and return `partial` with `remainingTasks`.
 
-Do not run `gh pr create` unless this skill's invocation context explicitly authorizes the PR-creating agent to create the PR. If not authorized, produce the prompt below and report `continuationStatus: "active"`.
+When authorized to create the PR on this lane, you **may** run `gh pr create`. If creation is not authorized, produce the PR prompt below (per rule 20) and report `continuationStatus: "active"` — do not call `gh pr create`.
 
 ## PR prompt fallback
 
@@ -85,7 +94,7 @@ When direct PR creation is not authorized, generate a prompt for **a PR-creating
 1. **Current branch**: `git branch --show-current`
 2. **Base branch**: `git log --oneline --decorate --all` or `git merge-base` to determine the branch this was forked from. Use the most recent parent branch that has a remote tracking branch (e.g. `main`, `phase-1/...`). If ambiguous, ask the user.
 3. **Repo URL**: parse from `git remote get-url origin` (e.g. `https://github.com/sedea-ai/app`).
-4. **Changes summary**: review `git diff <base-branch>...HEAD` and the conversation context. You have better context than **a PR-creating agent** — the description starter must be **reviewer-complete** (see `.sedea/centers/sedea-centers--development/rules/efficient-pr-shipping.mdc` → **Comprehensive PR descriptions** → **a PR-creating agent prompt and proportional context**). Scale length to PR size; small PRs stay short but still cover **why this slice**, **not in this PR**, **plan lineage** when work came from a plan, and **how to verify** (tests / observable behaviour), plus the usual what/why and behavioural deltas.
+4. **Changes summary**: review `git diff <base-branch>...HEAD` and the conversation context. You have better context than **a PR-creating agent** — the description starter must be **reviewer-complete** (see `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc` → **Comprehensive PR descriptions** → **a PR-creating agent prompt and proportional context**). Scale length to PR size; small PRs stay short but still cover **why this slice**, **not in this PR**, **plan lineage** when work came from a plan, and **how to verify** (tests / observable behaviour), plus the usual what/why and behavioural deltas.
 
 Then print the following inside a fenced code block (so the user can copy it):
 
@@ -157,6 +166,8 @@ If PR status is `closed` without merge, return `partial` or `abandoned` accordin
 
 ### Spawn deploy-walk after merge
 
+Entry paths for **`deploy-walk`**: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Ship chain* → **`deploy-walk` entry points*. This subsection is the **`create-pr`** chain path (spawned child after merge).
+
 When `autoDeployAfterMerge` is not `false` and PR status is `merged`, verify deploy-walk prerequisites, then ask the developer with **AskQuestion** before spawning deploy verification. Required options:
 
 1. **Start deploy verification now**
@@ -166,7 +177,7 @@ When `autoDeployAfterMerge` is not `false` and PR status is `merged`, verify dep
 
 Only when the developer chooses **Start deploy verification now**, emit exactly one child-spawn request for:
 
-`.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/deploy-walk/SKILL.md`
+`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/deploy-walk/SKILL.md`
 
 Inputs must include:
 
@@ -212,7 +223,7 @@ If all prerequisites are ready, ask the developer with **AskQuestion** before sp
 
 Only when the developer chooses **Run plan-reconcile now**, emit exactly one child-spawn request for:
 
-`.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md`
+`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md`
 
 Inputs must include:
 
@@ -253,3 +264,28 @@ Extend spawned result outputs with:
 - `outputs.archivedSlugs`
 - `outputs.flaggedSlugs`
 - `outputs.postponedSlugs`
+
+## Squad Leader bubble-up (detached lanes)
+
+Runs on a **detached** PR-creator lane. After PR open (or a blocked handoff), nudge the developer to post **Ship recap — plan and deliver** on the leader dispatch (**`../plan.mdc`** §8).
+
+| Outcome | `shipPhase` | Key `outputs` for recap |
+|---------|-------------|-------------------------|
+| PR created | `pr-open` | `targetPlanPath`, `prUrl`, `prNumber` |
+| Blocked / deferred | `implementing` or `blocked` | `targetPlanPath`, `remainingTasks`, `blockedReason` |
+
+## Completion (spawned)
+
+Required `outputs` per **## Result contract** and any **Extend spawned result outputs** bullets above (including after nested **`deploy-walk`** or **`plan-reconcile`** results are merged). Re-emit an **updated** terminal result after user-requested follow-up on this lane (same `correlationId`).
+
+### Host protocol line (required)
+
+Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status`, `summary`, `outputs`, `errors` (use `[]` when none). Populate `outputs` from the sections above. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
+
+Stop after this line.
+
+## Completion (inline)
+
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+Normally spawned from **`coding-session`**. If run inline, use the same `outputs` semantics as **## Result contract** and **`## Completion (spawned)`** in prose only.

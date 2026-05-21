@@ -1,5 +1,7 @@
 ---
-description: Plan and deliver — PRD through ship via the Sedea plan tree; protocol in progress.
+description: >-
+  Plan and deliver — PRD through ship via the Sedea plan tree; Squad Leader entry
+  protocol §§1–8 plus squad-operations spawn map (planning §§1–7, ship oversight §8).
 alwaysApply: false
 ---
 
@@ -7,58 +9,26 @@ alwaysApply: false
 
 ## Objectives
 
+The outcomes below span the **full cadence** (PRD → plans → implementation → PR → deploy → reconcile). **Not every step runs on the Squad Leader lane** for a `plan and deliver` dispatch — see **Squad operations** for who spawns whom. Skill procedures live under `missions/plan-and-deliver/skills/`; branch names and the strategic product loop are in `.sedea/centers/research-and-development/docs/development-process.md` (**Protocol branches** + **Cadence**). **This `plan.mdc`** remains canonical for dispatch protocol §§1–8, spawn ownership, and §8 ship ledger.
+
+### Cadence reference (all branches — not Squad Leader protocol steps)
+
 ```mermaid
-flowchart TB
-  classDef skill fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
-  classDef approval fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:2px
-  classDef terminal fill:#dcfce7,stroke:#16a34a,color:#14532d
+flowchart LR
+  classDef branch fill:#f0fdf4,stroke:#16a34a,color:#14532d
 
-  START[PRD source] --> LINK[Linked PRD]
-  START --> AH[ad-hoc-prd]
-  AH:::skill --> A1{{Approve PRD}}
-  A1:::approval --> MP[master-plan]
-  LINK --> MP
-
-  subgraph planning["Planning + decomposition"]
-    MP:::skill --> A2{{Approve route}}
-    A2:::approval --> DP[delivery-phases]
-    A2 --> PB[pr-breakdown]
-    DP:::skill --> A3{{Approve list}}
-    PB:::skill --> A4{{Approve list}}
-    A3:::approval --> NP1[new-plan phase child]
-    A4:::approval --> NP2[new-plan PR child]
-    NP1:::skill --> A5{{Approve populate}}
-    NP2:::skill --> A6{{Approve populate}}
-    A5:::approval --> PP[phase-plan]
-    A6:::approval --> PRP[pr-plan]
-    PP:::skill --> A7{{Approve next route}}
-    A7:::approval --> DP
-    A7 --> PB
-  end
-
-  subgraph delivery["Implementation + PR"]
-    PRP:::skill --> A8{{Approve implementation}}
-    A8:::approval --> CS[coding-session]
-    CS:::skill --> A9{{Approve cut point}}
-    A9:::approval --> PPR[pre-pr-review]
-    PPR:::skill --> A10{{Approve fixes or PR creation}}
-    A10:::approval --> CS
-    A10 --> CPR[create-pr]
-    CPR:::skill --> REV[pr-review inline]
-    REV:::skill --> A11{{Approve PR feedback actions}}
-    A11:::approval --> CS
-  end
-
-  subgraph ship["Merge + deploy + reconcile"]
-    CPR --> A12{{Approve deploy verification}}
-    A12:::approval --> DW[deploy-walk]
-    DW:::skill --> A13{{Approve deploy state changes}}
-    A13:::approval --> REC_PRE[plan-reconcile preview]
-    REC_PRE:::skill --> A14{{Approve archive mutations}}
-    A14:::approval --> REC[plan-reconcile complete]
-    class REC terminal
-  end
+  PRD[PRD] --> MPB[master-plan]:::branch
+  MPB --> DEC[delivery-phases or pr-breakdown]:::branch
+  DEC --> CHILD[new-plan → phase-plan or pr-plan]:::branch
+  CHILD --> CSB[coding-session]:::branch
+  CSB --> PPRB[pre-pr-review]:::branch
+  PPRB --> CPRB[create-pr]:::branch
+  CPRB --> REVB[pr-review]:::branch
+  REVB --> DWB[deploy-walk]:::branch
+  DWB --> RECB[plan-reconcile]:::branch
 ```
+
+Approval gates and developer choices happen inside each skill; this line is the **happy-path order** only.
 
 1. **Feature planning contracts** — From PRD or scope, produce reviewable Master / Phase / PR plan bodies per Sedea development-process templates (`master-plan`, `phase-plan`, `pr-plan`).
 
@@ -76,87 +46,160 @@ flowchart TB
 
 8. **Plan tree integrity** — Scaffold and link `.plan.md` + `.state.yaml` under `.sedea/operations/` (`new-plan`, `plan-reconcile`); valid parents, slugs, Mission Control metadata (`mission.yaml` when listed).
 
+## Squad operations (`plan and deliver` dispatch)
+
+This diagram is the **dispatch ownership map**. It answers: which agent on this mission spawns whom, who waits, and what is **not** started from the Squad Leader lane. Written protocol steps **§§1–8** below: **§§1–7** are yellow **Squad Leader** planning steps; **§8** is leader-lane **ship oversight** (detached branches still run on other lanes).
+
+**Roles**
+
+| Role | Lane | Spawns | Does not |
+|------|------|--------|----------|
+| **Squad Leader** | Mission dispatch leader | `ad-hoc-prd` (§3), `master-plan` (§5) | Route menu for §6 decomposition; `delivery-phases`, `coding-session`, etc. |
+| **Master Plan agent** | Child lane after §5 | `delivery-phases`, `pr-breakdown` via **AskQuestion** + `AGENT_RUN_REQUEST_V1`; drafts §7 inline | Replace Squad Leader ledger; resolve dispatch |
+| **Downstream skill agents** | Further child lanes | Per skill: e.g. `new-plan` → `phase-plan` / `pr-plan`; `coding-session` → `pre-pr-review` | `MC_DISPATCH_RESOLVED_V1` |
+| **Detached branches** | Often separate session / phrase | Invoked via `development-process.md` branch names | Automatic Squad Leader spawn from §§1–5 |
+
+**Host rules:** each `AGENT_RUN_REQUEST_V1` opens a child lane; parent waits for `AGENT_RESULT_RESPONSE_V1` when the skill says so. Squad Leader **§7** tracks planning `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`; **§8** tracks ship rows per PR plan — it does not re-run detached child skills from the leader lane.
+
+```mermaid
+flowchart TB
+  classDef leader fill:#fef3c7,stroke:#d97706,color:#78350f
+  classDef child fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+  classDef wait fill:#f1f5f9,stroke:#64748b,color:#0f172a
+  classDef detached fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
+
+  subgraph sl["Squad Leader — mission protocol §§1–7"]
+    CMD(["plan and deliver"]):::leader
+    CMD --> S1["§1 PRD source"]:::leader
+    S1 --> S2["§2 Validate PRD"]:::leader
+    S1 --> S3["§3 spawn ad-hoc-prd"]:::leader
+    S3 --> S3W["wait AGENT_RESULT"]:::wait
+    S3W --> S4["§4 Planning seed"]:::leader
+    S2 --> S4
+    S4 --> S5["§5 spawn master-plan"]:::leader
+    S5 --> S5W["wait AGENT_RESULT"]:::wait
+    S5W --> S6["§6 Acknowledge — no route menu"]:::leader
+    S6 --> S7["§7 Closure ledger"]:::leader
+    S7 --> RES["MC_DISPATCH_RESOLVED_V1"]:::leader
+  end
+
+  subgraph mpLane["Child lane — Master Plan agent"]
+    MP["master-plan skill"]:::child
+    MP --> M6["AskQuestion → spawn dp or pb"]:::child
+    MP --> M7["AskQuestion → Caveats inline"]:::child
+  end
+
+  S5 -.->|spawn| MP
+
+  subgraph planTree["Spawn tree — planning child lanes"]
+    DP["delivery-phases"]:::child
+    PB["pr-breakdown"]:::child
+    NP["new-plan indexed"]:::child
+    POP["phase-plan or pr-plan"]:::child
+    M6 --> DP
+    M6 --> PB
+    DP --> NP
+    PB --> NP
+    NP --> POP
+    POP -.->|may spawn| DP
+    POP -.->|may spawn| PB
+  end
+
+  subgraph impl["Detached — protocol branches not SL spawns"]
+    NOTE["developer phrase / snapshot / other lane"]:::detached
+    CS["coding-session"]:::detached
+    PPR["pre-pr-review"]:::detached
+    CPR["create-pr"]:::detached
+    PRV["pr-review"]:::detached
+    DW["deploy-walk"]:::detached
+    REC["plan-reconcile"]:::detached
+    NOTE --> CS
+    POP -.->|pr-plan approves handoff| CS
+    CS --> PPR
+    PPR --> CPR
+    CPR --> PRV
+    PRV --> DW
+    DW --> REC
+  end
+
+  S7 -.->|ledger tracks| planTree
+  S7 -.->|ledger tracks when reported| impl
+```
+
+**Legend:** yellow = Squad Leader executable steps; blue = spawned child lanes and their spawns; purple = cadence branches outside §§1–5 (see **Cadence reference** and `development-process.md`).
+
 ## Protocol
 
-Session command phrases are declared in `mission.yaml`. This section defines routing and execution for each phrase.
+Session command phrases are declared in `mission.yaml`. **§§1–7** define Squad Leader routing for **planning** on **`plan and deliver`**. **§8** defines Squad Leader **ship cadence oversight** and **dispatch resolution gates** while implementation/ship skills still execute as **detached** branches (see **Squad operations** — the Squad Leader does **not** spawn **`coding-session`**, **`pre-pr-review`**, **`create-pr`**, etc. from §§1–7).
 
 ```mermaid
 flowchart TD
-  classDef skill fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
-  classDef approval fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:2px
+  classDef leader fill:#fef3c7,stroke:#d97706,color:#78350f
   classDef wait fill:#f1f5f9,stroke:#64748b,color:#0f172a
-  classDef terminal fill:#dcfce7,stroke:#16a34a,color:#14532d
+  classDef spawn fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
 
-  CMD[Match create new plan] --> ASK[AskQuestion: PRD source]
-  ASK:::approval --> LINK["§2 Validate linked PRD"]
-  ASK --> AH["§3 ad-hoc-prd"]
-  AH:::skill --> AH_APPROVE{{Developer approves Ad-Hoc PRD?}}
-  AH_APPROVE:::approval --> SEED["§4 Collect planning seed"]
-  LINK --> SEED
-
-  SEED --> MP["§5 master-plan"]
-  MP:::skill --> MP_WAIT[Wait for master-plan result]
-  MP_WAIT:::wait --> MP_REVIEW{{Developer reviews §§1-5 and route choice}}
-  MP_REVIEW:::approval --> ROUTE{§6 route}
-
-  ROUTE --> DP["delivery-phases"]
-  ROUTE --> PB["pr-breakdown"]
-  ROUTE --> CAVEATS["master-plan drafts §7 Caveats"]
-  DP:::skill --> DP_APPROVE{{Approve phase list?}}
-  PB:::skill --> PB_APPROVE{{Approve PR breakdown?}}
-  DP_APPROVE:::approval --> NP_PHASE["new-plan indexed child phase"]
-  PB_APPROVE:::approval --> NP_PR["new-plan indexed child PR"]
-
-  NP_PHASE:::skill --> NP_PHASE_APPROVE{{Approve child stub and populate?}}
-  NP_PR:::skill --> NP_PR_APPROVE{{Approve child stub and populate?}}
-  NP_PHASE_APPROVE:::approval --> PHASE["phase-plan"]
-  NP_PR_APPROVE:::approval --> PRPLAN["pr-plan"]
-
-  PHASE:::skill --> PHASE_ROUTE{{Approve phase plan and next route?}}
-  PHASE_ROUTE:::approval --> ROUTE
-  PRPLAN:::skill --> IMPL_APPROVE{{Approve PR plan for implementation?}}
-
-  IMPL_APPROVE:::approval --> CS_START{{Approve start implementation?}}
-  CS_START:::approval --> CS["coding-session"]
-  CS:::skill --> WORKTREE[Worktree, sidecar session, workbench attach, coding prompt]
-  WORKTREE --> CUTPOINT{{Developer approves committed cut point?}}
-  CUTPOINT:::approval --> PPR["pre-pr-review"]
-  PPR:::skill --> PPR_RESULT{review result}
-  PPR_RESULT -->|no-go| FIX_APPROVE{{Approve fix scope?}}
-  FIX_APPROVE:::approval --> CS
-  PPR_RESULT -->|go| PR_APPROVE{{Approve follow-ups and PR creation?}}
-  PR_APPROVE:::approval --> CPR["create-pr"]
-
-  CPR:::skill --> PR_OPEN[PR URL and lifecycle tracking]
-  PR_OPEN --> PRR["pr-review inline in coding-session"]
-  PRR:::skill --> PRR_APPROVE{{Approve PR comment fixes or follow-ups?}}
-  PRR_APPROVE:::approval --> CS
-  PR_OPEN --> MERGE_WAIT[Wait/check PR approval and merge]
-  MERGE_WAIT:::wait --> DEPLOY_APPROVE{{Approve deploy verification?}}
-  DEPLOY_APPROVE:::approval --> DW["deploy-walk"]
-
-  DW:::skill --> DEP_BEFORE{{Approve deployed with unchecked before-deploy steps?}}
-  DEP_BEFORE:::approval --> DW
-  DW --> DEP_CLOSE{{Approve deploy checklist closure?}}
-  DEP_CLOSE:::approval --> DEP_DONE[Deploy status done and capstone todo done]
-  DEP_DONE:::terminal --> REC_APPROVE{{Approve plan-reconcile?}}
-  REC_APPROVE:::approval --> REC_PREVIEW["plan-reconcile dry-run preview"]
-  REC_PREVIEW:::skill --> REC_MUTATE{{Approve reconcile/archive mutations?}}
-  REC_MUTATE:::approval --> REC_DONE[Archive, follow-ups triage, ledger terminal]
-  REC_DONE:::terminal --> LEDGER["§7 Squad Leader closure ledger"]
-  LEDGER --> RESOLVE[Propose dispatch resolution]
+  CMD["Match plan and deliver"]:::leader
+  CMD --> ASK["§1 AskQuestion PRD source"]:::leader
+  ASK --> LINK["§2 Validate linked PRD"]:::leader
+  ASK --> AH["§3 spawn ad-hoc-prd"]:::spawn
+  AH --> AHW["wait child result"]:::wait
+  AHW --> APR["developer approves PRD"]:::leader
+  LINK --> SEED["§4 Collect planning seed"]:::leader
+  APR --> SEED
+  SEED --> MP["§5 spawn master-plan"]:::spawn
+  MP --> MPW["wait child result"]:::wait
+  MPW --> ACK["§6 Acknowledge status only"]:::leader
+  ACK --> LED["§7 Planning ledger"]:::leader
+  LED --> SHIP["§8 Ship ledger + resolution gates"]:::leader
+  SHIP --> DONE["Propose dispatch resolution"]:::leader
 ```
 
-- **§1 live** — PRD source gate
-- **Yellow diamonds** — developer approval gates; no state transition past the gate without approval
-- **Blue nodes** — skill execution points; child agents report ledger-shaped outputs upstream
-- **Gray nodes** — wait states where the owning lane must not infer completion from silence
+- **§§1–7** — Squad Leader **planning** steps on the leader lane (see prose subsections below).
+- **§8** — Squad Leader **ship oversight** on the leader lane; detached skills run elsewhere.
+- **Spawn nodes** — emit `AGENT_RUN_REQUEST_V1`; stop until `AGENT_RESULT_RESPONSE_V1`.
+- **§6** — **not** decomposition routing (that lives on the **Master Plan agent** lane — **AskQuestion** + spawn in `master-plan/SKILL.md` Step 7).
+- **§7** — register **planning** downstream lanes/plans from child `outputs`; do not infer completion from silence.
+- **§8** — register **ship** progress per PR plan; **do not** propose **`resolved`** dispatch while ship rows are open unless the developer explicitly closes planning-only (see §8).
+
+### Spawn, wait, and parent resume
+
+This subsection is the **Squad Leader** contract for §§3, 5, 6, and 7. Sedea host behavior is defined in **`.sedea/centers/sedea/rules/4_mission.mdc`** (spawn invocation, agent session closure). **Planning** child lanes use each skill’s **`## Completion (spawned)`**; **ship** lanes use the same terminal line with field lists in domain sections (see **`missions/plan-and-deliver/skills/README.md`** § Planning spawn, § Ship spawn, § Inline-only).
+
+**Host vs “wait.”** Mission Control does **not** block the parent turn while a child runs. **Wait** means: announce that you are waiting for a child result, emit **`AGENT_RUN_REQUEST_V1`**, then **stop** further protocol work on the leader lane until Mission Control delivers a silent UserSend that begins with **`Mission Control: agent-result-response delivered.`** Follow the response-protocol footer in that message before §6, §7, or another spawn.
+
+**§3 resume (Ad-Hoc PRD agent).** After the first `AGENT_RESULT_RESPONSE_V1` for §3:
+
+| Check | Action |
+|-------|--------|
+| `outputs.prdRef` present | Present to developer for approval (§3 procedure); do not treat success as approval |
+| `outputs.continuationStatus: terminal` | Continue to §4 after developer approval |
+| `status: partial` / missing `prdRef` | Stop; collect missing fields or retry per **`ad-hoc-prd`** **`## Completion (spawned)`** |
+
+**§5 resume (Master Plan agent).** Before §6, validate the child result against **`master-plan`** **`## Completion (spawned)`**:
+
+| Required `outputs` | §6 / §7 use |
+|--------------------|-------------|
+| `masterPlanPath`, `masterPlanSlug` | Ledger seed; status ack |
+| `complexityBand`, `complexityScore` | High-complexity messaging only on leader lane |
+| `continuationOwner`, `continuationStatus` | §6: if `continuationOwner` is `master-plan-agent` and `continuationStatus` is `active`, ack only — no route menu on leader |
+| `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks` | §7 ledger initialization and updates |
+
+**§6 (acknowledge only).** One status line on the leader lane. Do **not** re-run Master Plan routing, §6 decomposition **AskQuestion**, or child spawns from the Squad Leader.
+
+**§7 (ledger).** On every later `agent-result-response delivered` that reports a planning child:
+
+1. Match by `correlationId`, then `outputs.targetPlanPath` / slug / ledger fields per the skill **`## Completion (spawned)`**.
+2. Merge `activeLanes`, `spawnedPlans`, `openLedgerEntries`, `remainingTasks` from the child result.
+3. Acknowledge without presenting planning route choices on the leader lane.
+4. After §7 planning entries are terminal, continue **§8** before proposing dispatch resolution (§7 alone is **not** sufficient for **`resolved`** on a full cadence dispatch).
+
+**Nested spawns.** The **Master Plan agent** (and decomposition agents) may emit further **`AGENT_RUN_REQUEST_V1`** lines on child lanes. The Squad Leader does **not** duplicate those spawns; it only consumes **terminal or updated** child results that bubble up through §7.
 
 ### 1. Establish PRD source
 
 - **Type:** Branching logic
-- **Intent:** Capture requirements input before any planning artifacts (per **Setup** in `.sedea/centers/sedea-centers--development/docs/development-process.md`: PRD is upstream to the Master Plan).
-- **Inputs:** Opening message matching `create new plan` (case-insensitive); optional remainder is context only.
+- **Intent:** Capture requirements input before any planning artifacts (per **Setup** in `.sedea/centers/research-and-development/docs/development-process.md`: PRD is upstream to the Master Plan).
+- **Inputs:** Opening message matching `plan and deliver` (case-insensitive); optional remainder is context only.
 - **Expected output:** A PRD link or `@path`, or a short ad-hoc task description for ad-hoc PRD authoring.
 - **Next-step resolution:**
   - Option **1** (PRD link or file) → continue to §2 to collect and validate the PRD artifact.
@@ -164,15 +207,15 @@ flowchart TD
 
 **Procedure**
 
-1. Match `create new plan` on the opening message (case-insensitive).
+1. Match `plan and deliver` on the opening message (case-insensitive).
 2. Use **AskQuestion** (per Sedea conduct — includes the standard *More details for option _* escape hatch) to ask where the PRD will come from:
    1. **PRD link or file** — Confluence, Google Docs, or `@path` in the workspace.
    2. **Ad-hoc task description** — Short blurb the agent uses to draft an ad-hoc PRD via **`ad-hoc-prd`** (see development-process **PRD** bullet and protocol branches table).
 3. Apply the branch for the confirmed choice (see **Next-step resolution** above). Do not engage downstream protocol branches from partial or ambiguous answers.
 
-**Out of scope for this step:** Indexed child / sub-plan spawns — those use a **dedicated protocol branch** and separate session command (not `create new plan`).
+**Out of scope for this step:** **`new-plan`** indexed-child expansion (and downstream **`phase-plan`** / **`pr-plan`**) — those use **AskQuestion** / numbered options and often a separate session command (not `plan and deliver` §1–2 PRD intake).
 
-**Referenced assets:** `.sedea/centers/sedea-centers--development/docs/development-process.md`; `skills/ad-hoc-prd/SKILL.md`; `skills/master-plan/SKILL.md`.
+**Referenced assets:** `.sedea/centers/research-and-development/docs/development-process.md`; `skills/ad-hoc-prd/SKILL.md`; `skills/master-plan/SKILL.md`.
 
 ### 2. Validate linked PRD
 
@@ -199,10 +242,10 @@ flowchart TD
 ### 3. Create ad-hoc PRD via agent
 
 - **Type:** Agent engagement and handover
-- **Intent:** Delegate ad-hoc PRD creation to a focused **Ad-Hoc PRD agent** so the **Squad Leader** can keep ownership of the main `create new plan` protocol.
-- **Inputs:** Confirmed ad-hoc task description from §1; optional title if already provided; Sedea always-apply rules; this mission plan; `.sedea/centers/sedea-centers--development/docs/development-process.md`; assigned skill `skills/ad-hoc-prd/SKILL.md`.
+- **Intent:** Delegate ad-hoc PRD creation to a focused **Ad-Hoc PRD agent** so the **Squad Leader** can keep ownership of the main `plan and deliver` protocol.
+- **Inputs:** Confirmed ad-hoc task description from §1; optional title if already provided; Sedea always-apply rules; this mission plan; `.sedea/centers/research-and-development/docs/development-process.md`; assigned skill `skills/ad-hoc-prd/SKILL.md`.
 - **Target agent role:** Ad-Hoc PRD agent
-- **Assigned skill:** `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md`
+- **Assigned skill:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md`
 - **Required rule context:** Sedea center always-apply rules, this mission plan, `development-process.md`, and the `ad-hoc-prd` skill.
 - **Expected output:** Child agent result with `status: success` or `partial`, `outputs.prdPath`, `outputs.prdRef`, `outputs.prdTitle`, `outputs.missingFields`, `outputs.complexityGuard`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner`, and `outputs.continuationStatus`.
 - **Next-step resolution:**
@@ -260,10 +303,10 @@ Related (optional):
 ### 5. Create Master Plan via agent
 
 - **Type:** Agent engagement and handover
-- **Intent:** Delegate Master Plan creation and §§1–5 drafting to a focused **Master Plan agent** while the **Squad Leader** keeps ownership of the overall `create new plan` protocol.
+- **Intent:** Delegate Master Plan creation and §§1–5 drafting to a focused **Master Plan agent** while the **Squad Leader** keeps ownership of the overall `plan and deliver` protocol.
 - **Inputs:** Complete seed from §4 (`Feature planning`, `PRD`, `Parent`, optional `Related`); Sedea always-apply rules; this mission plan; `development-process.md`; assigned skill `skills/master-plan/SKILL.md`.
 - **Target agent role:** Master Plan agent
-- **Assigned skill:** `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/master-plan/SKILL.md`
+- **Assigned skill:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-plan/SKILL.md`
 - **Required rule context:** Sedea center always-apply rules, this mission plan, `development-process.md`, planning target resolution rule, and the `master-plan` skill.
 - **Expected output:** Child agent result with `status: success` or `partial`, `outputs.masterPlanPath`, `outputs.masterPlanSlug`, `outputs.complexityBand`, `outputs.complexityScore`, `outputs.continuationOwner`, `outputs.continuationStatus`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.spawnedPlans`, `outputs.remainingTasks`, and any recommended next action.
 - **Next-step resolution:**
@@ -288,7 +331,7 @@ Related (optional):
 - **Expected output:** One status acknowledgement from the **Squad Leader**; no route menu.
 - **Next-step resolution:**
   - Master Plan agent reports active continuation ownership → acknowledge status and enter a resumable wait state.
-  - Master Plan agent reports terminal success and no remaining tasks → the **Squad Leader** may propose dispatch resolution.
+  - Master Plan agent reports terminal success and no remaining **planning** tasks → continue **§7** then **§8**; do **not** propose **`resolved`** dispatch from §6 alone (planning complete ≠ ship complete).
   - Master Plan agent reports failure or no usable plan path → stop and ask whether to retry, revise seed, switch PRD source, or abandon.
   - Downstream agent result arrives → resume only when the result requires mission-level action.
 
@@ -299,10 +342,10 @@ Related (optional):
 3. Do not ask the developer to choose Delivery phases, PR breakdown, or Caveats from the **Squad Leader** lane.
 4. Pause the **Squad Leader** in a resumable wait state for downstream notifications.
 
-### 7. Maintain closure ledger
+### 7. Maintain planning closure ledger
 
 - **Type:** Finish/stop logic
-- **Intent:** Track mission-level completion while downstream planning agents own the actual plan-building continuation.
+- **Intent:** Track **planning-phase** completion while downstream planning agents own plan-building continuation. Ship-phase tracking is **§8**.
 - **Inputs:** Master Plan agent result; every later downstream child result; plan path and child plan paths reported by downstream agents; continuation status; active lane identifiers; remaining task lists.
 - **Expected output:** Updated closure ledger, status acknowledgement, continued wait, or dispatch resolution proposal.
 - **Next-step resolution:**
@@ -310,20 +353,152 @@ Related (optional):
   - Downstream child result reports active continuation → acknowledge status and keep that lane open.
   - Downstream child result reports terminal completion for a registered phase or PR plan → mark that ledger entry closed.
   - Any child result reports failure, aborted, or abandoned → mark the ledger blocked and ask the developer whether to retry, revise scope, accept partial resolution, or abandon.
-  - Ledger has no open or blocked entries, every active lane is terminal, and no remaining tasks are reported → propose dispatch resolution.
+  - Planning ledger has no open or blocked entries and every planning lane is terminal → continue **§8** (do **not** propose **`resolved`** here if ship work remains).
 
-**Closure ledger rules**
+**Planning ledger rules**
 
-- The **Squad Leader** owns mission-level closure accounting; downstream agents own planning choices and child spawning.
-- Every phase or PR plan spawned from the Master Plan tree must have an explicit ledger entry.
-- The **Squad Leader** must receive terminal closure for every open ledger entry before proposing resolved dispatch.
+- The **Squad Leader** owns **planning** closure accounting; downstream agents own planning choices and child spawning.
+- Every phase or PR plan spawned from the Master Plan tree must have an explicit **planning** ledger entry.
+- The **Squad Leader** must receive terminal closure for every open **planning** entry before treating planning as complete.
 - A plan entry may close as completed, deferred, abandoned, or out of scope, but the closing status must be explicit.
 - Silence, missing metadata, or an unreported lane is not completion.
+- When a PR plan child reports `readyForImplementation` in planning `outputs`, record planning-handoff readiness on the **planning** ledger only. **§8 ship rows** open from **`coding-session`** (see §8), not from **`pr-plan`** child results.
+- **`readyForImplementation: true` does not advance §8 `phase` beyond `not-started`** — planning-ready ≠ worktree-ready. Do not set `phase` to `worktree` or later until **`plan-ws-completeness.mjs`** passes (or the developer overrides in **`coding-session`**) **and** layer-2 `developerApprovedImplementation: true` is reported (see §8 *Register or refresh*).
 
 **Procedure**
 
-1. Initialize the ledger when the Master Plan agent reports a plan path and continuation ownership.
+1. Initialize the planning ledger when the Master Plan agent reports a plan path and continuation ownership.
 2. Register each downstream phase plan, PR plan, or agent lane when a child reports it was spawned or made active.
-3. On each downstream result, update the matching ledger entry by correlation id, plan path, or reported slug.
+3. On each downstream result, update the matching planning entry by correlation id, plan path, or reported slug.
 4. Acknowledge updates without presenting planning route choices from the **Squad Leader** lane.
-5. When the ledger is empty of open/blocked work and all reported lanes are terminal, propose dispatch resolution.
+5. When the planning ledger has no open/blocked work and all planning lanes are terminal, continue **§8**.
+
+### 8. Ship cadence ledger and dispatch resolution gates
+
+- **Type:** Finish/stop logic
+- **Intent:** Close the gap between **objectives** (implementation → PR → deploy → reconcile) and **Squad Leader** protocol. The Squad Leader **tracks** detached ship work and **gates** `MC_DISPATCH_RESOLVED_V1`; it does **not** spawn ship skills from this section.
+- **Inputs:** Planning ledger state from §7; developer messages on the leader lane; **`coding-session`** child `outputs` (especially `developerApprovedImplementation`, `targetPlanPath` after the worktree-open gate); explicit developer status when ship runs on other lanes.
+- **Expected output:** Updated **ship ledger** per PR plan; status acknowledgement; **`MC_DISPATCH_RESOLVED_V1`** only when gates below allow.
+- **Next-step resolution:**
+  - No ship row yet, planning complete → **AskQuestion** once: close dispatch **planning-only** (`partial` / `resolved` with summary) vs ship continues on detached lanes (keep dispatch **active**).
+  - Ship row open → keep dispatch **active**; acknowledge phase updates; do **not** propose **`resolved`**.
+  - All ship rows **closed** (or explicitly deferred/abandoned per row) → propose dispatch resolution per **`.sedea/centers/sedea/rules/4_mission.mdc`**.
+  - Developer requests wrap-up with open ship → propose **`partial`** or **`abandoned`** with explicit remaining work in the JSON `summary`.
+
+**Detached branches (execution stays off the leader lane)**
+
+| Order | Protocol branch | Typical invoker | Skill |
+|------:|-----------------|-----------------|-------|
+| 1 | `coding-session` | Developer phrase, snapshot, or post–**pr-plan** handoff | `skills/coding-session/SKILL.md` |
+| 2 | `pre-pr-review` | **coding-session** (spawn) after committed cut point | `skills/pre-pr-review/SKILL.md` |
+| 3 | `create-pr` | **coding-session** after pre-PR **go** | `skills/create-pr/SKILL.md` |
+| 4 | `pr-review` | **coding-session** (inline) after PR exists | `skills/pr-review/SKILL.md` |
+| 5 | `deploy-walk` | Developer phrase, **`create-pr`** after merge (**AskQuestion**), or detached dispatch | `skills/deploy-walk/SKILL.md` — **development-process.md** § *deploy-walk entry points* |
+| 6 | `plan-reconcile` | Developer / **`create-pr`** after deploy done (not auto from deploy-walk) | `skills/plan-reconcile/SKILL.md` |
+
+**`deploy-walk` entry points:** developer phrase on a detached lane; **`create-pr`** spawns after merge when the developer chooses **Start deploy verification now**; or direct skill dispatch with plan inputs. Finishing deploy-walk does **not** run **`plan-reconcile`**.
+
+Procedures, gates, and spawn contracts live in those skills and in **`.sedea/centers/research-and-development/docs/development-process.md`** (**Protocol branches** table and § *Ship chain*). The Squad Leader **does not** emit `AGENT_RUN_REQUEST_V1` for this table unless a future protocol step explicitly adds it.
+
+**Ship ledger row (per PR plan)**
+
+Maintain one row per in-scope **PR plan** path under `.sedea/operations/.../plans/`:
+
+| Field | Meaning |
+|-------|---------|
+| `targetPlanSlug` / `targetPlanPath` | Anchor PR plan |
+| `phase` | Latest known phase (see enum below) |
+| `status` | `open` \| `closed` \| `deferred` \| `abandoned` \| `blocked` |
+| `lastReportedBy` | `child-output` \| `developer-message` \| `inferred` (use sparingly) |
+| `remainingTasks` | Short list copied from skill outputs or developer statement |
+
+**Phase enum (happy-path order)** — update when the developer or a bubbled child result reports progress; do not skip backward without explicit correction:
+
+`not-started` → `worktree` → `implementing` → `pre-pr-review` → `pr-open` → `pr-review` → `deploy-walk` → `reconcile` → `done`
+
+**Ship child `outputs` hints (when `AGENT_RESULT_RESPONSE_V1` bubbles up)** — see **`skills/README.md`** § Ship spawn. Typical mappings:
+
+| Child skill | Advance `phase` when `outputs` include |
+|-------------|----------------------------------------|
+| `coding-session` | `developerApprovedImplementation: true` (after worktree-open gate in that skill) + `targetPlanPath` → at least `implementing`; worktree ready → `worktree` |
+| `pre-pr-review` | `recommendation: go` (or `no-go` + blockers → `blocked`) → `pre-pr-review` |
+| `create-pr` | `prUrl` / `prNumber` → `pr-open` |
+| `pr-review` (inline in **coding-session**) | `prReviewStatus` terminal + `githubReconciliationStatus` when required → `pr-review` |
+| `deploy-walk` | `deployStatus: done` and `deployTodoStatus: done` → `deploy-walk` (then `done` when reconcile complete) |
+| `plan-reconcile` | terminal reconcile with target archived → `reconcile` or `done` |
+
+**`readyForImplementation` vs worktree completeness:** Layer 1 (`readyForImplementation` from **`pr-plan`**) may be true while §§5–8 still contain `_TBD_`. **`plan-ws-completeness.mjs`** may exit **`INCOMPLETE`** until those sections are filled or the developer overrides in **`coding-session`**. When registering or refreshing a §8 row from planning signals alone, keep `phase: not-started` — do **not** advance to `worktree` or later until completeness passes or is overridden **and** `developerApprovedImplementation: true` is reported.
+
+**Register or refresh a ship row when any of:**
+
+1. **`coding-session`** child `outputs` include `developerApprovedImplementation: true` and `targetPlanPath` (layer 2 worktree-open gate only — not from **`pr-plan`** `readyForImplementation`).
+2. The developer on the **leader lane** names a PR plan and starts **`coding-session`** (or reports worktree/implementation started).
+3. The developer reports a milestone on the leader lane (e.g. “PR #123 open”, “deploy walk done”, “merged and reconciled”) — set `lastReportedBy: developer-message`.
+
+**Leader-lane ship recap (minimal bubble-up)**
+
+Ship skills usually run on **detached** lanes; the Squad Leader often receives **no** child `AGENT_RESULT_RESPONSE_V1`. Progress reaches §8 via **`lastReportedBy: developer-message`** (preferred) or **`child-output`** when a parent lane forwards results.
+
+**`pr-review`** runs **inline** on the active **`coding-session`** lane (still often detached from the leader). After PR comment triage, post **Ship recap** on the leader dispatch with `shipPhase: pr-review` and fields from **`coding-session`** / **`pr-review`** (`prReviewStatus`, `githubReconciliationStatus`) — see **`skills/pr-review/SKILL.md`** § *Leader §8 recap* and **`coding-session`** § *Squad Leader bubble-up*.
+
+When the developer returns to the **plan and deliver** leader dispatch and any ship row is `open` or `blocked`, collect a **minimal recap** per PR plan (use **AskQuestion** once if they give only vague chat). Do **not** advance `phase` from **`inferred`** unless unavoidable — ask for the fields below.
+
+| Field | Required | Purpose |
+|-------|----------|---------|
+| `targetPlanPath` | yes | Anchor `.sedea/operations/…/plans/<slug>.plan.md` |
+| `shipPhase` | yes | Latest value from the phase enum |
+| `rowStatus` | yes | `open` while work continues; `closed` when `shipPhase: done`; `blocked` / `deferred` / `abandoned` when stated |
+| `remainingTasks` | when not `done` | One short line (or copy from skill `outputs.remainingTasks`) |
+| `prUrl` / `prNumber` | when phase ≥ `pr-open` | From **create-pr** or GitHub |
+| `blockedReason` | when `rowStatus: blocked` | e.g. pre-PR no-go, deploy gate, reconcile failure |
+
+**Natural-language → `shipPhase` (examples)**
+
+| Developer milestone (paraphrase OK) | Set `phase` |
+|-------------------------------------|-------------|
+| Worktree / session prompt ready | `worktree` |
+| Coding in progress on worktree | `implementing` |
+| Pre-PR review finished (go) | `pre-pr-review` |
+| PR opened (URL or number) | `pr-open` |
+| Open PR comments triaged / reconciliation done | `pr-review` |
+| Deploy checklist walked / capstone done | `deploy-walk` |
+| Merged + reconcile / plan archived | `reconcile` or `done` |
+| Nothing left on this PR | `done`, `rowStatus: closed` |
+
+**Copy-paste template** (developer or detached-lane agent may emit verbatim on the leader dispatch):
+
+```text
+Ship recap — plan and deliver
+targetPlanPath: <path to .plan.md>
+shipPhase: <not-started | worktree | implementing | pre-pr-review | pr-open | pr-review | deploy-walk | reconcile | done>
+rowStatus: <open | closed | blocked | deferred | abandoned>
+remainingTasks: <none | short list>
+prUrl: <optional>
+prNumber: <optional>
+blockedReason: <optional>
+```
+
+Detached ship skills end with a nudge to post this recap when the **plan and deliver** dispatch is still active — see each skill § *Squad Leader bubble-up* and **`skills/README.md`** § *Leader-lane ship recap*.
+
+Do **not** treat silence on detached lanes as ship complete.
+
+**Dispatch resolution gates (Squad Leader only)**
+
+| Propose | When |
+|---------|------|
+| **`resolved`** | Planning ledger complete per §7 **and** every ship row is `closed` with `phase: done` (or legitimately empty ship ledger **and** developer chose planning-only close in AskQuestion). |
+| **`partial`** | Useful planning or ship work landed, but identifiable follow-up remains (open PR, deploy, reconcile, or planning debt). |
+| **`abandoned`** / **`aborted`** | Developer stops or execution cannot continue; say so in `summary`. |
+
+**Never** propose **`resolved`** when:
+
+- Any ship row is `open` or `blocked` and the developer has not explicitly chosen **planning-only** dispatch closure.
+- Only the **planning** ledger is empty — objectives 4–7 in this mission plan still imply ship unless the developer opted out via §8 AskQuestion.
+
+**Procedure**
+
+1. After §7 reports planning complete, scan for PR plans with implementation handoff signals; open a ship row for each (or confirm none — then run AskQuestion for planning-only vs active ship).
+2. On each leader-lane turn that touches ship, update rows before other protocol work — parse **leader-lane ship recap** blocks or child `outputs` per the tables above.
+3. When recap is missing for an `open` row, ask once using the template fields (or offer **AskQuestion**: paste recap vs no ship progress yet).
+4. When the developer signals done on **this dispatch**, re-check all rows against the gates table; choose `resolved` / `partial` / `abandoned` accordingly.
+5. Put the recap in `MC_DISPATCH_RESOLVED_V1` **`summary`**; list open PR plans or deferred ship work when status is **`partial`**.

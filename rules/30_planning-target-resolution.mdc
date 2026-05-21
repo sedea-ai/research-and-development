@@ -4,22 +4,33 @@ description: >-
   (new-plan, phase-plan, pr-plan, delivery-phases, pr-breakdown, plan-reconcile). Resolution
   is from session and chat context — not from IDE focused-file list. Covers resolution order,
   snapshot emission, and "Where we are now in the plan tree" table format for AskQuestion /
-  numbered choices (no developer-typed workflow shortcuts).
-alwaysApply: false
+  numbered choices for planning moves (§ *Planning vs ship cadence*). **`master-plan`** handoff uses the same contract (Step 7 — AskQuestion + AGENT_RUN_REQUEST_V1).
+alwaysApply: true
 ---
 
 # Planning target resolution
 
 Planning protocol branches act on a specific `.plan.md` under the **`.sedea/operations/`** union. The target is resolved from **session input, chat context, and structured choices** — not from the IDE focused-file list alone (IDE state can drift from planning intent).
 
+## Planning vs ship cadence
+
+**Planning-tree** moves (§ *Standard flow* below): **`AskQuestion`**, numbered options, each naming **protocol branch + target plan**.
+
+**Implementation / ship** moves: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Commit and push cadence* and **[`pr-review/SKILL.md`](../missions/plan-and-deliver/skills/pr-review/SKILL.md)**:
+
+| Intent | Control surface |
+|--------|-----------------|
+| Triage open PR review comments | **`pr-review`** — **AskQuestion**, natural language (*triage PR comments*, *run pr-review*), or **coding-session** handoff |
+| Commit, push, plan upsert, optional **create-pr** prompt | Rule **20** § *Commit and push cadence* — **AskQuestion** or same-message *commit* / *push* per **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`** |
+
 ## Standard flow
 
 1. Developer signals a planning-tree lane change — explicitly (*"where are we?"*, *"what's next?"*) or implicitly (*"back to plan"*, *"let's move on to …"*).
 2. Agent emits a **"Where we are now in the plan tree"** snapshot (§ *Snapshot format*).
-3. Agent lists **numbered next-move options** in the same reply, each naming the **protocol branch + target plan** (e.g. *Option 2: sub-plan index 3 under `<slug>` → **new-plan** spawns child*). Use **`AskQuestion`** or a numbered bullet list; the developer picks a number or option — they do **not** type legacy shortcut tokens to select the move.
+3. Agent lists **numbered next-move options** in the same reply, each naming the **protocol branch + target plan** (e.g. *Option 2: **new-plan** — expand list item **3** under `<parent-slug>`*, then *Option 3: **phase-plan** on `<child-path>`*). Offer **`AskQuestion`** or a numbered bullet list; the developer picks by number or option label.
 4. Agent resolves the target from the chosen option and invokes the relevant skill with the target pre-resolved.
 
-Mid-flow, when chat already unambiguously names the current lane (e.g. sub-plan expansion just wrote child `3_xxx_<hex>.plan.md` and the next step is clearly **phase-plan** on that file), the agent may continue without a new snapshot — see § *Resolution order* bullet 4.
+Mid-flow, when chat already unambiguously names the current lane (e.g. **`new-plan`** indexed-child just wrote `3_xxx_<hex>.plan.md` and the next step is clearly **phase-plan** on that file), the agent may continue without a new snapshot — see § *Resolution order* bullet 4.
 
 ## Resolution order
 
@@ -52,21 +63,21 @@ Markdown table for each in-flight plan (typically one Master Plan subtree):
 | **Plan** | Slug + display name. |
 | **Stage** | Mode #1 Master Plan, #2 Phase, #3 PR plan, roadmap topic. |
 | **Status** | Drafted sections, `_TBD_`, PR linked, archived. |
-| **Next viable moves** | **Numbered** options naming **protocol branch + target** (e.g. *1. **new-plan** — sub-plan index 2 under `<parent-slug>`*; *2. **phase-plan** — populate child `<path>`*). |
+| **Next viable moves** | **Numbered** options naming **protocol branch + target** (e.g. *1. **new-plan** — expand list item **2** under `<parent-slug>`*; *2. **phase-plan** — populate child `<path>`*). |
 
-Below the table, repeat the same options as **`AskQuestion`** choices or a **numbered bullet list** the developer can answer with a digit — aligned with [sedea-plan-and-deliver.mdc](../../../../.cursor/rules/sedea-plan-and-deliver.mdc).
+Below the table, repeat the same options as **`AskQuestion`** choices or a **numbered bullet list** the developer can answer with a digit. Session and plan-path contracts for planning live in this center rule, **`planning-target-resolution`**, center skills, and **`.sedea/centers/research-and-development/docs/development-process.md`** — product-repo **`.cursor/rules/`** cover codebase architecture and navigation only.
 
-**Snapshot-scoped hooks** (e.g. *"Reply **fill PR plan** to continue"*) are allowed **only** inside that snapshot; do not rely on global typed shortcuts.
+**Snapshot-scoped prompts** (e.g. *Option 2: **phase-plan** on `<path>`*) belong **only** inside that snapshot.
 
 ### PR-plan completeness before coding-session
 
-Snapshots should respect the **coding-session** completeness gate when a PR plan would anchor a worktree session:
+Snapshots should respect **coding-session** pre-worktree validation and the worktree-open gate when a PR plan would anchor a worktree session. **`readyForImplementation: true`** from **`pr-plan`** does **not** bypass validation — see **development-process.md** § *Planning readiness vs worktree completeness*.
 
 1. For each in-scope **PR plan** row, detect `_TBD_` outside fenced code in §§5–8 / deploy where applicable, or run (from hosting repo):  
-   `node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-ws-completeness.mjs --file "<absolute path>"`  
-   Exit **1** means incomplete for worktree handoff.
+   `node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-ws-completeness.mjs --file "<absolute path>"`  
+   Exit **1** (`INCOMPLETE`) means incomplete for worktree handoff even when the plan was marked planning-ready.
 
-2. **Anchor plan** for **coding-session** matches **`plan-state.mjs resolve`**: `node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs resolve --cwd "$PWD"` when in a linked worktree, else the PR plan explicitly in play.
+2. **Anchor plan** for **coding-session** matches **`plan-state.mjs resolve`**: `node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs resolve --cwd "$PWD"` when in a linked worktree, else the PR plan explicitly in play.
 
 3. If incomplete **and** that plan is the default **coding-session** anchor, the **first** numbered option must be finishing the PR plan sections; list **coding-session** only after completeness or with an explicit override label consistent with the **coding-session** skill.
 

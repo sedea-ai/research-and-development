@@ -6,10 +6,6 @@ description: >-
   propose Code Review Follow-ups when plan-anchored, and report go/no-go before PR
   creation. Spawned by coding-session after the implementation cut point; coding-session
   obtains developer approval before any follow-up mutation.
-timeoutMs: 1800000
-warmUpRules:
-  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
-  - ".sedea/centers/sedea-centers--development/rules/efficient-pr-shipping.mdc"
 inputs:
   anchorType:
     type: string
@@ -52,6 +48,12 @@ inputs:
     type: string
     description: Skill that spawned this reviewer, usually coding-session.
     required: false
+warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Pre-PR Review
@@ -79,7 +81,7 @@ Confirm this is a fresh reviewer lane. Do not reuse context from the coding agen
 
 ## Step 3 — Load standards and rules
 
-Read `.sedea/centers/sedea-centers--development/docs/development-process.md` in full, or at minimum the per-PR template, strategy, cadence, and Pre-PR reviewer sections.
+Read `.sedea/centers/research-and-development/docs/development-process.md` in full, or at minimum the per-PR template, strategy, cadence, and Pre-PR reviewer sections.
 
 Read every path from `projectRules`. If a rule path is missing, report it as `partial` unless the rule is clearly irrelevant to the diff.
 
@@ -184,4 +186,29 @@ Set `continuationStatus`:
 - `active` when blockers require a coding-session fix loop and developer approval is pending.
 - `partial` status with `continuationStatus: "active"` when the review ran but missing rules, dirty uncommitted edits, or incomplete anchors make the result degraded.
 
-Stop after the report and terminal child result. Do not run `git`, `gh`, source edits, commits, pushes, or PR creation.
+Stop after the report. Do not run `git`, `gh`, source edits, commits, pushes, or PR creation.
+
+## Squad Leader bubble-up (detached lanes)
+
+Runs on a **detached** reviewer lane; the **plan and deliver** Squad Leader may not see this result. When the review finishes, ask the developer to post **Ship recap — plan and deliver** on the leader dispatch (**`../plan.mdc`** §8).
+
+| Outcome | `shipPhase` | `rowStatus` | Key `outputs` |
+|---------|-------------|-------------|---------------|
+| `recommendation: go` | `pre-pr-review` | `open` | `targetPlanPath`, `remainingTasks` |
+| `no-go` / blockers | `pre-pr-review` | `blocked` | `targetPlanPath`, `blockers`, `blockedReason` in recap |
+
+## Completion (spawned)
+
+Required `outputs` per **Step 8 — Report and result** above. Re-emit an **updated** terminal result after user-requested follow-up on this lane (same `correlationId`).
+
+### Host protocol line (required)
+
+Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status` (`success` | `partial` | `failure` | `aborted` | `abandoned`), `summary` (1–3 sentences), `outputs`, `errors` (use `[]` when none). Populate `outputs` from Step 8. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
+
+Stop after this line.
+
+## Completion (inline)
+
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+Normally spawned from **`coding-session`** on a fresh reviewer lane. If run inline on the same lane, use the same `outputs` semantics as **Step 8 — Report and result** and **`## Completion (spawned)`** in prose only.

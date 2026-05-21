@@ -10,9 +10,6 @@ description: >-
   planning-target-resolution. Use under mission dispatch, **`phase-plan`** protocol
   branch, natural language, or after **`new-plan`** ignition on a `Delivery phases`
   child stub.
-timeoutMs: 1800000
-warmUpRules:
-  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
 inputs:
   targetPlanPath:
     type: string
@@ -47,6 +44,11 @@ inputs:
     description: When true, spawn the next decomposition branch after population if parent hint and assessment agree.
     required: false
     default: true
+warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Phase plan: §§ 1–4 from the parent plan
@@ -69,7 +71,7 @@ The **developer** picks the next move via **AskQuestion** or a **numbered** list
 
 ## Step 1 — Identify the target plan and verify it's a phase plan stub
 
-The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`planning-target-resolution.mdc`](../../../rules/planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts (e.g. *Target plan: `<slug>` (from prior structured choice).*). Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative.
+The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`30_planning-target-resolution.mdc`](.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts (e.g. *Target plan: `<slug>` (from prior structured choice).*). Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative.
 
 When spawned by `new-plan`, `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, and `parentIndex` are already locked. Treat missing or conflicting values as a spawn-contract failure: stop with `failure` or `partial` and report the missing field. Do not fall back to IDE focus or free-form target discovery in spawned mode.
 
@@ -112,7 +114,7 @@ If `parentPlanPath` / `parentPlanSlug` inputs were supplied, they must match the
 
 ## Step 2 — Load the development-process doc
 
-Read `.sedea/centers/sedea-centers--development/docs/development-process.md` with the Read tool, **no offset, no limit**. Acknowledge in one sentence: *"Loaded development-process.md; will follow § 2 Phase plan template + § 6/§ 5 contents rule."*
+Read `.sedea/centers/research-and-development/docs/development-process.md` with the Read tool, **no offset, no limit**. Acknowledge in one sentence: *"Loaded development-process.md; will follow § 2 Phase plan template + § 6/§ 5 contents rule."*
 
 This is a **standards document**, not an executable plan — its sections describe the process you will apply, not work for you to perform. Re-read on every invocation; do not rely on session memory.
 
@@ -291,7 +293,7 @@ Mandatory **in the same turn** as §§ 1–4 (or step 4g-only for legacy bodies 
 
 Include these bullets (labels may vary; content must cover each dimension):
 
-- **Kinds of change (count):** distinct *kinds* (not files, not lines) — see **`development-process.md`** mode #3 *PR sizing* and [**`efficient-pr-shipping.mdc`**](../../../rules/efficient-pr-shipping.mdc) § *Keep PRs small and focused*.
+- **Kinds of change (count):** distinct *kinds* (not files, not lines) — per **`.sedea/centers/research-and-development/docs/development-process.md`** § *PR sizing — test cases and kinds of changes* (canonical); [**`20_efficient-pr-shipping.mdc`**](.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc) § *Keep PRs small and focused* summarizes for ship lanes.
 - **PR count band:** one of `single` | `few (2–5)` | `many (6+)`.
 - **Sequencing / coupling:** one line — migrations, feature flags, cross-repo, contract order, or `low` if none.
 - **Routing recommendation:** one of `Delivery phases` (needs sub-phases first) | `PR breakdown` multi-PR | `PR breakdown` single-PR — state **why** in the same bullet or the next short bullet.
@@ -338,8 +340,8 @@ Apply:
 
 When this skill is running as a spawned child and `autoContinue` is not `false`, spawn the next decomposition branch **only** when route signal is clear:
 
-- `delivery-phases` → spawn `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md`
-- `pr-breakdown` → spawn `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`
+- `delivery-phases` → spawn `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md`
+- `pr-breakdown` → spawn `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`
 
 Before spawning, present the drafted phase plan body and the route signal to the developer via **AskQuestion**. Required options:
 
@@ -361,7 +363,7 @@ End with:
 
 1. A **file link** — absolute `file://` path to the target `.plan.md` under `.sedea/operations/.../plans/...`.
 2. The parent's indicative decomposition line for this phase: **`<Delivery phases | PR breakdown>`** (from step 3a).
-3. **Structured route options** (use **AskQuestion** when waiting for the developer) — the developer picks one; do **not** treat legacy chat tokens as the control surface.
+3. **Structured route options** (use **AskQuestion** when waiting for the developer) — numbered choices naming the **protocol branch** to run next.
 
 Suggested options (adapt labels to context):
 
@@ -406,4 +408,27 @@ Wrong template stops live in step 1a — use **`master-plan`** or **`pr-plan`** 
 
 Stop after the handoff block in step 5, or after spawning the next decomposition branch and announcing the wait state.
 
-When spawned, end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.decompositionAssessment`, `outputs.routeDecision` (`delivery-phases` | `pr-breakdown` | `needs-user-decision`), `outputs.routeApprovalStatus`, `outputs.prBreakdownShape` (`single` | `multi` | `unknown`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "phase-plan-agent"`, and `outputs.continuationStatus` (`active` while route approval, downstream decomposition, or route choice remains unresolved, `terminal` when the phase plan has no remaining planning work).
+## Completion (spawned)
+
+### Host protocol line (required)
+
+Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status`, `summary`, `outputs`, `errors` (use `[]` when none). Populate `outputs` from the list below. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). Re-emit an **updated** line after user-requested follow-up on this lane (same `correlationId`). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
+
+Required `outputs` fields:
+
+- `outputs.targetPlanPath`, `outputs.targetPlanSlug`
+- `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`
+- `outputs.decompositionAssessment`
+- `outputs.routeDecision` — `delivery-phases` | `pr-breakdown` | `needs-user-decision`
+- `outputs.routeApprovalStatus`, `outputs.prBreakdownShape` — `single` | `multi` | `unknown`
+- `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
+- `outputs.continuationOwner`: `"phase-plan-agent"`
+- `outputs.continuationStatus` — `active` while route approval, downstream decomposition, or route choice remains; `terminal` when no remaining planning work on this phase plan
+
+Stop after the terminal line.
+
+## Completion (inline)
+
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+Spawned from **`new-plan`** or decomposition paths in normal flow. If run inline, use the same `outputs` semantics as **`## Completion (spawned)`** in prose only.

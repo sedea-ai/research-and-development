@@ -1,3 +1,77 @@
 name: R&D
 description: >-
-  This center describes how developers deliver new features from idea to production.
+  How developers deliver new features from idea to production — planning, implementation,
+  PR shipping, deploy verification, and plan hygiene. Agents and Mission Control discover
+  skills from `missions/<slug>/skills/**/SKILL.md` on disk; this manifest documents the
+  checkout for audits and center-maintenance. Keep `skillEntries` in sync when adding skills.
+
+# Paths below are relative to `.sedea/centers/research-and-development/` unless noted.
+
+layout:
+  rules: rules/
+  docs: docs/
+  missions: missions/
+
+docs:
+  - path: docs/development-process.md
+    summary: Protocol branch catalogue, planning modes, product cadence; canonical PR sizing sync contract (§ PR sizing — test cases and kinds of changes). Squad dispatch contract lives in plan-and-deliver/plan.mdc.
+
+rules:
+  - path: rules/10_plan-naming-convention.mdc
+  - path: rules/20_efficient-pr-shipping.mdc
+  - path: rules/30_planning-target-resolution.mdc
+  - path: rules/31_operations-user-id.mdc
+  - path: rules/40_maintain-rules.mdc
+
+missions:
+  - slug: plan-and-deliver
+    plan: missions/plan-and-deliver/plan.mdc
+    skills: missions/plan-and-deliver/skills/
+    commands:
+      - plan and deliver
+    skillEntries:
+      - missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md
+      - missions/plan-and-deliver/skills/coding-session/SKILL.md
+      - missions/plan-and-deliver/skills/create-pr/SKILL.md
+      - missions/plan-and-deliver/skills/delivery-phases/SKILL.md
+      - missions/plan-and-deliver/skills/deploy-walk/SKILL.md
+      - missions/plan-and-deliver/skills/master-plan/SKILL.md
+      - missions/plan-and-deliver/skills/new-plan/SKILL.md
+      - missions/plan-and-deliver/skills/phase-plan/SKILL.md
+      - missions/plan-and-deliver/skills/plan-reconcile/SKILL.md
+      - missions/plan-and-deliver/skills/pr-breakdown/SKILL.md
+      - missions/plan-and-deliver/skills/pr-plan/SKILL.md
+      - missions/plan-and-deliver/skills/pr-review/SKILL.md
+      - missions/plan-and-deliver/skills/pre-pr-review/SKILL.md
+  - slug: prd
+    plan: missions/prd/plan.mdc
+    skills: missions/prd/skills/
+    commands:
+      - create prd
+      - manage prd
+    skillEntries:
+      - missions/prd/skills/author-prd/SKILL.md
+  - slug: topics
+    plan: missions/topics/plan.mdc
+    skills: missions/topics/skills/
+    commands:
+      - create topic
+    skillEntries:
+      - missions/topics/skills/create-topic-plan/SKILL.md
+
+centerSkills:
+  readme: missions/plan-and-deliver/skills/README.md
+  note: Spawn contracts and normative terminal stop for plan-and-deliver; not a runnable skill.
+
+manifest:
+  verify: missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
+  sync: >-
+    After adding or removing any `missions/<slug>/skills/*/SKILL.md`, update this file's
+    `skillEntries` for that mission and run the verify script from the hosting repo root
+    (see development-process.md § Center and mission governance).
+
+governance:
+  missionScopedRules: false
+  note: >-
+    Intentionally no `missions/<slug>/rules/*.mdc` packs. Center rules plus each
+    mission `plan.mdc` and skill `SKILL.md` files are the source of truth.

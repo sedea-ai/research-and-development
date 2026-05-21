@@ -2,17 +2,14 @@
 name: new-plan
 description: >-
   Scaffold a new `.plan.md` plus `.state.yaml` sidecar under the `.sedea/operations/`
-  plan union (joint or per-operations-user-id `plans/`), with required frontmatter
+  plan union (joint or per-user `operationsUserId` `plans/`), with required frontmatter
   (name, overview, todos, isProject) and `parent` only in the sidecar. Resolves
   parent per planning-target-resolution; confirms parent before write except on
   indexed child spawn when parent + index N are already locked by session context.
   After an indexed spawn, may hand off to **phase-plan** or **pr-plan** via
   initiating-agent ignition when those skills exist. Use under mission dispatch or
-  when the developer asks for a new plan / sub-plan / indexed child from a
-  numbered dual-title list.
-timeoutMs: 900000
-warmUpRules:
-  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
+  when the developer asks to scaffold a plan via **new-plan** (standalone) or expand
+  a parent list item **N** (indexed-child) from a numbered dual-title list.
 inputs:
   mode:
     type: string
@@ -51,21 +48,26 @@ inputs:
     type: string
     description: Skill that requested this child creation.
     required: false
+warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # New plan
 
-Scaffold a standalone `.plan.md` and `.state.yaml` under the **`.sedea/operations/`** plan union (`joint/.../plans/` or `<operations-user-id>/.../plans/` — see **Slug and filename**). On first write, frontmatter must be valid YAML and match the shape Sedea tooling expects (see **Write the plan template** and naming guidance in `.sedea/centers/sedea-centers--development/docs/development-process.md` plus `.sedea/centers/sedea-centers--development/rules/10_plan-naming-convention.mdc`).
+Scaffold a standalone `.plan.md` and `.state.yaml` under the **`.sedea/operations/`** plan union (`joint/.../plans/` or `<operationsUserId>/.../plans/` — see **Slug and filename**). On first write, frontmatter must be valid YAML and match the shape Sedea tooling expects (see **Write the plan template** and naming guidance in `.sedea/centers/research-and-development/docs/development-process.md` plus `.sedea/centers/research-and-development/rules/10_plan-naming-convention.mdc`).
 
-**Resolution contract:** read `.sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc` and follow it for target selection and snapshots. Resolve parents using **§ Parent derivation** below (explicit session/message → `plan-state resolve` → recent chat references).
+**Resolution contract:** read `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` and follow it for target selection and snapshots. Resolve parents using **§ Parent derivation** below (explicit session/message → `plan-state resolve` → recent chat references).
 
 ## Triggers
 
 Invocation context examples (mission dispatch and structured choices):
 
-- Mission dispatch or explicit request to run **`new-plan`** / **`sub-plan`**.
-- Natural language: create a new plan named …; scaffold a child plan under parent …; expand item **N** from the parent’s `Delivery phases` or `### PR list`.
-- Free-form (“I need a new plan for …”) — confirm scope then proceed.
+- Mission dispatch or explicit request to run **`new-plan`** (standalone or indexed-child).
+- Natural language: scaffold a new plan file …; expand list item **N** under a parent’s `Delivery phases` or `### PR list` (then usually **`phase-plan`** or **`pr-plan`** on the child path).
+- Free-form (“I need a plan for …”) — confirm scope, then **`new-plan`** standalone or indexed-child per **30_planning-target-resolution**.
 
 The **developer** selects continuation via **AskQuestion** or a **numbered** option you present.
 
@@ -101,7 +103,7 @@ The regular parent-confirmation gate below is **skipped** when that pre-resoluti
 
 **`N` alone with no name:** fall through to prompting for a name inline; parent stays as pre-resolved.
 
-**Placement:** child files live in the same **flat** `plans/` directory as their siblings (the resolved `joint/.../plans/` or `<operations-user-id>/.../plans/` tree). Indexed children and every other plan file use that single folder — no extra plan subfolders for now.
+**Placement:** child files live in the same **flat** `plans/` directory as their siblings (the resolved `joint/.../plans/` or `<operationsUserId>/.../plans/` tree). Indexed children and every other plan file use that single folder — no extra plan subfolders for now.
 
 Everything else (slug shape, frontmatter, sidecar, after-write steps, scope guard) matches the non-indexed path below.
 
@@ -113,10 +115,10 @@ A plan without a parent is a **top-level topic** (top-level plan: `parent: null`
 2. **Session anchor** — from hosting repo root:
 
    ```bash
-   node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs resolve --cwd "$PWD"
+   node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs resolve --cwd "$PWD"
    ```
 
-   Exit **0** means `$PWD` is inside a worktree listed in some plan’s sidecar; that plan is a strong passive parent candidate. Optional scope: **`--user-uuid <id>`** before the subcommand (CLI flag name is **historical**; value is the **operations user id**), else `.sedea/local/operations-user-uuid`, else `git config --local sedea.operationsUserUuid`; if none set, only `joint` plans are searched.
+   Exit **0** means `$PWD` is inside a worktree listed in some plan’s sidecar; that plan is a strong passive parent candidate. Optional scope: **`--operations-user-id <id>`** before the subcommand (Mission Control **`operationsUserId`** in agent runs); if omitted, only `joint` plans are searched.
 3. **Recent chat references** — last turns name a slug or absolute plan path.
 4. **Nothing resolved** — ask the developer for a parent slug, or the literal `null` for a **top-level topic** (top-level plan, `parent: null`).
 
@@ -124,7 +126,7 @@ Lock the parent using the bullets above; **planning-target-resolution** is norma
 
 **Confirm** before writing on this path (unless **Indexed child spawn** already skipped the gate). Wrong parent is the expensive failure mode. Example:
 
-> Parent: `plan_board_extension_mvp_a0939d76` (from `plan-state resolve`). OK? Reply yes to write, paste a different slug, or `null` for a **top-level topic** (top-level plan).
+> Parent: `<parent-slug>` (from `plan-state resolve`). OK? Reply yes to write, paste a different slug, or `null` for a **top-level topic** (top-level plan).
 
 If two candidates conflict, present both and ask.
 
@@ -135,9 +137,9 @@ If two candidates conflict, present both and ask.
 - **Title prefix (indexed spawn):** prepend `<N>. ` to **display title** in `name:` and H1; item 10 uses filename `A_...` but title prefix `10. `. Apply this prefix only for indexed digit-only **N**; omit for other spawns.
 - **Slug base (indexed):** from raw bolded title only (normalized). **Slug base (non-indexed):** from user name, lowercased, spaces → `_` or `-`, match sibling conventions.
 - **Suffix:** append 8 hex chars (e.g. `crypto.randomBytes(4).toString('hex')`) for uniqueness.
-- **Paths:** under `.sedea/operations/joint/plans/` or `.sedea/operations/<operations-user-id>/plans/` (same directory for `.plan.md` and `.state.yaml`). Indexed: `<C>_<slugBase>_<hex>.plan.md` / `.state.yaml`; otherwise `<slugBase>_<hex>.plan.md` / `.state.yaml`.
+- **Paths:** under `.sedea/operations/joint/plans/` or `.sedea/operations/<operationsUserId>/plans/` (same directory for `.plan.md` and `.state.yaml`). Indexed: `<C>_<slugBase>_<hex>.plan.md` / `.state.yaml`; otherwise `<slugBase>_<hex>.plan.md` / `.state.yaml`.
 
-All new plans are sibling files in the flat `.../plans/` directory for the resolved operations tree (`joint` or `<operations-user-id>`). **Top-level topic** names a top-level plan with `parent: null` in the sidecar — same flat `.../plans/` path as any other plan file.
+All new plans are sibling files in the flat `.../plans/` directory for the resolved operations tree (`joint` or `<operationsUserId>`). **Top-level topic** names a top-level plan with `parent: null` in the sidecar — same flat `.../plans/` path as any other plan file.
 
 ### Handling 10–35 children
 
@@ -222,8 +224,8 @@ Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **t
 
    Populator skill paths:
 
-   - `phase-plan` → `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/phase-plan/SKILL.md`
-   - `pr-plan` → `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-plan/SKILL.md`
+   - `phase-plan` → `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/phase-plan/SKILL.md`
+   - `pr-plan` → `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md`
 
    Inputs must include `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, `parentIndex`, `ledgerParent`, and `upstreamSkill: "new-plan"`. Announce that this agent is waiting for the populator result and stop. **`pr-breakdown`**, nested decomposition, and **`plan-reconcile`** happen in their own mission steps after this skill finishes. If a center populator `SKILL.md` is ever absent, end after stub + parent link and point at **`development-process.md`**.
 
@@ -242,6 +244,27 @@ Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **t
 
 This skill writes `.plan.md` + `.state.yaml`, optionally updates one `Plan:` line under the parent’s dual-title list (indexed spawn), and may spawn the requested **`phase-plan`** / **`pr-plan`** populator. Worktree creation, PR prompts, archive bullets, and expanding the dual-title list beyond the chosen item **N** sit in **`coding-session`**, **`plan-reconcile`**, **`delivery-phases`**, and **`pr-breakdown`** as applicable.
 
-When spawned, end with a child result containing `outputs.planPath`, `outputs.planSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.childKind`, `outputs.decompositionKind`, `outputs.parentPlanLinkStatus` (`linked` | `already_linked` | `blocked`), `outputs.populatorSkill`, `outputs.populatorApprovalStatus`, `outputs.populatorStatus`, `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "new-plan-agent"`, and `outputs.continuationStatus` (`active` while populator approval, a populator lane, or row repair remains, `terminal` when the child stub, parent link, and optional populator handoff are complete).
+## Completion (spawned)
+
+### Host protocol line (required)
+
+Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status`, `summary`, `outputs`, `errors` (use `[]` when none). Populate `outputs` from the list below. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). Re-emit an **updated** line after user-requested follow-up on this lane (same `correlationId`). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
+
+Required `outputs` fields:
+
+- `outputs.planPath`, `outputs.planSlug`
+- `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex` (indexed mode)
+- `outputs.childKind`, `outputs.decompositionKind`
+- `outputs.parentPlanLinkStatus` — `linked` | `already_linked` | `blocked`
+- `outputs.populatorSkill`, `outputs.populatorApprovalStatus`, `outputs.populatorStatus`
+- `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
+- `outputs.continuationOwner`: `"new-plan-agent"`
+- `outputs.continuationStatus` — `active` while populator approval, a populator lane, or row repair remains; `terminal` when stub, parent link, and optional populator handoff are complete
 
 Stop after write + parent confirmation (when required) + parent `Plan:` update (indexed) + optional populator spawn / wait state when downstream skills exist.
+
+## Completion (inline)
+
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+Spawned from decomposition agents (**`delivery-phases`**, **`pr-breakdown`**) or indexed child expansion in normal flow. If run inline, use the same `outputs` semantics as **`## Completion (spawned)`** in prose only.

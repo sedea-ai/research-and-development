@@ -9,9 +9,6 @@ description: >-
   links follow **new-plan** indexed spawn; bodies follow **phase-plan**. Target
   resolved per planning-target-resolution. Use under mission dispatch, **delivery-phases**
   protocol branch, or natural language (decompose phases, draft delivery phases).
-timeoutMs: 1800000
-warmUpRules:
-  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
 inputs:
   targetPlanPath:
     type: string
@@ -45,6 +42,11 @@ inputs:
     type: string
     description: Optional upstream-selected route. When set to delivery-phases, skip the decision gate.
     required: false
+warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Delivery phases — mode #2 decomposition
@@ -63,7 +65,7 @@ The **developer** picks the next move via **AskQuestion** or a **numbered** list
 
 ## Step 1 — Identify the target plan and verify stage
 
-The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`planning-target-resolution.mdc`](../../../rules/planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts (e.g. *Target plan: `<slug>` (from prior structured choice).*). Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative. Do **not** infer the target from the IDE’s focused-file list alone.
+The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`30_planning-target-resolution.mdc`](.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts (e.g. *Target plan: `<slug>` (from prior structured choice).*). Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative. Do **not** infer the target from the IDE’s focused-file list alone.
 
 If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot; let the developer pick the lane via **AskQuestion** or numbered options, then continue.
 
@@ -80,7 +82,7 @@ Acknowledge: *"Stage: <Master Plan | Phase plan>; proceeding."*
 
 ## Step 2 — Load the development-process doc
 
-Read `.sedea/centers/sedea-centers--development/docs/development-process.md` with the Read tool, **no offset, no limit** (hosting repo root). Acknowledge in one sentence: *"Loaded development-process.md; will follow § 2 Delivery phases + § 6/§ 5 contents rule."*
+Read `.sedea/centers/research-and-development/docs/development-process.md` with the Read tool, **no offset, no limit** (hosting repo root). Acknowledge in one sentence: *"Loaded development-process.md; will follow § 2 Delivery phases + § 6/§ 5 contents rule."*
 
 This is a **standards document**, not an executable plan — its sections describe the process you apply. Re-read on every invocation; do not rely on session memory.
 
@@ -185,7 +187,7 @@ When running as a spawned downstream agent under `master-plan`, mission dispatch
    - **Defer child plan creation**
    - **Abandon this branch**
    - **More details for option _**
-3. Only when the developer chooses **Approve phase list and spawn children**, emit one child-spawn request per phase row for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md`.
+3. Only when the developer chooses **Approve phase list and spawn children**, emit one child-spawn request per phase row for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`.
 4. Each request's inputs must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-plan"`, `requestedPopulatorSkill: "phase-plan"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, and `decompositionKind: "delivery-phases"`.
 5. Record each spawned child as an open ledger entry keyed by correlation id plus `(parentPlanSlug, index)` with status `active`.
 6. Announce that this agent is waiting for **K** indexed child results and stop. Do not return terminal success upstream until every spawned `new-plan` lane has returned terminal status or the developer explicitly defers/abandons the remaining rows.
@@ -215,7 +217,7 @@ Only return `continuationStatus: "terminal"` when every row is explicitly `compl
 
 ## One primary choice per turn — surface observations
 
-Match the discipline in **`master-plan`** and **`phase-plan`**: perform exactly what was chosen; do not silently expand scope. If you notice gaps (diagram vs phase boundary, duplicate wording, phase count vs assessment), list short **numbered observations** in the chat reply; the developer addresses them on the next turn or folds them into a revise pass. Do **not** invent typed shortcut vocabularies for accepting or skipping flags.
+Match the discipline in **`master-plan`** and **`phase-plan`**: perform exactly what was chosen; scope stays on the chosen pass. If you notice gaps (diagram vs phase boundary, duplicate wording, phase count vs assessment), list short **numbered observations** in the chat reply; the developer addresses them on the next turn or folds them into a revise pass. Offer **AskQuestion** or a **numbered list** for accepting or skipping flags.
 
 ## Scope guard
 
@@ -223,6 +225,26 @@ Match the discipline in **`master-plan`** and **`phase-plan`**: perform exactly 
 
 **Out of scope:** renaming child plans after **`new-plan`** creates them; filling phase bodies inline (**`phase-plan`** owns the body); PR breakdown content (**`pr-breakdown`**); edits outside the dual-title section; extra H2 phase headings in the parent; `git` / commit automation; roadmap topics and PR plans (step 1 stops).
 
-**Result contract when spawned:** end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.decompositionKind: "delivery-phases"`, `outputs.childCount`, `outputs.developerApprovalStatus`, `outputs.childRows` (array of `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`), `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "delivery-phases-agent"`, and `outputs.continuationStatus` (`active` while approval, child creation, or population remains, `terminal` when all child rows are closed, deferred, abandoned, or out of scope).
+## Completion (spawned)
+
+### Host protocol line (required)
+
+Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status`, `summary`, `outputs`, `errors` (use `[]` when none). Populate `outputs` from the list below. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). Re-emit an **updated** line after user-requested follow-up on this lane (same `correlationId`). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
+
+Required `outputs` fields:
+
+- `outputs.targetPlanPath`, `outputs.targetPlanSlug`
+- `outputs.decompositionKind`: `"delivery-phases"`
+- `outputs.childCount`, `outputs.developerApprovalStatus`
+- `outputs.childRows` — `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`
+- `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
+- `outputs.continuationOwner`: `"delivery-phases-agent"`
+- `outputs.continuationStatus` — `active` while approval, child creation, or population remains; `terminal` when all child rows are `completed`, `deferred`, `abandoned`, or `out_of_scope` and no active populator lanes remain
 
 Stop after the step 6 handoff block or after spawning and announcing the wait state.
+
+## Completion (inline)
+
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+Spawned from the **Master Plan agent** or **plan and deliver** decomposition paths in normal flow. If run inline, use the same `outputs` semantics as **`## Completion (spawned)`** in prose only.

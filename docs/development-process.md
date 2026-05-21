@@ -9,7 +9,7 @@ This is a document describing how developers deliver new features from idea to p
 3. **Planning Modes** — the three modes planning passes through, applied top-down (*architectural / code design* → *delivery phases* → *PR breakdown*), each with a plan-file template and notes on how the template shifts across hierarchy levels (feature-level plan, delivery phase plan, etc.). A **PRD** (product or feature requirements document) is upstream input to the one-shot **Master Plan** in mode #1; it is not a separate planning mode.
 4. **Cadence** — the continuous loop that wraps the modes once delivery starts: phase decomposition → PRs breakdown → work session → feedback collection → plan updates → next phase. Each iteration may update *any* plan in the hierarchy, depending on the feedback's nature.
 
-**Naming.** **Master Plan** is this document's term for the feature-level plan at the top of a feature's plan tree — the artifact mode #1's **Master Plan** template (below) produces. It is the single source of truth for the feature; phases, PRs, and sub-plans all hang off it.
+**Naming.** **Master Plan** is this document's term for the feature-level plan at the top of a feature's plan tree — the artifact mode #1's **Master Plan** template (below) produces. It is the single source of truth for the feature; phases, PRs, and child plans all hang off it.
 
 ## Strategy
 
@@ -31,6 +31,26 @@ The six principles below are the non-negotiables. Everything in **Planning Modes
 
 Single catalogue of **what we use** in this process. Later sections still spell out **agent roles** wherever a role appears (e.g. **a coding agent**) so a developer reader scanning a template never has to chase definitions.
 
+### Center and mission governance
+
+This center does **not** ship **`missions/<missionSlug>/rules/*.mdc`** for **`plan-and-deliver`**, **`prd`**, or **`topics`**. That is **intentional**, not incomplete setup. Sedea treats mission rules as **optional** (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Rules* — absence is normal).
+
+R&D delivery agents are governed by:
+
+- **Center rules** — `.sedea/centers/research-and-development/rules/`
+- **Mission plans** — `missions/<missionSlug>/plan.mdc`
+- **Skills** — `missions/<missionSlug>/skills/` and the **Protocol branches** table below
+
+**Audits and gap reports** must **not** flag missing mission-level rule files under this center. To change **center** process or rules, use **`improve center rules`** on **sedea** `center-maintenance`. To change **repo** agent guidance in a product or hosting checkout, use **`.cursor/rules/*.mdc`** per **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`** and per-PR plan **§ 5. Repo rules impact**.
+
+**`center.yaml` `skillEntries` sync (manifest hygiene).** Mission Control discovers skills on disk; **`skillEntries`** in **`.sedea/centers/research-and-development/center.yaml`** is for audits and maintenance. When you **add, rename, or remove** a `SKILL.md` under any mission `skills/` tree, update that mission's `skillEntries` list in the same change. From the **hosting repo root**:
+
+```bash
+node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
+```
+
+Exit **0** when manifest and disk match; **1** prints paths only on disk or only in YAML. Plan-and-deliver authors also see **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md`** § *Adding or removing a skill*.
+
 ### Agents and roles
 
 **Coding agent.** Delivers deliverables defined in a PR plan.
@@ -46,26 +66,27 @@ Single catalogue of **what we use** in this process. Later sections still spell 
 - **GitHub** — Pull requests, diffs, and PR description fields (e.g. “Notes for the reviewer”). **A PR-creating agent** fills the body from the prompt **a coding agent** supplies.
 - **Plan board** — Where **developers** open and review planning-mode `.plan.md` files in the plans folder `.sedea/operations/**/plans/**`).
 - **`.plan.md` files** — Standalone plan files at each hierarchy level (Master Plan, phase plans, PR plans); canonical location is under `.sedea/operations/**/plans/**`.
-- **PRD** — Product (or feature) Requirements Document — the prime input for the one-shot **Master Plan** (mode #1). **Bugs and small improvements** may start as an **Ad-Hoc PRD** at **`.sedea/operations/<operations-user-id>/docs/ad_hoc_<slug>_<hex>.ad-hoc-prd.md`** (personal operations space only when using the **`ad-hoc-prd`** skill; **`joint/docs/`** is not written by that protocol — promote by moving the file if the developer wants it shared). Authoring is defined by the **`ad-hoc-prd`** protocol branch (file shape is embedded in that skill).
+- **PRD** — Product (or feature) Requirements Document — the prime input for the one-shot **Master Plan** (mode #1). **Bugs and small improvements** may start as an **Ad-Hoc PRD** at **`.sedea/operations/<operationsUserId>/docs/ad_hoc_<slug>_<hex>.ad-hoc-prd.md`** (personal operations space only when using the **`ad-hoc-prd`** skill; **`joint/docs/`** is not written by that protocol — promote by moving the file if the developer wants it shared). Authoring is defined by the **`ad-hoc-prd`** protocol branch (file shape is embedded in that skill).
 - **Git worktree** — Isolated checkout used by the **`coding-session`** protocol branch when spinning up a coding agent.
-- **Protocol** — The "Development" mission protocol that serves as an implementation of Development Processes as defined in this document. 
+- **Protocol** — The **plan and deliver** mission (`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`, command phrase *plan and deliver*) — protocol branches and skills under `missions/plan-and-deliver/skills/` implement this document's cadence. 
 
 ### Protocol branches
 
 | Branch | Path | Role in this process |
 | --- | --- | --- |
-| `ad-hoc-prd` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md` | Scaffold a minimal **Ad-Hoc PRD** (`ad_hoc_<slug>_<hex>.ad-hoc-prd.md`) under **`.sedea/operations/<operations-user-id>/docs/`** only — standalone upstream input for **`master-plan`**; Master Plan `.plan.md` is created afterward. Moving an Ad-Hoc PRD into **`joint/docs/`** for sharing is manual. |
-| `master-plan` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/master-plan/SKILL.md` | PRD → **Master Plan** (mode #1). Drafts §§ 1–5 of the Master Plan template (Background, Benefits, Related features, Architectural design, Changes) in the initial turn, including **`### Decomposition assessment`** and **`### Complexity score (plan-scope signal)`** under § 5. The complexity subsection is a **fixed two-column, three-row table** (flowchart boxes §4, sequence arrows §4, change bullets §5) plus **band** and **overall score** (max of the three rows); **high** (overall score > 20) gates foregrounding **`6`** until scope shrinks or the feature is split by user journeys. § 6 routes out to `delivery-phases` or `pr-breakdown`; § 7 (Caveats) is drafted by this protocol branch in a follow-up turn via the `7` shortcut. |
-| `delivery-phases` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` | Decompose a focused **Master Plan** or **Phase plan** into delivery phases (mode #2). Drafts the dual-title section as a numbered list of child phases; sets the heading to `Delivery phases`. |
-| `pr-breakdown` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` | Decompose a focused **Master Plan** or **Phase plan** into PRs (mode #3 set-level). Ensures **`### Decomposition assessment`** exists (inserts if missing), then gates **Delivery phases** vs multi-PR vs single-PR `PR breakdown`. Drafts the dual-title section as `### Single-concern strategy` + `### Sequencing` + `### PR list` (numbered; **one item is valid** for a single deliverable); sets the heading to `PR breakdown` when a PR breakdown path is chosen. |
-| `phase-plan` or `sub-plan` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/phase-plan/SKILL.md` | Populate the body of a focused **phase plan** stub: drafts §§ 1–4 plus **`### Decomposition assessment`** (immediately before the dual-title § 5) per the Phase plan template, using the parent's `Delivery phases` item N as the scope anchor. |
-| `pr-plan` or `sub-plan` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-plan/SKILL.md` | Populate the body of a focused **PR plan** stub: drafts §§ 1–4 (Single concern, Background, Change scope, Reasoning) per the per-PR template, using the parent's `### PR list` item N for § 1 and parent's `### Single-concern strategy` + `### Sequencing` to ground § 4 Reasoning. Sections 5 (Repo rules impact), 6 (Tests to write), 7 (Deploy test plan), and 8 (Caveats) stay `_TBD_` — **a coding agent** fills them in `coding-session` before `commit-push`. |
-| `new-plan` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/new-plan/SKILL.md` | Scaffold a new `.plan.md` + sidecar; parent linkage; invoked by **`sub-plan`** to spawn child plans from `Delivery phases` / `PR breakdown` numbered lists. |
-| `coding-session` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/coding-session/SKILL.md` | Coding session: worktree + fresh agent + handoff to **a coding agent**; after the committed implementation cut point, spawns **`pre-pr-review`**. |
-| `plan-reconcile` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md` | Plan reconcile / archive, plus **follow-ups triage** at dispatch resolve time (see **Cadence** § *Plan Updates*). |
-| `pre-pr-review` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md` | Fresh spawned pre-PR reviewer lane. Reviews committed implementation diff against a PR plan or free-form scope, checks per-PR template + repo rules + quality, appends **Code Review Follow-ups** to the PR plan's `## Follow-ups` when anchored to **`plan`**, and reports go/no-go. |
-| `pr-review` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-review/SKILL.md` | Triage PR review comments; feeds **Code review follow-ups** on the PR plan. |
-| `deploy-walk` | `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/deploy-walk/SKILL.md` | Walk a PR plan's `## N. Deploy test plan` section step by step. `start dep <N>` (or `start dep before/after <N>`) presents step N in detail (verbatim text + the *because* + expected outcome + commands + cross-references); `dep <N> done [: note]` / `skip: reason` / `block: reason` resolves; `dep deployed [: note]` flips Status `drafted → deployed` to unlock After-deploy; `dep status` summarises progress. Loose mode between `start` and resolution — the chat is normal collaboration. State lives in the plan file (**`**Status:**`** lifecycle line + GFM task list checkboxes `1. [ ]`), so walks survive multi-day gaps and session summarization. After-deploy fully checked auto-flips Status `deployed → done` **and** frontmatter todo `deploy-test-plan-verified` `pending` → `done`. Does **not** auto-run `plan-reconcile` (merge / archive is a separate cadence). |
+| `ad-hoc-prd` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md` | Scaffold a minimal **Ad-Hoc PRD** (`ad_hoc_<slug>_<hex>.ad-hoc-prd.md`) under **`.sedea/operations/<operationsUserId>/docs/`** only — standalone upstream input for **`master-plan`**; Master Plan `.plan.md` is created afterward. Moving an Ad-Hoc PRD into **`joint/docs/`** for sharing is manual. |
+| `master-plan` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-plan/SKILL.md` | PRD → **Master Plan** (mode #1). Drafts §§ 1–5 in the initial turn, including **`### Decomposition assessment`** and **`### Complexity score (plan-scope signal)`** under § 5. **High** complexity (overall score > 20) withholds §6 decomposition in **AskQuestion** until scope shrinks. Follow-up moves use **AskQuestion** / numbered picks (not typed shortcuts): spawn **`delivery-phases`** or **`pr-breakdown`** via **`AGENT_RUN_REQUEST_V1`**, draft §7 Caveats inline, revise sections, or commit plans when the user asks in the same message. |
+| `delivery-phases` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` | Decompose a focused **Master Plan** or **Phase plan** into delivery phases (mode #2). Drafts the dual-title section as a numbered list of child phases; sets the heading to `Delivery phases`. |
+| `pr-breakdown` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` | Decompose a focused **Master Plan** or **Phase plan** into PRs (mode #3 set-level). Ensures **`### Decomposition assessment`** exists (inserts if missing), then gates **Delivery phases** vs multi-PR vs single-PR `PR breakdown`. Drafts the dual-title section as `### Single-concern strategy` + `### Sequencing` + `### PR list` (numbered; **one item is valid** for a single deliverable); sets the heading to `PR breakdown` when a PR breakdown path is chosen. |
+| `phase-plan` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/phase-plan/SKILL.md` | Populate the body of a focused **phase plan** stub (usually after **`new-plan`** indexed child spawn for a `Delivery phases` row): drafts §§ 1–4 plus **`### Decomposition assessment`** before dual-title § 5, using the parent's `Delivery phases` item **N** as the scope anchor. |
+| `pr-plan` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md` | Populate §§ 1–4 on the **planning** lane; §§ 5–8 default **`_TBD_`**. Menu handoff to **`coding-session`** (step 5c option 4) — **does not** spawn **`coding-session`**. See skill § *Handoff to coding-session*. |
+| `new-plan` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md` | Scaffold a new `.plan.md` + sidecar; parent linkage; runs when the developer picks list index **N** (AskQuestion / numbered option) to expand a `Delivery phases` or `PR breakdown` child. |
+| `coding-session` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md` | **Separate** lane from **`pr-plan`**: worktree, coding-agent prompt, §§ 5–8 during implementation, ship chain (**`pre-pr-review`**, **`create-pr`**, **`pr-review`**). See skill § *Relationship to pr-plan*. |
+| `pre-pr-review` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md` | Fresh spawned pre-PR reviewer lane. Reviews committed implementation diff against a PR plan or free-form scope, checks per-PR template + repo rules + quality, returns **proposed** non-blocker items in `outputs.proposedFollowUps` when anchored to **`plan`** (does **not** edit the plan file). The active **`coding-session`** agent presents proposals to the developer; approved bullets are appended to `## Follow-ups` before **`create-pr`** when the developer chooses that path. Reports go/no-go. |
+| `create-pr` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/create-pr/SKILL.md` | Spawned **PR-creating agent** lane after **`pre-pr-review`** returns `go`. **Only** branch that may run **`gh pr create`** (per **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`**). Builds a reviewer-complete PR description from the PR plan, diff, and pre-PR review context; opens the GitHub PR when push/creation is authorized, or emits a copy-paste prompt for **a PR-creating agent** when not. **`coding-session`** spawns this skill — planning, coding, and review lanes must not open PRs themselves. May spawn **`deploy-walk`** after merge when configured. |
+| `pr-review` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md` | Triage PR review comments; feeds **Code review follow-ups** on the PR plan. |
+| `deploy-walk` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/deploy-walk/SKILL.md` | Walk a PR plan's `## N. Deploy test plan` section step by step via **`deploy-walk`** (natural language or **AskQuestion** / numbered picks per **30_planning-target-resolution**). Present step **N** in detail; mark step **N** done / skip / block; flip Status `drafted → deployed` to unlock After-deploy; summarise progress. Loose mode between present and resolution — normal collaboration between bracketing commands. State lives in the plan file (**`**Status:**`** lifecycle line + GFM task list `1. [ ]`). After-deploy fully checked auto-flips Status `deployed → done` **and** frontmatter todo `deploy-test-plan-verified` `pending` → `done`. Does **not** auto-run **`plan-reconcile`**. |
+| `plan-reconcile` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md` | Plan reconcile / archive, plus **follow-ups triage** at dispatch resolve time (see **Cadence** § *Plan Updates*). |
 
 ### Diagram and feedback channels
 
@@ -76,7 +97,7 @@ Single catalogue of **what we use** in this process. Later sections still spell 
 
 Per Strategy principle #2, planning happens in three modes, applied top-down: **architectural / code design**, **delivery phases**, and **PR breakdown**. Each addresses a different question — design says *what* will exist, delivery says *how the design decomposes* (into sub-phases or into PRs) *on its way to delivery*, and PR breakdown says *which coding-ready PRs* a PR-ready phase produces. PRs are the only units that ship; phases are organizing structure, not delivery units.
 
-**Every level of the plan tree gets its own plan file.** A feature is a plan tree rooted at the **Master Plan** (one file per feature, mode #1). Every phase, sub-phase, and sub-sub-phase below it is its own standalone plan file authored from the **Phase plan template** in mode #2 — recursion stops only when a plan is decided to be **PR-ready**. Every PR is its own standalone plan file authored from the per-PR template in mode #3. Standalone files at every level keep each plan focused on a single granularity, let **a coding agent** work without broader-context distraction when working from a PR plan (Strategy #6), and make `sub-plan` the natural way to expand any non-PR-ready entry one level down.
+**Every level of the plan tree gets its own plan file.** A feature is a plan tree rooted at the **Master Plan** (one file per feature, mode #1). Every phase, sub-phase, and sub-sub-phase below it is its own standalone plan file authored from the **Phase plan template** in mode #2 — recursion stops only when a plan is decided to be **PR-ready**. Every PR is its own standalone plan file authored from the per-PR template in mode #3. Standalone files at every level keep each plan focused on a single granularity, let **a coding agent** work without broader-context distraction when working from a PR plan (Strategy #6), and make **indexed child expansion** via **`new-plan`** the natural way to grow any non-PR-ready entry one level down.
 
 **The dual-title `Delivery phases | PR breakdown` section is the recursion point.** Both the Master Plan template (§ 6) and the Phase plan template (§ 5) end in a dual-title section whose heading is one of `Delivery phases` (children are sub-phase plans) or `PR breakdown` (children are PR plans, mode #3). The shared **§ 6 / § 5 contents rule** below the Phase plan template defines both shapes once. Until the decomposition decision is made, the heading reads `Delivery phases | PR breakdown` and the body is `_TBD_`.
 
@@ -90,7 +111,7 @@ Per Strategy principle #2, planning happens in three modes, applied top-down: **
 - **PR list** (mode #3 set-level § 3) — a numbered list whose item lines (the PR slug or short title, bolded) follow the short-bullet rule, but whose **Single concern** sub-bullet inherits the per-PR § 1 sentence verbatim and is therefore full prose, not 2–5 words.
 - **Reasoning** (mode #3 per-PR) — **a coding agent** (implementation + **fresh pre-PR reviewer agent session**) + **a reviewer agent**-facing; full sentences so the PR description carries faithful rationale.
 - **Deploy test plan** (mode #3 per-PR) — each step must be unambiguous for the on-call.
-- **Sedea rules impact** (mode #3 per-PR § 5) — short bullets for **`.cursor/rules/*.mdc`** in the hosting product repo (what to update with the code) and for **`.sedea/centers/sedea-centers--development/rules/maintain-rules.mdc`** (center rule hygiene); agent-primary. The `_None — …_` line is still short-bullet form.
+- **Repo rules impact** (mode #3 per-PR § 5) — short bullets for **`.cursor/rules/*.mdc`** in the repo that receives the PR (hosting checkout or product worktree); see **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`**. **Not** Sedea center rules under **`.sedea/centers/`** — center changes use **`improve center rules`** on **sedea** `center-maintenance`. The `_None — …_` line is still short-bullet form.
 - **Caveats** (mode #3 per-PR only) — **a coding agent** (implementation + **fresh pre-PR reviewer agent session**) + **a reviewer agent**-facing; full sentences so the PR description carries the concern faithfully. *In modes #1 and #2 Caveats is read by the developer during plan review and follows the short-bullet rule like the other planning bullets — short, scannable, sufficient.*
 
 Each section says inline whether it follows the short-bullet rule or opts out.
@@ -113,7 +134,7 @@ A **Master Plan** operates at feature granularity. It has these sections only �
    - **State diagram** — lifecycle / state-machine changes.
    - **ER / schema diagram** — data model or database changes.
    - …whatever conveys the change most clearly.
-5. **Changes.** Short bullet points listing what changes, how, and where, scoped at the feature level. Follows the short-bullet rule. Immediately after the change bullets, the **`master-plan`** protocol branch appends a **`### Decomposition assessment`** subsection (same short-bullet + one-line recommendation pattern as phase plans — see mode #2 below). That block records **kinds of change**, **PR count band**, **sequencing / coupling**, a **routing recommendation** (`Delivery phases`, multi-PR `PR breakdown`, or single-PR `PR breakdown`), and **confidence**, so **developer** can choose "Delivery Phase" or "PR Breakdown" with evidence before § 6 is drafted. After that block, **`master-plan`** appends **`### Complexity score (plan-scope signal)`** using the **table + overall score + band** shape and counting rules defined in **`master-plan`** Step 6c (**low** ≤ 10, **medium** 11–20, **high** > 20, where the score is the max of the three table rows). **High** means pause **`6`** until the plan is narrowed or split along merchant/customer outcomes (see the protocol branch).
+5. **Changes.** Short bullet points listing what changes, how, and where, scoped at the feature level. Follows the short-bullet rule. Immediately after the change bullets, the **`master-plan`** protocol branch appends a **`### Decomposition assessment`** subsection (same short-bullet + one-line recommendation pattern as phase plans — see mode #2 below). That block records **kinds of change**, **PR count band**, **sequencing / coupling**, a **routing recommendation** (`Delivery phases`, multi-PR `PR breakdown`, or single-PR `PR breakdown`), and **confidence**, so **developer** can choose "Delivery Phase" or "PR Breakdown" with evidence before § 6 is drafted. After that block, **`master-plan`** appends **`### Complexity score (plan-scope signal)`** using the **table + overall score + band** shape and counting rules defined in **`master-plan`** Step 6c (**low** ≤ 10, **medium** 11–20, **high** > 20, where the score is the max of the three table rows). **High** means pause **§6 decomposition** (spawn route) until the plan is narrowed or split along merchant/customer outcomes (see the protocol branch).
 6. **Delivery phases | PR breakdown.** Dual-title section: the heading is `Delivery phases` when the feature decomposes into one or more phase plans, or `PR breakdown` when the feature is small enough to break directly into PRs without an intermediate phase layer. When the heading is `Delivery phases`, the body is a **short numbered list** (see the **§ 6 / § 5 contents rule** below the Phase plan template in mode #2). Most features land on `Delivery phases`; tiny features that don't need a phase layer land on `PR breakdown` and skip mode #2 entirely. Until this section is drafted, its body may stay `_TBD_` **or** follow the **assessment-before-dual-title** pattern in the **§ 6 / § 5 contents rule** (assessment block already present from § 5, dual-title list still `_TBD_`).
 7. **Caveats.** *Optional — omit if there are none.* Anything that needs special attention — known exceptions, edge cases, risks, or coupling that isn't obvious from the diagram or change list. Follows the short-bullet rule from the bullet-style convention above (developer-primary; one short bullet per concern is more scannable than a paragraph).
 
@@ -147,13 +168,13 @@ Every plan ends in a **dual-title section** — § 6 in the Master Plan, § 5 in
   - Sub-bullet 2: a one-line scope sentence (paraphrased from the child plan's § 2 Scope).
   - Sub-bullet 3: a Markdown link to the child plan's `.plan.md` file.
 
-  The index **N** is the `sub-plan <N>` argument: keep list order and numbering in sync with `## N.` phase headings in the parent plan when you add those headings (same **N**, same sequence). Follows the short-bullet rule (each sub-bullet is one short line).
+  List index **N** (1-based ordered list) is what the developer picks via **AskQuestion** / numbered option when spawning a child via **`new-plan`**: keep list order and numbering in sync with `## N.` phase headings in the parent plan when you add those headings (same **N**, same sequence). Follows the short-bullet rule (each sub-bullet is one short line).
 
-- **Heading = `PR breakdown`** (the plan is PR-ready and decomposes directly into PRs): the mode #3 set-level content — Single-concern strategy + Sequencing + **PR list**. The **PR list** sub-section is itself a **short numbered list** mirroring the Delivery phases shape (one numbered item per PR, with the PR's slug or short title bolded on the item line so `sub-plan <N>` can read it as the new sub-plan's name). See mode #3 below for the full set-level template, including the two sub-bullets each numbered item carries.
+- **Heading = `PR breakdown`** (the plan is PR-ready and decomposes directly into PRs): the mode #3 set-level content — Single-concern strategy + Sequencing + **PR list**. The **PR list** sub-section is itself a **short numbered list** mirroring the Delivery phases shape (one numbered item per PR, with the PR's slug or short title bolded on the item line so **`new-plan`** can seed the child name from item **N**). See mode #3 below for the full set-level template, including the two sub-bullets each numbered item carries.
 
 A short **optional intro paragraph** (one or two sentences) is allowed immediately under the heading and before the entries — useful when the decomposition needs a one-line framing the reader can't infer from the entries alone (e.g. "phases run in two parallel tracks"). Skip it when the entries speak for themselves; an empty intro is preferred over filler.
 
-A non-PR-ready plan thus *only* lists short summaries pointing at child plans — never inlines a child's body. To break a child entry out into its own plan file, use the global **`sub-plan <N>`** protocol branch (**Development tools** § *Protocol branches*). **N** is the ordered-list index from the parent's numbered list of children — `Delivery phases` body when the heading is `Delivery phases`, or the `### PR list` sub-section when the heading is `PR breakdown`. **`sub-plan`** routes to the **`new-plan`** protocol branch with the parent plan resolved from chat context per **`.sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc`** and seeds the sub-plan's name from the bolded item title on item **N**'s line.
+A non-PR-ready plan thus *only* lists short summaries pointing at child plans — never inlines a child's body. To break a child entry out into its own plan file, the developer picks list index **N** via **AskQuestion** / numbered option; the agent runs the **`new-plan`** protocol branch (**Development tools** § *Protocol branches*) with the parent plan resolved from chat context per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`**. **N** is the ordered-list index from the parent's numbered list of children — `Delivery phases` body when the heading is `Delivery phases`, or the `### PR list` sub-section when the heading is `PR breakdown`. **`new-plan`** seeds the child plan's name from the bolded item title on item **N**'s line (indexed-child mode; pick **N** via **AskQuestion** / numbered option per **30_planning-target-resolution**). **Indexed-child stub:** the child file uses a **generic** scaffold (`## Overview`, `## Phasing`, `## Out of scope`) until **`phase-plan`** or **`pr-plan`** replaces the body with the Phase plan or per-PR template — that two-step split is intentional.
 
 ### 3. PR breakdown
 
@@ -177,12 +198,20 @@ The set-level content fills the PR-ready plan's dual-title section (Master Plan 
 
 #### PR sizing — test cases and kinds of changes
 
+**Canonical source (center sync contract).** This subsection is the **authoritative** definition of PR sizing for the **research-and-development** center. When buckets, kinds-of-change rules, or test-case counting change, edit **here first**, then align:
+
+- **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Keep PRs small and focused* (ship-lane summary)
+- **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`** § *Step 5a — Infer PR boundaries from the parent plan* (operational application)
+- **`master-plan`** / **`phase-plan`** § *Decomposition assessment* (routing bands `single` | `few (2–5)` | `many (6+)` only — sizing metrics reference this subsection)
+
+Do **not** change thresholds (**≤ 10** / **11–20** / **21+**) or the kinds-vs-lines rule in a single downstream file alone.
+
 Two metrics support the breakdown decision — which PRs to carve out, and how heavy each candidate ends up:
 
 1. **Test-case count.** Estimate the test cases each candidate PR introduces or meaningfully changes — unit + integration / snapshot + exploratory recordings, each enumerated case counted once. Buckets: **≤ 10** simple, **11–20** mid-sized, **21+** heavy. A heavy PR is a *signal to investigate* splitting — it is not automatically wrong. Do not split if the only available split runs within one kind of change (instance batching), or if the result is a half-shipped feature (Strategy #4 trumps size).
 2. **Kinds of changes.** Count *distinct kinds* of changes — not raw lines and not raw files. N instances of the same kind (the same shape applied to N similar files) is **one kind**, not N kinds. Threading the same prompt fragment into 8 generators is one kind with 8 instances; **a reviewer agent** reads the first instance carefully and skims the rest, and **a pre-PR reviewer agent** does the same. Splitting by call-path or by file is rarely justified when the kinds across both halves are identical.
 
-Raw changed-line count is **not** a size signal in this process. The canonical buckets and "kinds vs lines" reasoning live in **`.sedea/centers/sedea-centers--development/rules/efficient-pr-shipping.mdc`** § *Keep PRs small and focused*; the operational application during breakdown lives in **`.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`** § *Step 5a — Infer PR boundaries from the parent plan*. Both must stay in sync with this section.
+Raw changed-line count is **not** a size signal in this process. Downstream copies must stay aligned with this subsection per the sync contract above.
 
 **When to run sizing.** **`### Decomposition assessment`** is authored at the end of **`master-plan`** § 5 and **`phase-plan`** § 4 (same metrics as this subsection), *before* the dual-title section is populated — so **developer** and **`pr-breakdown`** together choose `delivery-phases`, a multi-item **`pr-breakdown`**, or a **one-item `### PR list`** with full context. If a plan predates that block, **`pr-breakdown`** inserts it before the decision gate.
 
@@ -211,9 +240,9 @@ Each PR's standalone plan file has these sections only — sections 1–7 are re
 4. **Reasoning.** Why this PR makes the choices it does, in two parts. The bullet-length rule does **not** apply here — items are full sentences, since each entry needs to make the reasoning unambiguous for **a reviewer agent** (via the PR description), for **a coding agent** relaying to **a PR-creating agent**, and for **a coding agent** in a **fresh pre-PR reviewer agent session**.
    - **Why this approach.** The design decisions made in this PR and *why each was made*. Capture the *because* for every non-obvious choice — naming, layering, where logic is placed, what is reused vs introduced, what is kept backwards-compatible.
    - **Considered & rejected.** Alternatives that were considered but not taken, each with the reason it was rejected. This gives **a reviewer agent** maximum signal and the same signal to **a coding agent** in a **fresh pre-PR reviewer agent session**: capturing "we considered X and rejected it because Y" short-circuits "did you think about X?" comments and lets **a reviewer agent** give actionable feedback on the chosen path.
-5. **Repo rules impact.** Short bullet list for **a coding agent** — which **`.cursor/rules/*.mdc`** files in the **product repo** (the repo that receives this PR) should be **added or updated** after the code change lands, and **one line each** on *what* guidance to add or adjust (new boundary, deployment constraint, error-handling pattern, layout rule, …). Follows the short-bullet rule; paths are relative to that repo's root. When this PR does not warrant any rule change, write a single bullet: `_None — no repo rule updates required for this PR._` This section is **plan-first** for long-lived agent guidance (see **`.sedea/centers/sedea-centers--development/rules/maintain-rules.mdc`**); it is **not** required to duplicate the GitHub PR description body unless **a coding agent** chooses to surface it under "Notes for the reviewer".
+5. **Repo rules impact.** Short bullet list for **a coding agent** — which **`.cursor/rules/*.mdc`** files in the **product repo** (the repo that receives this PR) should be **added or updated** after the code change lands, and **one line each** on *what* guidance to add or adjust (new boundary, deployment constraint, error-handling pattern, layout rule, …). Follows the short-bullet rule; paths are relative to that repo's root. When this PR does not warrant any rule change, write a single bullet: `_None — no repo rule updates required for this PR._` This section is **plan-first** for long-lived agent guidance (see **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`**); it is **not** required to duplicate the GitHub PR description body unless **a coding agent** chooses to surface it under "Notes for the reviewer".
 
-   **Align product-repo rules before `commit-push`.** The §5 list is not only planning intent — it is the **coding checklist against the product-repo diff**. Before asking for review or saying `commit-push`, **a coding agent** reconciles every §5 bullet with the branch: bullets that call for **update** / **extend** / **add** a named **`.cursor/rules/*.mdc`** file must have the corresponding edit **in the same PR** (preferred) or an explicit follow-up commit on the same branch before merge; bullets that say **no file edit** / **verify only** / **skip unless …** are satisfied by confirming the code obeys the existing rule (no `.mdc` change). If a rule edit is genuinely deferred, **revise §5 in the plan** in the same window so a **fresh pre-PR reviewer agent session** and **reviewer-agents** do not see plan ↔ repo drift.
+   **Align product-repo rules before commit and push.** The §5 list is not only planning intent — it is the **coding checklist against the product-repo diff**. Before asking for review or running rule **20** § *Commit and push cadence*, **a coding agent** reconciles every §5 bullet with the branch: bullets that call for **update** / **extend** / **add** a named **`.cursor/rules/*.mdc`** file must have the corresponding edit **in the same PR** (preferred) or an explicit follow-up commit on the same branch before merge; bullets that say **no file edit** / **verify only** / **skip unless …** are satisfied by confirming the code obeys the existing rule (no `.mdc` change). If a rule edit is genuinely deferred, **revise §5 in the plan** in the same window so a **fresh pre-PR reviewer agent session** and **reviewer-agents** do not see plan ↔ repo drift.
 6. **Tests to write.** Check this repo's specific rule for writing tests if exists. If the rule does not exist write: *No testing rules exist for this repo.*
 7. **Deploy test plan.** Two **numbered GFM task lists** (Markdown `1. [ ]`, `2. [ ]`, `3. [ ]` — *not* dash bullets, *not* bare numbered items without checkboxes), under a **`**Status:**`** lifecycle marker. Section shape:
 
@@ -241,12 +270,12 @@ Each PR's standalone plan file has these sections only — sections 1–7 are re
 
    The bullet-length rule does **not** apply here: items can be full sentences, since each step needs to be unambiguous for **a coding agent** or the on-call. Numbering is required so reviewers and a **fresh pre-PR reviewer agent session** can reference each step by index (e.g. *"flag § 7 After-deploy 3"*) without counting; the same convention applies to § 8 Caveats. The `[ ]` / `[x]` checkbox is the contract the **`deploy-walk`** protocol branch uses — *no* checkbox means the step won't be picked up by `deploy-walk <N> done` and the step has to be tracked manually.
 
-   **What NOT to include.** § 7 is the **PR-specific delta** on top of the baseline development process — anything covered by always-on rules, standing alerts, or an **optional** product-repo “verify after changes” rule does not belong here. Specifically:
+   **What NOT to include.** § 7 is the **PR-specific delta** on top of the baseline development process — anything covered by always-on rules, standing alerts, or the implementation repo’s **standing** pre-review commands (README, CONTRIBUTING, CI defaults, etc.) does not belong here. Center docs do **not** name product-repo rule paths; discover that repo’s baseline from its own docs when implementing. Specifically:
 
-   - **Repo-local verify baseline (optional)** — A hosting / product checkout **may** ship **`.cursor/rules/verify-after-changes.mdc`**. **When that file exists**, follow its **must pass before asking for review** (or equivalent) section for that repo’s baseline commands before review. **When it does not exist**, there is **no** verify-after-changes baseline for that repo: do **not** assume lint/build/test pipelines from another product or from this center doc. In **both** cases, do **not** paste those baseline commands into § 7 — listing them duplicates the contract and adds noise; § 7 captures what is **different for this PR** beyond whatever baseline that repo actually defines (including *none*).
+   - **Standing verify / review commands** — Do **not** paste the implementation repo’s normal lint/build/test (or equivalent) pre-review bar into § 7. § 7 captures what is **different for this PR** beyond that standing bar. Do **not** assume another product’s pipelines or copy baseline commands from this center doc.
    - **Local smoke curls when integration tests cover the same surface.** If § 6 Tests to write includes an integration test that exercises the new endpoint / handler / job, do not also list a `curl http://localhost:<port>/...` step in **Before deploy**. The integration test is the contract; a localhost curl is a strictly weaker version of it. List a local smoke curl only when there is no integration test (because the surface is hard to integration-test) or when the curl exercises a real external dependency the integration test mocks.
 
-   When applying these exclusions leaves a section empty (e.g. **Before deploy** with no PR-specific prep), write the section as a single italic line — *"None — covered by § 6 tests and any optional product-repo verify baseline (see `.cursor/rules/verify-after-changes.mdc` when that file exists in the repo)."* — rather than leaving it blank.
+   When applying these exclusions leaves a section empty (e.g. **Before deploy** with no PR-specific prep), write the section as a single italic line — *"None — covered by § 6 tests and the implementation repo’s standing pre-review checks (not duplicated here)."* — rather than leaving it blank.
 
    **Frontmatter capstone todo (`deploy-test-plan-verified`).** Every PR plan's YAML `todos:` list must include one entry **after** implementation todos, **before** `isProject:`:
 
@@ -268,11 +297,42 @@ Each PR's standalone plan file has these sections only — sections 1–7 are re
    - **`plan-reconcile` is not auto-triggered.** Finishing the deploy walk (or this todo) does **not** run `plan-reconcile` protocol branch. **`plan-reconcile`** reconciles **merged** PRs, archive candidates, and follow-ups triage — a different cadence. Run `plan-reconcile` yourself when linked PRs have merged and you want reconcile/archive. See the **`plan-reconcile`** protocol branch *When to trigger* guardrail.
 8. **Caveats.** *Optional — omit if there are none.* Free-form bullets for exceptions, risks, or agent-relevant warnings (e.g. feature-flag dependencies, schema-migration timing, rollback caveats). The short-bullet rule does **not** apply here: bullets may be full sentences, since this section faces **a coding agent** (implementation + **fresh pre-PR reviewer agent session**) and **a reviewer agent** — **a coding agent** carries Caveats into the PR description's "Notes for the reviewer" field (GitHub UI label), and **a reviewer agent** needs the concern spelled out unambiguously. (This is the divergence from mode #1 / mode #2 Caveats, which are developer-only and do follow the short-bullet rule.)
 
-Sections 1, 2, 3, 4, 6, 7, and 8 (when present) flow into the PR description that **a coding agent** has **a PR-creating agent** write — single concern → PR title and summary; Background → "Context"; Change scope → "What changed"; Reasoning → "Why this approach" and "Alternatives considered"; Tests to write → "Tests"; Deploy test plan → "Verification / deploy plan"; Caveats → "Notes for the reviewer" (for **a reviewer agent** and for a **fresh pre-PR reviewer agent session**). Section **5 (Repo rules impact)** is primarily for **coding + workspace rules** alignment; it may be summarized in the PR description optionally but its contract is to list **which** rule files to touch — and **those product-repo `.mdc` edits land with the code before merge** unless §5 explicitly defers them (see **Align product-repo rules before `commit-push`** above).
+Sections 1, 2, 3, 4, 6, 7, and 8 (when present) flow into the PR description that **a coding agent** has **a PR-creating agent** write — single concern → PR title and summary; Background → "Context"; Change scope → "What changed"; Reasoning → "Why this approach" and "Alternatives considered"; Tests to write → "Tests"; Deploy test plan → "Verification / deploy plan"; Caveats → "Notes for the reviewer" (for **a reviewer agent** and for a **fresh pre-PR reviewer agent session**). Section **5 (Repo rules impact)** is primarily for **coding + workspace rules** alignment; it may be summarized in the PR description optionally but its contract is to list **which** rule files to touch — and **those product-repo `.mdc` edits land with the code before merge** unless §5 explicitly defers them (see **Align product-repo rules before commit and push** above).
 
 ## Cadence
 
 **Strategy**, **Development tools**, and **Planning Modes** describe the **artifacts** and tooling of feature development. **Cadence** describes the **operational loop** those artifacts live inside. Setup is one-shot per feature (PRD → **Master Plan**); from there, every feature runs the loop below until it is done shipping.
+
+### Canonical sources (do not conflate)
+
+| Question | Read first |
+|----------|------------|
+| Protocol branch names, templates, and the **product development loop** | This document — **Development tools** § *Protocol branches* and **Cadence** below |
+| Happy-path **skill order** (planning → ship) | **Cadence reference** diagram (matches **`plan-and-deliver/plan.mdc`** *Cadence reference*) |
+| **Mission Control `plan and deliver` dispatch** — who spawns whom, §§1–8 protocol, §8 ship ledger, `MC_DISPATCH_RESOLVED_V1` gates | **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** — *Squad operations* and §8 (not duplicated here) |
+
+The large loop diagram below includes planning, **ship chain**, feedback, and plan updates. It is **not** the Squad Leader spawn map. Detached ship lanes and leader-lane recap: **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8 and § *Leader-lane ship recap* under **Loop stages** below.
+
+### Cadence reference (skill order — same as plan-and-deliver `plan.mdc`)
+
+Approval gates and developer choices happen inside each skill; this line is the **happy-path order** only.
+
+```mermaid
+flowchart LR
+  classDef branch fill:#f0fdf4,stroke:#16a34a,color:#14532d
+
+  PRD[PRD] --> MPB[master-plan]:::branch
+  MPB --> DEC[delivery-phases or pr-breakdown]:::branch
+  DEC --> CHILD[new-plan → phase-plan or pr-plan]:::branch
+  CHILD --> CSB[coding-session]:::branch
+  CSB --> PPRB[pre-pr-review]:::branch
+  PPRB --> CPRB[create-pr]:::branch
+  CPRB --> REVB[pr-review]:::branch
+  REVB --> DWB[deploy-walk]:::branch
+  DWB --> RECB[plan-reconcile]:::branch
+```
+
+### Product development loop (planning + ship + feedback)
 
 ```mermaid
 ---
@@ -290,7 +350,7 @@ flowchart TD
     subgraph Cycle["Product Development Loop"]
       direction TB
       C[Next Phase Decomposition] --> D[PRs Breakdown]
-      D --> E[Work Session]
+      D --> E[coding-session]
 
       subgraph S1["Feedback Collection"]
         direction TB
@@ -300,7 +360,12 @@ flowchart TD
         G4[Customer Feedback]
       end
 
-      E --> S1 --> H[Collect Feedback]
+      E --> PPR[pre-pr-review]
+      PPR --> CPR[create-pr]
+      CPR --> PRV[pr-review]
+      PRV --> DW[deploy-walk]
+      DW --> REC[plan-reconcile]
+      REC --> S1 --> H[Collect Feedback]
       H --> I[Plan Updates]
     end
 
@@ -322,10 +387,13 @@ flowchart TD
     class C violet
     class D orange
     class E fuchsia
+    class PPR,CPR,PRV,DW,REC fuchsia
     class S1 green
     class H yellow
     class I rose
 ```
+
+**Diagram legend.** **`coding-session`** covers worktree setup and the **coding agent** implementation pass. The nodes **`pre-pr-review`** → **`create-pr`** → **`pr-review`** → **`deploy-walk`** → **`plan-reconcile`** are the **ship chain** (same order as **Cadence reference** above and **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`**). Feedback and **Plan Updates** close the iteration; they are not substitutes for ship branches.
 
 **One-shot setup.** PRD → **Master Plan**. The agent that drafts the **Master Plan** from a PRD is the **`master-plan`** protocol branch (path in **Development tools** § *Protocol branches*); the artefact is mode #1's **Master Plan** template above.
 
@@ -346,19 +414,78 @@ The triage decision is the human-in-the-loop part of the cycle — there is no r
 
 #### Next Phase Decomposition
 
-Pick up the next phase to ship from the active plan's dual-title section (Master Plan § 6 or, recursively, a phase plan's § 5). The **section's heading** is the decomposition decision: `Delivery phases` means the body is a **short numbered list** of child phases; `PR breakdown` means "skip mode #2 and go straight to mode #3 here" — the body's `### PR list` sub-section is itself a **short numbered list** of child PRs. The two heading variants share the same numbered-list shape so the global **`sub-plan <N>`** shortcut works uniformly across modes: it picks the **N**th child whether that child is a phase plan or a PR plan. Every non-leaf entry expands into its own standalone plan file via `sub-plan <N>` (parent resolved from chat context per **`.sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc`**; the new sub-plan inherits its name from the bolded item title on item **N**'s line).
+Pick up the next phase to ship from the active plan's dual-title section (Master Plan § 6 or, recursively, a phase plan's § 5). The **section's heading** is the decomposition decision: `Delivery phases` means the body is a **short numbered list** of child phases; `PR breakdown` means "skip mode #2 and go straight to mode #3 here" — the body's `### PR list` sub-section is itself a **short numbered list** of child PRs. The two heading variants share the same numbered-list shape. Expanding list item **N** uses **`new-plan`** (indexed child) after the developer picks **N** via **AskQuestion** or a numbered option per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`**.
 
 #### PRs Breakdown
 
 For a plan decided to be PR-ready (its dual-title section is titled `PR breakdown`), this stage produces the per-PR plans. See **§ 3 PR breakdown** above and its set-level + per-PR templates.
 
+#### Planning readiness vs worktree completeness
+
+Two independent gates apply before a worktree opens. Do not treat **`pr-plan`** “ready” as automatic permission to skip plan-body validation.
+
+| Layer | Mechanism | Pass criteria | `_TBD_` in per-PR §§5–8 |
+|-------|-----------|---------------|-------------------------|
+| **Planning handoff** | **`pr-plan`** → `readyForImplementation` | §§1–4, deploy capstone todo, parent link | **Allowed** at handoff |
+| **Worktree gate** | **`coding-session`** worktree-open gate (runs **`plan-ws-completeness.mjs`** first) | No `_TBD_` in per-PR body (outside fenced code), unless override chosen in that gate | **Blocks** until filled or override |
+
+When **`readyForImplementation`** is true but §§5–8 still contain `_TBD_`, the script prints **`INCOMPLETE`** — expected, not a bug. Proceed only after the developer finishes those sections, uses **`pr-plan`** pre-fill sketches, chooses **Start with incomplete plan (executive override)** in the worktree-open gate, or sends **`override incomplete plan`** in the message. **`readyForImplementation` alone does not advance the Squad Leader §8 ship `phase` beyond `not-started`** until completeness passes or is overridden and **`coding-session`** sets `developerApprovedImplementation` (**`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §7–§8). See **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *PR-plan completeness before coding-session*.
+
 #### Coding Session
 
-Each PR is delivered in a newly spun-off agent driven by the **`coding-session`** protocol branch (see **Development tools** § *Protocol Branches*). The protocol branch spins up a worktree, starts a new **coding agent**, and hands it the per-PR plan. The session ends when the PR ships.
+Each PR is delivered through the **`coding-session`** protocol branch (see **Development tools** § *Protocol branches*). This stage spins up a worktree, attaches the Sedea workbench when applicable, emits a copy-safe prompt for **a coding agent**, and coordinates the **ship chain** (§ *Ship chain* below) after an explicit committed implementation cut point.
 
-**Pre-PR reviewer agent** pass happens **after** implementation and **before** the change is treated as merge-ready: **a coding agent** opens a **new agent session** and re-reads the PR plan / diff / description as an unbiased reviewer — see **Development tools** § *Pre-PR reviewer agent*. Only then do **a reviewer agent** and the rest of the PR pipeline run on a level playing field.
+**In-loop feedback** during implementation: **a coding agent** maintains **`## Follow-ups`** on the PR plan for scope-adjacent items (Strategy #6). **`pre-pr-review`** returns **proposed** follow-ups only; **`coding-session`** appends after developer approval. **`pr-review`** follow-ups follow the same approval pattern when required. § *Plan Updates* below drains routed bullets.
 
-This stage is *also* where in-loop feedback gets captured: **a coding agent** maintains a `## Follow-ups` section on the PR plan and appends to it whenever they notice an improvement opportunity, code-review item, or risk that would expand scope (Strategy #6 forbids the expansion; the follow-up is the safe escape valve). Follow-ups from **a reviewer agent** land in the same section during the `pr-review` protocol branch flow. Each bullet may carry an optional `(target: …)` hint — Master Plan, current phase plan, sibling plan, new plan, or `drop` — to feed the next-step triage. The capture itself is wired through the **`coding-session`** task prompt and the **`pr-review`** flow; § *Plan Updates* below describes how those bullets get drained.
+#### Ship chain (per PR)
+
+After **`pr-plan`** handoff and **`coding-session`** implementation, the happy path runs these **protocol branches** in order (see **Cadence reference** and the loop diagram). Branches usually run on **detached** lanes (developer phrase, snapshot, or nested spawn) — not from the **plan and deliver** Squad Leader protocol §§1–7. Skill paths: **Development tools** § *Protocol branches*.
+
+| Order | Branch | Role (one line) |
+|------:|--------|-----------------|
+| 1 | **`pre-pr-review`** | Fresh reviewer lane; go/no-go before merge-ready |
+| 2 | **`create-pr`** | **Only** branch that may run **`gh pr create`** (rule **20**) |
+| 3 | **`pr-review`** | Triage open PR comments (often **inline** in **`coding-session`**) |
+| 4 | **`deploy-walk`** | Walk §7 deploy checklist after merge when applicable (see **Entry points** below) |
+| 5 | **`plan-reconcile`** | Merge-driven archive + follow-ups triage (separate cadence after merge/deploy) |
+
+**`deploy-walk` entry points (canonical)**
+
+| How it starts | Typical lane | When |
+|---------------|--------------|------|
+| **Developer phrase** — `deploy-walk present <N>`, `deploy-walk status`, step done/skip/block | Detached (developer or snapshot) | PR merged or target env ready; plan §7 exists |
+| **`create-pr` chain** — **AskQuestion** **Start deploy verification now** after merge | Spawned **`deploy-walk`** child | PR `merged`; `autoDeployAfterMerge` not `false` (**`create-pr/SKILL.md`** § *Spawn deploy-walk after merge*) |
+| **Mission / skill dispatch** — invoke **`deploy-walk/SKILL.md`** with plan anchor | Detached | Same as developer phrase when inputs are supplied |
+
+**Ordering:** Run **`deploy-walk`** after the PR is **merged** and §7 is walkable. Finishing deploy-walk (or capstone todo **done**) does **not** run **`plan-reconcile`** — start **`plan-reconcile`** separately when linked PRs are merged and you want archive/follow-up triage (**`plan-reconcile/SKILL.md`** § *When to trigger*).
+
+##### pre-pr-review
+
+Spawned from **`coding-session`** after a committed cut point. Reviews diff + PR plan + repo rules; returns **`recommendation: go`** or blockers. Non-blockers are **`outputs.proposedFollowUps`** — **`coding-session`** presents them; plan **`## Follow-ups`** edits only after developer approval. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`**.
+
+##### create-pr
+
+Spawned from **`coding-session`** when pre-PR review is **go**. Builds reviewer-complete PR description; opens GitHub PR when authorized. Planning and coding lanes must **not** run **`gh pr create`**. May chain **`deploy-walk`** after merge when configured. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/create-pr/SKILL.md`**.
+
+##### pr-review
+
+Runs **inline** on the active **`coding-session`** lane after a PR exists (not a separate spawn on **`plan and deliver`**). Triages review comments; commit/push gates per rule **20** and Sedea **6_git-commit-push-gate**. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md`**.
+
+##### deploy-walk
+
+Step-by-step walk of the PR plan **`## 7. Deploy test plan`**; flips capstone todo **`deploy-test-plan-verified`** when done. Entry paths: **§ Ship chain** *deploy-walk entry points* above. See **`deploy-walk/SKILL.md`** § *Entry points*.
+
+##### plan-reconcile
+
+Archive candidates, follow-ups triage, merge/deploy gates. Often developer-triggered after merge; separate from deploy-walk completion. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md`**.
+
+##### Leader-lane ship recap (detached lanes)
+
+On a **`plan and deliver`** Mission Control dispatch, the Squad Leader **§8** ship ledger may **not** receive child **`AGENT_RESULT_RESPONSE_V1`** from detached lanes.
+
+- **§8 does not auto-update from detached work.** Finishing **`pre-pr-review`**, **`create-pr`**, **`deploy-walk`**, or **`plan-reconcile`** on a detached or nested lane does **not** refresh the leader §8 table by itself. Advance or register a row when the developer posts **Ship recap — plan and deliver** on the **leader dispatch** (`lastReportedBy: developer-message`), or when a parent lane forwards a child result the leader can parse (`lastReportedBy: child-output`). Until then, §8 rows stay stale even if the PR plan file or GitHub already moved on.
+
+After each ship milestone, post the **Ship recap — plan and deliver** block on the **leader dispatch** (template and phase enum: **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8 *Leader-lane ship recap*). Each ship skill § *Squad Leader bubble-up* maps **`outputs`** → **`shipPhase`**. **`pr-review`** is inline on the **`coding-session`** lane — use the same recap with `shipPhase: pr-review` (**`pr-review/SKILL.md`** § *Leader §8 recap*).
 
 #### Feedback Collection
 
@@ -367,7 +494,7 @@ Four sources, split by where they enter the loop.
 **In-loop sources** — captured inside the Coding Agent Session, on the PR plan's `## Follow-ups`:
 
 - **Implementation Follow-ups.** Things **a coding agent** noticed *while writing the code* that aren't in scope of the current PR. Recorded during the session in `## Follow-ups`. Freshest source; losing these is the most expensive omission in the loop.
-- **Code Review Follow-ups.** Things **a coding agent**, **a pre-PR reviewer agent** and **a reviewer agent** notice *during PR review* that aren't worth blocking the PR on — e.g. **a pre-PR reviewer agent** flags "out of scope but worth thinking about", or **a coding agent** spots something during coding. Captured into the same `## Follow-ups` section via the `pr-review` protocol branch flow.
+- **Code Review Follow-ups.** Non-blockers from **a pre-PR reviewer agent** (`outputs.proposedFollowUps` → developer approval → **`coding-session`** append), from **a reviewer agent** on the open PR (**`pr-review`** after approval), or from **a coding agent** during implementation (direct append when in scope). Example: **a pre-PR reviewer agent** flags "out of scope but worth thinking about" without blocking merge readiness.
 
 **Async sources** — they don't originate inside the loop; they queue up between sessions and are drained at the next Plan Updates pass:
 
@@ -385,15 +512,15 @@ A bullet may eventually graduate from the target's `## Follow-ups` to:
 1. **Changes** — a feature-level addition picked up in the next PR breakdown.
 2. **Delivery phases | PR breakdown** — a new entry that becomes its own phase or PR.
 3. **Caveats** — a risk or constraint the next coding agent must respect.
-4. **A new sub-plan** spawned via **`sub-plan`** (phase of a parent plan resolved from chat context per **`.sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc`**) or **`new plan`** (free-standing).
+4. **A new child plan** scaffolded via **`new-plan`** — **indexed-child** (list item **N** under a parent, then **`phase-plan`** or **`pr-plan`** on the child path) or **standalone** (free-standing plan with `parent: null`), per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`**.
 
 (Section numbers shift between templates: Master Plan uses § 5 / § 6 / § 7, Phase plan uses § 4 / § 5 / § 6 — names stay the same.)
 
 The async-source drain plugs in at the same step: teammate suggestions and customer signals land in some plan's `## Follow-ups` (Master Plan by default) and pass through the same routing options the next time **`plan-reconcile`** archives that plan.
 
-### Nested loops — sub-plan loops feed back up the hierarchy
+### Nested loops — child plans feed back up the hierarchy
 
-A sub-plan (one created via `sub-plan` or `new plan` with a non-Master parent) runs *its own* Cadence loop — own phase decomposition, own PR breakdown, own work sessions, own feedback collection, own plan updates. When that sub-loop's Plan Updates step fires, the targeted plan is picked from the same heuristics — but the candidate set now includes the sub-plan itself, its parent, the **Master Plan**, and any sibling. **Feedback flows along the plan hierarchy, in either direction.** A child loop's Implementation Follow-up may surface a **Master Plan**-level concern; a **Master Plan**-level customer feedback item may target a sub-plan if the work it implies is local to that sub-plan's concern.
+A **child plan** (one scaffolded via **`new-plan`** with a non-Master `parent` in the sidecar) runs *its own* Cadence loop — own phase decomposition, own PR breakdown, own work sessions, own feedback collection, own plan updates. When that sub-loop's Plan Updates step fires, the targeted plan is picked from the same heuristics — but the candidate set now includes the child plan itself, its parent, the **Master Plan**, and any sibling. **Feedback flows along the plan hierarchy, in either direction.** A child loop's Implementation Follow-up may surface a **Master Plan**-level concern; a **Master Plan**-level customer feedback item may target a child plan if the work it implies is local to that child's concern.
 
 The diagram above describes the per-feature shape and deliberately does not draw the cross-loop arrows for every hierarchy level — adding them makes it unreadable. The shape is fractal: every plan in the tree runs the same loop with the same triage step.
 

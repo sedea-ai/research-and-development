@@ -6,8 +6,7 @@ description: >-
   AskQuestion, archive with plan-state.mjs archive, then follow-ups triage
   before archiving user-selected slugs. Use under mission dispatch, natural
   language ("plan reconcile"), or when the developer wants merge-driven archive
-  cadence — not legacy two-letter chat tokens.
-timeoutMs: 1800000
+  cadence — via **AskQuestion**, natural language, or mission dispatch.
 inputs:
   targetPlanPath:
     type: string
@@ -45,6 +44,12 @@ inputs:
     type: string
     description: Skill that spawned reconcile, usually create-pr.
     required: false
+warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Plan reconcile
@@ -74,17 +79,17 @@ If any gate fails, stop with `partial`, keep `continuationStatus: "active"`, and
 All **`plan-state.mjs`** invocations run from the **hosting repo root** (the tree that contains **`.sedea/`**). Use a **direct `node` command** — the **Node runtime bundled with Sedea / VS Code** (e.g. integrated terminal where `node` is the editor’s runtime). **Do not** rely on **fnm**, **nvm**, or other host-installed Node managers.
 
 ```bash
-node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs <subcommand> …
+node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs <subcommand> …
 ```
 
-Plans and sidecars live only under the **`.sedea/operations/`** union — **`.sedea/operations/joint/plans/`** and **`.sedea/operations/<operations-user-id>/plans/`** (literal **`joint`**). Do **not** use **`~/.cursor/plans/`** for Sedea product plans.
+Plans and sidecars live only under the **`.sedea/operations/`** union — **`.sedea/operations/joint/plans/`** and **`.sedea/operations/<operationsUserId>/plans/`** (literal **`joint`**). Do **not** use **`~/.cursor/plans/`** for Sedea product plans.
 
 ## Flow
 
 ### 1. Preview reconcile (PR-tracked path)
 
 ```bash
-node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs reconcile --dry-run
+node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs reconcile --dry-run
 ```
 
 This queries **`gh pr view`** for every sidecar **`prs[]`** entry without moving files or appending parent bullets. The printed report has three buckets:
@@ -108,7 +113,7 @@ Present the dry-run report to the developer and use **AskQuestion** before runni
 Only **Approve PR-tracked reconcile mutations** authorizes:
 
 ```bash
-node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs reconcile
+node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs reconcile
 ```
 
 If the developer skips PR-tracked reconcile, do not run non-dry-run `reconcile`; continue only to read-only `list-candidates` and developer-selected archive work. If the developer aborts, stop with `continuationStatus: "active"` and no archive mutations.
@@ -116,7 +121,7 @@ If the developer skips PR-tracked reconcile, do not run non-dry-run `reconcile`;
 ### 2. Run list-candidates (non-PR path)
 
 ```bash
-node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs list-candidates --json
+node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs list-candidates --json
 ```
 
 Emits a JSON array of plans reconcile could not auto-decide. Schema per entry:
@@ -159,7 +164,7 @@ If both lists are empty → no question; continue (step 3.5 only if something in
 
 ### 3.5 — Follow-ups triage
 
-Per **`.sedea/centers/sedea-centers--development/docs/development-process.md`** (**Cadence** / plan updates): **an un-triaged follow-up is a forgotten one**. Before archiving a plan that has a non-empty **`## Follow-ups`** section, route every bullet.
+Per **`.sedea/centers/research-and-development/docs/development-process.md`** (**Cadence** / plan updates): **an un-triaged follow-up is a forgotten one**. Before archiving a plan that has a non-empty **`## Follow-ups`** section, route every bullet.
 
 **Scope**
 
@@ -196,7 +201,7 @@ If a plan in scope has no **`## Follow-ups`** section, or the section is empty, 
 For each slug the user picked that is **not** in the **`postponed:`** set from step 3.5:
 
 ```bash
-node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs archive \
+node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs archive \
   --slug <slug> \
   --signal "<signal-text>"
 ```
@@ -265,8 +270,49 @@ Set `continuationStatus`:
 - `active` when flagged plans, postponed follow-ups, manual routing, or developer choices remain.
 - `partial` status with `continuationStatus: "active"` when script errors or missing merge/deploy gates block reconcile.
 
+## Squad Leader bubble-up (detached lanes)
+
+Runs on a **detached** reconcile lane. When reconcile reaches terminal success for the target PR plan, nudge the developer to post **Ship recap — plan and deliver** on the leader dispatch (**`../plan.mdc`** §8).
+
+| Outcome | `shipPhase` | `rowStatus` | Key `outputs` for recap |
+|---------|-------------|-------------|-------------------------|
+| Target archived / ship complete | `done` | `closed` | `targetPlanPath`, `archivedSlugs`, `remainingTasks` |
+| Flagged / postponed follow-ups | `reconcile` | `open` | `targetPlanPath`, `flaggedSlugs`, `postponedSlugs`, `remainingTasks` |
+| Script or gate blocked | `reconcile` | `blocked` | `targetPlanPath`, `remainingTasks`, `blockedReason` |
+
+## Completion (spawned)
+
+Required `outputs` per **## Spawned result contract** above. Re-emit an **updated** terminal result after user-requested follow-up on this lane (same `correlationId`).
+
+### Host protocol line (required)
+
+Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status`, `summary`, `outputs`, `errors` (use `[]` when none). Populate `outputs` from the sections above. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
+
+Stop after this line.
+
+## Completion (inline)
+
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+Normally spawned after deploy or on developer request. If run inline, use the same `outputs` semantics as **## Spawned result contract** and **`## Completion (spawned)`** in prose only.
+
 ## Extensions
 
+Maintenance subcommands and future UX — **not** part of the default reconcile flow (§§1–4). Run only when the developer explicitly requests them or dry-run output shows they are needed.
+
 - **Stale worktree prune.** Today other flows own this. If UX merges here, add **`prune-sessions`** behind an explicit **`AskQuestion`** gate.
-- **`shippedPrs` frontmatter** — when **`reconcile`** / archive writes **`shippedPrs`**, prefer that field in **`list-candidates`** heuristics over body regex (adjust step 2 comments when shipped).
-- **`backfill-prs-from-body`** — optional step 0 behind a separate trigger if you add it to **`plan-state.mjs`**.
+
+- **`shippedPrs` frontmatter** — **`reconcile`** / **`archive`** write **`shippedPrs`** from sidecar **`prs[]`** at archive time. **`list-candidates`** prefers that field over body-regex hits when present (adjust step 2 commentary when this field is populated).
+
+- **`backfill-prs-from-body` (implemented; separate from reconcile).** Subcommand already exists on **`plan-state.mjs`** (see script **`--help`**). Use **before** step 1 when legacy PR plans still reference merged PRs **only in plan body prose** and lack frontmatter **`shippedPrs`** — without it, PR-tracked **`reconcile`** may **`skip`** plans that have no sidecar **`prs[]`**. The subcommand **only** backfills **`shippedPrs`**; it does **not** archive, reparent, or run follow-ups triage. Skips plans that already have non-empty **`shippedPrs`** unless **`--force`**.
+
+  **Triggers (examples):** *backfill shipped PRs*, *fix legacy PR metadata before reconcile*, dry-run **`list-candidates`** shows body-only PR hits with empty **`shippedPrs`**.
+
+  **Gate:** present dry-run output and use **AskQuestion** before any non-dry-run run (same approval pattern as step 1b). Then continue with **Flow** from step 1.
+
+  ```bash
+  node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs backfill-prs-from-body --slug <slug> --dry-run
+  node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs backfill-prs-from-body --all --dry-run
+  ```
+
+  After developer approval, drop **`--dry-run`**. Add **`--force`** only when re-running after prose corrections and existing **`shippedPrs`** must be overwritten.

@@ -4,15 +4,11 @@ description: >-
   **Coding session** protocol branch: create a git worktree + branch from origin/main,
   record worktrees and session focus in the plan sidecar via plan-state.mjs, attach the
   worktree in the same Sedea workbench (Mission Control sedea_add_worktree_folder per
-  efficient-pr-shipping.mdc), emit a copy/paste-safe two-phase session prompt for
+  20_efficient-pr-shipping.mdc), emit a copy/paste-safe two-phase session prompt for
   **a coding agent**, and after the implementation cut point spawn **pre-pr-review**.
   Plan-anchored runs validate per-PR plans with plan-ws-completeness.mjs (_TBD_ in body
   requires completion or explicit override incomplete plan). Use under mission dispatch,
   natural language, or after planning when handing off implementation.
-timeoutMs: 1800000
-warmUpRules:
-  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
-  - ".sedea/centers/sedea-centers--development/rules/efficient-pr-shipping.mdc"
 inputs:
   targetPlanPath:
     type: string
@@ -24,11 +20,11 @@ inputs:
     required: false
   readyForImplementation:
     type: boolean
-    description: Readiness signal from pr-plan. Required for spawned implementation handoff.
+    description: Optional hint from a prior **pr-plan** menu (planning handoff only). Does not authorize worktrees.
     required: false
   developerApprovedImplementation:
     type: boolean
-    description: True only when the developer explicitly approved this PR plan for implementation handoff.
+    description: Layer 2 output — true only after an authorizing worktree-open gate choice. Not supplied by **pr-plan**.
     required: false
   repoPath:
     type: string
@@ -54,69 +50,89 @@ inputs:
     required: false
   upstreamSkill:
     type: string
-    description: Skill that requested implementation handoff, usually pr-plan.
+    description: Optional context label (developer dispatch, snapshot, planning skill). **pr-plan** does not spawn this skill.
     required: false
+warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Coding session
 
 Hand off a unit of work from the **initiating** session to **a coding agent** in a **dedicated git worktree**, with the worktree visible in the **same Sedea workbench** (multi-root workspace), not a second editor process.
 
-**Owns:** `git worktree add`, `plan-state.mjs set-worktrees` / `set-session`, Mission Control worktree attach, completeness gate, curated session prompt emission.
+**Owns:** per-PR plan §§ **5–8** during implementation (repo rules impact, tests, deploy plan, caveats); `git worktree add`, `plan-state.mjs set-worktrees` / `set-session`, Mission Control worktree attach, pre-worktree validation + worktree-open gate, curated session prompt emission; ship-chain spawns (**`pre-pr-review`**, **`create-pr`**, inline **`pr-review`**) after cut points.
 
-**Out of scope:** implementing product code in this chat; opening PRs; **`plan-reconcile`** archive cadence except where this skill references it for cleanup narrative.
+**Out of scope:** drafting per-PR §§ **1–4** ( **`pr-plan`** ); implementing product code in this chat; opening PRs from the planning lane; **`plan-reconcile`** archive cadence except where this skill references it for cleanup narrative.
 
 After emitting the implementation session prompt(s), **stop** — do not `cd` into the worktree to implement. When invoked later from the coding agent lane after a committed cut point, this same skill owns spawning **`pre-pr-review`**.
 
-## Spawned implementation handoff gate
+## Relationship to `pr-plan`
 
-When this skill is spawned from `pr-plan`, treat implementation handoff as plan-anchored and require:
+| Concern | **`pr-plan`** | **`coding-session`** (this skill) |
+|---------|--------------|-----------------------------------|
+| §§ **1–4** | Drafted on the planning lane | Read for prompts and review; edit only when the developer revises the plan |
+| §§ **5–8** | **`_TBD_`** or optional speculative sketch | Substantive fill during implementation |
+| Handoff | Step 5c option 4 + `outputs.readyForImplementation` | Developer starts this skill on a **separate** lane — **`pr-plan`** does not emit **`AGENT_RUN_REQUEST_V1`** here |
 
-1. `targetPlanPath` and `targetPlanSlug`.
-2. `readyForImplementation: true`.
-3. `developerApprovedImplementation: true`.
-4. At least one repo target (`repoPath` or `repoPaths`).
+See **`pr-plan/SKILL.md`** § *Handoff to coding-session*.
 
-If `readyForImplementation` is false or missing, stop before worktree creation and return `partial` with `remainingTasks` copied from the upstream PR plan readiness reasons. Do not create worktrees, attach folders, or emit a coding prompt from an unready PR plan.
+## Plan-anchored context (optional inputs)
 
-If `developerApprovedImplementation` is false or missing, stop before worktree creation and ask the developer with **AskQuestion**. Required options:
+The developer starts **`coding-session`** on a detached lane, via mission dispatch, or after **`pr-plan`** step 5c option 4 (menu handoff only — not a spawn from **`pr-plan`**).
 
-- **Approve implementation handoff now**
-- **Revise PR plan first**
-- **Defer implementation**
-- **Abandon this PR plan**
-- **More details for option _**
-
-Only **Approve implementation handoff now** authorizes worktree creation, sidecar session writes, MCP worktree attach, and coding-agent prompt emission.
+When `targetPlanPath` / `targetPlanSlug` are known (message, `@` path, snapshot, or spawn `inputs`), use them for sidecar writes and the session prompt.
 
 If repo targets are missing, stop and ask the developer with **AskQuestion** to choose or provide the implementation repo(s). Do not infer from focused files alone.
 
-## Plan completeness gate (before any worktree)
+## Implementation consent (two layers)
 
-When this run anchors Phase 2 to a Plan Board **`.plan.md`** under the **`.sedea/operations/`** union (absolute path from the user message, an `@` path, or `node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs resolve --cwd "$PWD"` from the **hosting repo** when already linked), **validate the plan** before `git worktree add`, Mission Control attach, or emitting the session prompt.
+Only **two** developer-consent layers apply before worktrees. Do not stack extra approval **AskQuestion** rounds for the same decision.
 
-**Lane-change snapshots** (*back to plan*, *where are we?*, …) follow `.sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc` § *PR-plan completeness before coding-session*: when a snapshot lists both an incomplete per-PR plan and **coding-session**, **finishing the plan** must be ordered **first**.
+| Layer | Where decided | Output field | This skill |
+|-------|---------------|--------------|------------|
+| **1 — Planning handoff** | **`pr-plan`** step 5c (especially option 4) | `readyForImplementation` | Hint only; **do not** re-ask. Does **not** authorize worktrees or advance **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8 `phase` past `not-started`. |
+| **2 — Worktree open** | [Worktree-open gate](#worktree-open-gate) below (one **AskQuestion**) | `developerApprovedImplementation` | Set `true` only after an authorizing choice in that gate. |
 
-**Skip this gate** when there is **no** plan file anchor (handoff with no `*.plan.md` in the task body).
+**Not consent layers** (validation / setup only — no separate approval **AskQuestion**):
 
-**Bypass** when the user’s message contains **`override incomplete plan`** anywhere (ASCII, case-insensitive).
+- **`plan-ws-completeness.mjs`** — script check; incomplete plans are handled inside the worktree-open gate (override option), not a second gate.
+- **Repo selection** — **AskQuestion** only when `repoPath` / `repoPaths` are missing.
+
+`inputs.developerApprovedImplementation` is never a substitute for layer 2; ignore upstream `true` until the developer picks an authorizing worktree-open option in **this** run.
+
+## Pre-worktree validation (plan completeness)
+
+**Worktree validation** (see **`pr-plan`** §5b and **development-process.md** § *Planning readiness vs worktree completeness*). Independent of layer 1 **`readyForImplementation`**. **`readyForImplementation: true` does not skip this script** — run it unless validation is skipped or the user message already contains **`override incomplete plan`**.
+
+When this run anchors Phase 2 to a Plan Board **`.plan.md`** under **`.sedea/operations/`**, run validation **before** the [Worktree-open gate](#worktree-open-gate) — but **do not** use a separate completeness **AskQuestion**; record the script result and present override/stop choices in that single gate.
+
+**Lane-change snapshots** (*back to plan*, *where are we?*, …) follow **30_planning-target-resolution.mdc** § *PR-plan completeness before coding-session*: when a snapshot lists both an incomplete per-PR plan and **coding-session**, **finishing the plan** must be ordered **first**.
+
+**Skip** when there is **no** plan file anchor.
+
+**Treat as override already chosen** when the user message contains **`override incomplete plan`** (ASCII, case-insensitive) — skip the script; proceed to the worktree-open gate.
 
 Otherwise:
 
-1. Resolve the plan’s **absolute** path. If you cannot, **stop** and ask for a path or a `plan-state` linkage — do not silently skip validation.
-2. From the **hosting repo root** (the tree that contains `.sedea/`), run:
+1. Resolve the plan’s **absolute** path. If you cannot, **stop** and ask for a path or `plan-state` linkage.
+2. From the **hosting repo root**:
    ```bash
-   node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-ws-completeness.mjs --file "<absolute-plan-path>"
+   node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-ws-completeness.mjs --file "<absolute-plan-path>"
    ```
-   - Exit **0** and stdout `OK` or `SKIP_NOT_PER_PR` → proceed.
-   - Exit **1** and stdout `INCOMPLETE` → **per-PR plan** still has `_TBD_` after stripping fenced code. **Do not** create worktrees or emit the prompt until the user accepts proceeding:
-     - **Preferred:** **AskQuestion** — **“Stop — I’ll complete the plan first”** vs **“Executive override — proceed with incomplete plan”**. On stop, end with a short nudge (finish §§ 5–8 / deploy per **development-process**, then re-run **coding-session**). On override, continue **in the same turn** with worktree creation.
+   - Exit **0** (`OK` / `SKIP_NOT_PER_PR`) → `planCompleteness: complete` for the worktree-open gate.
+   - Exit **1** (`INCOMPLETE`) → `planCompleteness: incomplete` — **do not** create worktrees yet; offer override only in the worktree-open gate.
 
-**Multi-repo:** run the script **once** on the shared plan before creating any worktrees.
+**Multi-repo:** run the script **once** on the shared plan before the worktree-open gate.
 
-## Start implementation approval gate
+## Worktree-open gate
 
-After readiness, repo selection, and plan completeness checks pass, but before any `git worktree add`, sidecar session write, Mission Control worktree attach, or coding-agent prompt emission, ask the developer for explicit start approval with **AskQuestion**. Required options:
+**Layer 2 — single AskQuestion** before any `git worktree add`, sidecar session write, Mission Control worktree attach, or coding-agent prompt emission.
+
+**When `planCompleteness: complete`** (or validation skipped / override already in the user message), required options:
 
 - **Start implementation now**
 - **Revise PR plan first**
@@ -124,7 +140,21 @@ After readiness, repo selection, and plan completeness checks pass, but before a
 - **Defer implementation**
 - **More details for option _**
 
-Only **Start implementation now** authorizes worktree creation and session-state mutation. This gate applies to both spawned and standalone `coding-session` runs; earlier readiness or repo-selection answers are not approval to mutate worktrees or sidecars.
+**When `planCompleteness: incomplete`**, required options (do **not** offer plain **Start implementation now** without override):
+
+- **Start with incomplete plan (executive override)**
+- **Stop — I’ll complete the plan first**
+- **Revise PR plan first**
+- **Change repo or branch settings**
+- **Defer implementation**
+- **More details for option _**
+
+**Authorizing choices** (set `outputs.developerApprovedImplementation: true`):
+
+- **Start implementation now** — only when `planCompleteness: complete`.
+- **Start with incomplete plan (executive override)** — when `planCompleteness: incomplete`.
+
+All other choices → `developerApprovedImplementation: false`; end or stay `continuationStatus: active` without worktrees. A prior **`pr-plan`** menu option does not substitute for this gate.
 
 ## Copy/paste-safe prompt output (required)
 
@@ -136,31 +166,31 @@ When you emit the final session prompt for the user to paste into **a coding age
 
 ## Generic flow (single repo)
 
-Run only **after** the [Plan completeness gate](#plan-completeness-gate-before-any-worktree) passes or is skipped / bypassed and the [Start implementation approval gate](#start-implementation-approval-gate) is approved.
+Run only **after** [Pre-worktree validation](#pre-worktree-validation-plan-completeness) and an authorizing choice in the [Worktree-open gate](#worktree-open-gate).
 
 1. Create a worktree on a fresh branch from `origin/main`:
    ```bash
    git fetch origin main
    git worktree add <sibling-path> -b <branch> origin/main
    ```
-   - Prefix sibling paths with the repo directory basename (see **Worktree setup** in `.sedea/centers/sedea-centers--development/rules/efficient-pr-shipping.mdc`).
+   - Prefix sibling paths with the repo directory basename (see **Worktree setup** in `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`).
    - Always branch from **`origin/main`**, not **`main`** (same failure mode as in **efficient-pr-shipping**).
-   - Branch naming: follow **stacked-pr-branch-prefix** for this monorepo (`feat/NN-…`) and **efficient-pr-shipping** otherwise.
+   - Branch naming: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Branch naming* (hosting checkout → Sedea **`7_stacked-pr-branch-naming`**; other implementation repos → `feat/`, `improve/`, `fix/`, …).
    - Refuse dirty primary checkouts before creating a worktree: run `git status --porcelain` in each repo and stop on any output. Do not stash, commit, discard, or clean the user's WIP.
-   - If `baseBranch` input is supplied, it must be a remote branch ref such as `origin/main`; do not accept a local-only branch for spawned implementation.
+   - If `baseBranch` input is supplied, it must be a remote branch ref such as `origin/main`; do not accept a local-only branch for worktree creation.
 
 2. **Record the session on the plan** (see [Sidecar state](#sidecar-state)). From the **hosting repo root**:
    ```bash
-   node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs set-worktrees \
+   node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs set-worktrees \
      --slug <plan-slug> \
      --json '[{"repo":"<repo-basename>","path":"<absolute-worktree-path>"}]'
-   node .sedea/centers/sedea-centers--development/missions/plan-and-deliver/scripts/plan-state.mjs set-session \
+   node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs set-session \
      --slug <plan-slug> \
      --focus <absolute-worktree-path>
    ```
    Skip when the session has no plan anchor.
 
-3. **Attach the worktree in Sedea** (same workbench): in Mission Control, invoke MCP **`sedea_add_worktree_folder`** with JSON `{ "path": "<absolute-worktree-root>" }` (optional `"name"` for the explorer label). See **efficient-pr-shipping.mdc** — *Squad Leader on the main branch vs. agent sessions on worktree* and *Attach the worktree in Sedea*.
+3. **Attach the worktree in Sedea** (same workbench): in Mission Control, invoke MCP **`sedea_add_worktree_folder`** with JSON `{ "path": "<absolute-worktree-root>" }` (optional `"name"` for the explorer label). See **20_efficient-pr-shipping.mdc** — *Squad Leader on the main branch vs. agent sessions on worktree* and *Attach the worktree in Sedea*.
 
    This MCP attach is mandatory before emitting the coding-agent prompt. If the MCP call fails, stop with `partial`; report the worktree path and the attach error, and keep `continuationStatus: "active"` so the Squad Leader does not close the implementation lane.
 
@@ -215,7 +245,7 @@ Compile the **`pre-pr-review`** child inputs:
 - `ledgerParent`
 - `upstreamSkill: "coding-session"`
 
-Spawn `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`, announce that **coding-session** is waiting for the pre-PR review result, and stop. Do not open a PR before the reviewer returns `recommendation: "go"`.
+Spawn `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`, announce that **coding-session** is waiting for the pre-PR review result, and stop. Do not open a PR before the reviewer returns `recommendation: "go"`.
 
 ### Review result aggregation
 
@@ -245,6 +275,8 @@ When **`pre-pr-review`** returns `recommendation: "no-go"` or any `blockers`:
 
 When **`pre-pr-review`** returns `recommendation: "go"`:
 
+This path is the normative **`create-pr`** handoff on this lane — it **supersedes** rule **20** § *Commit and push cadence* step 5 prompt-only wording when both apply.
+
 1. Verify the worktree branch is pushed or pushable per **efficient-pr-shipping**. Do not open the PR directly from coding-session.
 2. Present the reviewer `go` summary, non-blocking flags, and any proposed follow-ups to the developer, then use **AskQuestion** before plan follow-up mutation or PR creation. Required options:
    - **Approve follow-ups and create PR now**
@@ -254,7 +286,7 @@ When **`pre-pr-review`** returns `recommendation: "go"`:
    - **Abandon this implementation**
    - **More details for option _**
 3. Only **Approve follow-ups and create PR now** authorizes appending proposed follow-ups before PR creation. **Create PR without appending proposed follow-ups** authorizes only PR creation. Do not treat `pre-pr-review` `go` as developer approval to mutate the plan or open/prepare a PR.
-4. Emit exactly one child-spawn request for `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/create-pr/SKILL.md`.
+4. Emit exactly one child-spawn request for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/create-pr/SKILL.md`.
 5. Inputs must include `targetPlanPath`, `targetPlanSlug`, `worktreePath`, `branchName`, `baseRef`, `repoUrl`, `diffSummary`, `prePrReviewRecommendation: "go"`, `prePrReviewFlags`, `followUpsAppended`, `ledgerParent`, and `upstreamSkill: "coding-session"`.
 6. Announce that **coding-session** is waiting for the PR-creating agent result and stop. Do not continue to `pr-review` or deploy until `create-pr` reports a PR URL/number or a blocking failure.
 
@@ -262,7 +294,7 @@ When Mission Control delivers the **`create-pr`** result, copy `prUrl`, `prNumbe
 
 ### Inline PR review after PR creation
 
-After `create-pr` reports a PR URL/number, the active **coding-session agent** executes `.sedea/centers/sedea-centers--development/missions/plan-and-deliver/skills/pr-review/SKILL.md` inline. Do not spawn a `pr-review` agent.
+After `create-pr` reports a PR URL/number, the active **coding-session agent** executes `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md` inline. Do not spawn a `pr-review` agent.
 
 Inline `pr-review` inputs come from coding-session state:
 
@@ -277,11 +309,10 @@ The inline procedure:
 
 1. Collects PR review comments.
 2. Classifies each as `Must fix`, `Should fix`, `Skipped`, or `Skipped → follow-up`.
-3. Uses **AskQuestion** for developer approval before any code, plan, GitHub, commit, or push action.
+3. **Commit/push gates (stacked):** **AskQuestion** and **20_efficient-pr-shipping** § *Review before commit* for approval before the next stage; **`git commit`** / **`git push`** only per **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`** when the user **same message** explicitly asks (*commit*, *push*, etc.). Workflow approval alone is not git consent.
 4. Applies only the approved fix scope.
-5. Requires developer review before commit/push.
-6. Runs GitHub reconciliation only after approved fixes are committed/pushed, or immediately for skipped-only triage.
-7. Keeps coding-session `continuationStatus: "active"` until all PR comments are resolved, followed up, skipped with rationale, or explicitly deferred.
+5. Runs GitHub reconciliation only after approved fixes are committed/pushed, or immediately for skipped-only triage.
+6. Keeps coding-session `continuationStatus: "active"` until all PR comments are resolved, followed up, skipped with rationale, or explicitly deferred.
 
 ## Implementation handoff result
 
@@ -289,9 +320,8 @@ When this skill runs as a spawned child, end with a child result containing at l
 
 - `outputs.targetPlanPath`
 - `outputs.targetPlanSlug`
-- `outputs.readyForImplementation`
-- `outputs.developerApprovedImplementation`
-- `outputs.startImplementationApprovalStatus`
+- `outputs.readyForImplementation` — echo layer 1 when known; set only by **`pr-plan`**, not by this gate
+- `outputs.developerApprovedImplementation` — layer 2; `true` only after an authorizing worktree-open choice; never inherit from **`pr-plan`**
 - `outputs.repoPaths`
 - `outputs.worktrees` (array of `{repo, path, branch, attached}`)
 - `outputs.branchName`
@@ -336,6 +366,22 @@ Set `outputs.continuationStatus` as follows:
 
 Do not propose dispatch resolution from this skill; the Squad Leader closes the ledger after coding, review, PR, and deploy verification report terminal status.
 
+## Squad Leader bubble-up (detached lanes)
+
+This skill usually runs **off** the **plan and deliver** leader lane. The Squad Leader §8 ledger often does **not** receive your `AGENT_RESULT_RESPONSE_V1`. After each milestone below, nudge the developer to paste the **Ship recap — plan and deliver** block on the **leader dispatch** (template in **`../plan.mdc`** §8 *Leader-lane ship recap*).
+
+| Milestone in this skill | Suggested `shipPhase` | Copy from `outputs` |
+|-------------------------|----------------------|---------------------|
+| Worktrees attached + prompt emitted | `worktree` | `targetPlanPath`, `worktrees`, `developerApprovedImplementation: true`, `remainingTasks` |
+| Implementation / review loop in progress | `implementing` | `targetPlanPath`, `prePrReviewRecommendation`, `prReviewStatus` |
+| Pre-PR **go** | `pre-pr-review` | `targetPlanPath`, `prePrReviewRecommendation: go` |
+| PR opened | `pr-open` | `targetPlanPath`, `prUrl`, `prNumber` |
+| PR comment triage complete | `pr-review` | `targetPlanPath`, `prReviewStatus`, `githubReconciliationStatus` |
+| Deploy walk finished | `deploy-walk` | `targetPlanPath`, `deployStatus`, `deployTodoStatus` |
+| Reconcile / archive done | `done` or `reconcile` | `targetPlanPath`, `remainingTasks` (empty) |
+
+Set `rowStatus: blocked` when `prePrReviewRecommendation` is not **go**, review blockers remain, or `remainingTasks` is non-empty with no forward path. Parent **coding-session** agents should forward the same fields when they **do** bubble results to a squad parent.
+
 ## Sidecar state
 
 Writes go through **`plan-state.mjs`** into **`<slug>.state.yaml`** next to **`<slug>.plan.md`** under **`.sedea/operations/.../plans/`** — never plan frontmatter for `worktrees` / `session`.
@@ -367,7 +413,7 @@ Infer touched subtrees from the anchored plan and PR scope. List **absolute** pa
 
 ### Phase 1 — Warm-up (before the task)
 
-Workers may skip `alwaysApply: false` rules unless forced. Use a warm-up block so rule reads are explicit steps.
+R&D **center** rules (`10_`–`40_`, all `alwaysApply: true`) load on every dispatch via Mission Control. This warm-up block is for **product-repo** `.cursor/rules/*.mdc` paths under **Project rules** — list explicit `Read` steps for those only.
 
 **Four vs five steps:** If Phase 2 links a **`.plan.md`** (absolute path), use **five** steps and include **Plan file + sidecar** (step 5). Otherwise use **four** steps (omit step 5).
 
@@ -375,9 +421,9 @@ Phrase a hard gate, e.g. `Warm-up first — do not read the task body below --- 
 
 1. **Workspace readiness** — **Read** the worktree **`README`** and **`CONTRIBUTING`** when present. For **readiness or pre-task checks**, follow **only** what those files say, what the **plan** explicitly links for setup, and what **`.cursor/rules/*.mdc`** files prescribe **when they describe pre-work or environment gates** (do not invent extra checks). If nothing prescribes a check, one line **Readiness: no checks in README / CONTRIBUTING / cited rules** — continue. If a prescribed check fails, **stop** and ask the user.
 2. **Verify branch:** `git branch --show-current` matches the expected branch.
-3. **Process handback** — the **developer** continues via **AskQuestion** / **numbered** options or mission dispatch per **development-process**; do **not** rely on legacy typed shortcut tokens as the control surface. Name next moves with protocol branches (**`plan-reconcile`**, **`pre-pr-review`**, **`pr-review`**, commit cadence per **efficient-pr-shipping**).
+3. **Process handback** — the **developer** continues via **AskQuestion** / **numbered** options or mission dispatch per **development-process**. Name next moves with protocol branches (**`plan-reconcile`**, **`pre-pr-review`**, **`pr-review`**, rule **20** § *Commit and push cadence*).
 4. **Load project rules:** `Read` every path under **Project rules**; acknowledge before continuing.
-5. **Plan file + sidecar** *(plan-anchored only)*: Plans live under **`.sedea/operations/.../plans/`**; runtime fields (`worktrees`, `prs`, `session`, `parent`, todos via scripts) follow the **`.sedea/operations/`** plan union and **`plan-state.mjs`** contracts — flip todo status only through **`plan-state.mjs`** subcommands (`set-todo-status`, `todo-start`, `todo-done`); do not hand-edit `.state.yaml` except to repair a bad state. After substantive progress on a scoped todo, update status so the Plan Board stays accurate. PR linkage after push follows **efficient-pr-shipping** and **`plan-state.mjs upsert-pr`**.
+5. **Plan file + sidecar** *(plan-anchored only)*: Plans live under **`.sedea/operations/.../plans/`**; runtime fields (`worktrees`, `prs`, `session`, `parent`, todos via scripts) follow the **`.sedea/operations/`** plan union and **`plan-state.mjs`** contracts — flip todo status only through **`plan-state.mjs`** subcommands (`set-todo-status`, `todo-start`, `todo-done`); do not hand-edit `.state.yaml` except to repair a bad state. After substantive progress on a scoped todo, update status so the Plan Board stays accurate. PR linkage after push follows **20_efficient-pr-shipping** and **`plan-state.mjs upsert-pr`**.
 
 ### Phase 2 — Task
 
@@ -386,7 +432,7 @@ Include:
 - Which PR to implement (scope, behaviour, files).
 - **Plan link:** absolute path to the `.plan.md` (e.g. `@/…/.sedea/operations/…/plans/<slug>.plan.md`). When present, the emitter must have used the **five-step** warm-up.
 - **Follow-ups** — per **development-process** *Coding session* / *Feedback collection*: maintain **`## Follow-ups`** on the PR plan; append bullets for out-of-scope ideas with optional `(target: …)` hints.
-- **Review cadence** — after implementation and an explicit committed cut point, **a coding agent** invokes **`coding-session`** review handoff so Mission Control spawns **`pre-pr-review`** in a fresh reviewer lane before treating the change as merge-ready; coordinate **`pr-review`** and commit/push steps per **efficient-pr-shipping** (describe by **protocol branch** name, not legacy tokens).
+- **Review cadence** — after implementation and an explicit committed cut point, **a coding agent** invokes **`coding-session`** review handoff so Mission Control spawns **`pre-pr-review`** in a fresh reviewer lane before treating the change as merge-ready; coordinate **`pr-review`** and rule **20** § *Commit and push cadence* (name **protocol branches** in prompts and menus).
 - **Multi-repo only:** scope guard line per repo.
 
 ## Verbatim override
@@ -422,3 +468,19 @@ Implement the scoped change described in `@<absolute-hosting-repo-root>/.sedea/o
 
 Stop after implementation; after an explicit committed cut point, invoke **`coding-session`** review handoff so Mission Control spawns **`pre-pr-review`** in a fresh reviewer lane per **development-process**.
 ```
+
+## Completion (spawned)
+
+Required `outputs` per **## Implementation handoff result** above (include **`pr-review`** inline fields when that flow ran). Re-emit an **updated** terminal result after user-requested follow-up on this lane (same `correlationId`). Do not emit **`MC_DISPATCH_RESOLVED_V1`** from this skill.
+
+### Host protocol line (required)
+
+Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status`, `summary`, `outputs`, `errors` (use `[]` when none). Populate `outputs` from **Implementation handoff result**. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
+
+Stop after this line.
+
+## Completion (inline)
+
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+**plan and deliver** normally spawns this skill on a detached lane. If run inline, use the same `outputs` semantics as **## Implementation handoff result** and **`## Completion (spawned)`** in prose only (merge **`pr-review`** inline fields when that sub-flow ran).

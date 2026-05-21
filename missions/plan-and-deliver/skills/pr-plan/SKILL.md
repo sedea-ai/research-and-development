@@ -10,9 +10,6 @@ description: >-
   development-process.md. Target resolved per planning-target-resolution. Use under
   mission dispatch, **pr-plan** protocol branch, natural language, or after **new-plan**
   ignition on a `PR breakdown` child stub.
-timeoutMs: 1800000
-warmUpRules:
-  - ".sedea/centers/sedea-centers--development/rules/planning-target-resolution.mdc"
 inputs:
   targetPlanPath:
     type: string
@@ -47,15 +44,34 @@ inputs:
     description: When true, report implementation readiness after PR planning; this skill still does not start coding.
     required: false
     default: true
+warmUpRules:
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # PR plan: §§ 1–4 from the parent plan
 
 This skill drives the **per-PR planning move** under Sedea's New Feature Development Process: take a freshly-spawned PR plan stub (indexed child from the parent's **`### PR list`** under **`PR breakdown`**, typically right after the **`new-plan`** protocol branch) and populate §§ **1–4** of the **per-PR template** — Single concern, Background, Change scope, Reasoning. §§ **5–8** and the § 7 deploy scaffold stay **`_TBD_`** for **`coding-session`** and later turns unless the **developer** explicitly asks for a **fill** sketch here.
 
-The agent has enough context after step 3 to draft §§ 1–4 from the parent's **`### PR list`** row, **`### Single-concern strategy`**, **`### Sequencing`**, and earlier parent sections (diagrams / changes as *context* — PR plans do **not** embed parent diagrams in the body). § 4 is consumed by **a coding agent** (PR description) and **pre-pr-review** / **a reviewer agent**; keep sentences unambiguous. This skill reports implementation readiness, but it does **not** start coding or create a worktree.
+The agent has enough context after step 3 to draft §§ 1–4 from the parent's **`### PR list`** row, **`### Single-concern strategy`**, **`### Sequencing`**, and earlier parent sections (diagrams / changes as *context* — PR plans do **not** embed parent diagrams in the body). § 4 is consumed by **a coding agent** (PR description) and **pre-pr-review** / **a reviewer agent**; keep sentences unambiguous. This skill reports planning readiness; **worktrees and ship execution** belong to **`coding-session`** on a **separate** lane.
 
 The procedure below is a hard contract — do **not** skip steps or start drafting before the target is verified as a PR plan stub.
+
+## Handoff to `coding-session` (planning only)
+
+**`pr-plan`** and **`coding-session`** are **sequential skills on different lanes** — not parent/child spawn.
+
+| Concern | **`pr-plan`** (this skill) | **`coding-session`** |
+|---------|---------------------------|----------------------|
+| Per-PR §§ **1–4** | Draft and maintain | Read; revise only when the developer returns to planning |
+| Per-PR §§ **5–8** | Default **`_TBD_`**; optional *speculative* sketch if the developer picks step 5 option 2 | Substantive fill during implementation; final text once code paths are known |
+| `readyForImplementation` | Set in `outputs` | Read as layer-1 hint only |
+| Worktrees, session prompt, ship chain | Out of scope | Owns |
+| Start **`coding-session`** | Step 5c option 4 names the next skill — **does not** emit **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** on this lane | Developer starts via detached lane, mission dispatch, or snapshot |
+
+After step 5c option 4, **stop** this lane. The developer opens **`coding-session`** elsewhere; layer 2 worktree approval happens there (**`coding-session`** § *Implementation consent*).
 
 ## Trigger
 
@@ -67,7 +83,7 @@ The **developer** picks the next move via **AskQuestion** or a **numbered** list
 
 ## Step 1 — Identify the target plan and verify it's a PR plan stub
 
-The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`planning-target-resolution.mdc`](../../../rules/planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts. Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative. Do **not** infer the target from the IDE’s focused-file list alone.
+The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`30_planning-target-resolution.mdc`](.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts. Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative. Do **not** infer the target from the IDE’s focused-file list alone.
 
 When spawned by `new-plan`, `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, and `parentIndex` are already locked. Treat missing or conflicting values as a spawn-contract failure: stop with `failure` or `partial` and report the missing field. Do not fall back to IDE focus or free-form target discovery in spawned mode.
 
@@ -109,7 +125,7 @@ If `parentPlanPath` / `parentPlanSlug` inputs were supplied, they must match the
 
 ## Step 2 — Load the development-process doc
 
-Read `.sedea/centers/sedea-centers--development/docs/development-process.md` with the Read tool, **no offset, no limit** (hosting repo root). Acknowledge: *"Loaded development-process.md; will follow § 3 per-PR template + § 6/§ 5 contents rule."*
+Read `.sedea/centers/research-and-development/docs/development-process.md` with the Read tool, **no offset, no limit** (hosting repo root). Acknowledge: *"Loaded development-process.md; will follow § 3 per-PR template + § 6/§ 5 contents rule."*
 
 Re-read every invocation; do not rely on session memory.
 
@@ -293,7 +309,18 @@ Set `readyForImplementation: false` when any of those checks fail. Add each miss
 
 ### 5b — Planning completeness
 
-§§ 5–8 may remain `_TBD_` after this skill. That does **not** block implementation readiness by itself, because `coding-session` owns repo rules impact, tests, deploy plan details, and caveats once code paths are concrete. However:
+§§ 5–8 may remain `_TBD_` after this skill. That does **not** block **`readyForImplementation`** by itself — see **Handoff to `coding-session`** for the split between speculative sketches here and substantive §§ 5–8 work in **`coding-session`**.
+
+**Two-layer readiness (do not conflate):**
+
+| Layer | Where | What passes |
+|-------|--------|-------------|
+| **Planning handoff** | This skill → `outputs.readyForImplementation` | §§ 1–4 drafted, capstone todo, parent link (§5a). §§ 5–8 may stay `_TBD_`. |
+| **Worktree gate** | **`coding-session`** § *Worktree-open gate* | Per-PR body has **no** `_TBD_` outside fenced code, unless the developer chooses **Start with incomplete plan (executive override)** or sends **`override incomplete plan`** in the message. |
+
+`readyForImplementation: true` does **not** bypass **`plan-ws-completeness.mjs`** or authorize worktrees. The Squad Leader §8 ship ledger must keep `phase: not-started` until completeness passes or is overridden **and** **`coding-session`** reports `developerApprovedImplementation: true` (**`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §7–§8). Agents that report “ready” here may still hit **`INCOMPLETE`** at worktree open — that is expected; point the developer to finish §§ 5–8, pre-fill sketches (option 2), or the **`coding-session`** override path.
+
+However:
 
 - If § 4 **Considered & rejected** is `_TBD_`, add a non-blocking `remainingTasks` note for `coding-session`.
 - If parent link is blocked, keep `continuationStatus: "active"` until **`plan-reconcile`** repairs it or the upstream agent explicitly accepts the partial state.
@@ -308,11 +335,11 @@ End with:
 3. **Numbered options** (adapt labels):
 
    1. **Revise § *N*** — The **developer** names the section and feedback; one focused `StrReplace`; echo.
-   2. **Pre-fill § 5 / § 6 / § 7 / § 8 (sketch)** — Draft a *starting* sketch from parent + § 3 context; label it speculative; § 7 must use numbered GFM **`1. [ ]`** lists and **`**Status:** drafted`** opener; apply **development-process.md** § 7 *What NOT to include* and the italic fallback when empty; for § 7 exclusions use the baseline path **`.sedea/centers/development/docs/baseline-verify-after-changes.md`** where the doc points. After accepting a § 7 sketch, run **4a-bis** if the capstone todo is still missing.
+   2. **Pre-fill § 5 / § 6 / § 7 / § 8 (sketch)** — Draft a *starting* sketch from parent + § 3 context; label it speculative; § 7 must use numbered GFM **`1. [ ]`** lists and **`**Status:** drafted`** opener; apply **`.sedea/centers/research-and-development/docs/development-process.md`** § 7 *What NOT to include* and the italic fallback when empty. After accepting a § 7 sketch, run **4a-bis** if the capstone todo is still missing.
    3. **Commit when ready** — Remind the **developer** to commit; this skill does **not** run `git`.
-   4. **Approve for implementation and continue in `coding-session`** — This is the developer approval gate for implementation handoff. Implementation fills §§ 5–7 before merge cadence per **`development-process.md`**; **`deploy-walk`** drives § 7 checkbox lifecycle.
+   4. **Continue in `coding-session`** — Layer 1 only: sets planning handoff intent (`readyForImplementation` when checks pass). Opens a **separate** **`coding-session`** run; layer 2 is one worktree-open **AskQuestion** there (**Start implementation now** or **Start with incomplete plan (executive override)**) → `outputs.developerApprovedImplementation`. See **`coding-session`** § *Implementation consent (two layers)*.
 
-**Stop** after this block — do not run **`coding-session`** inside this turn.
+**Stop** after this block — do not spawn or run **`coding-session`** on this lane.
 
 ## Step 5a — Follow-up turns
 
@@ -328,14 +355,34 @@ Perform exactly what was chosen. List short **numbered observations** for gaps (
 
 **Owns:** target PR plan **body** §§ 1–4; **4a-bis** append-only capstone todo; implementation readiness assessment; optional **fill** sketches for § 5–8 when explicitly chosen.
 
-**Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); spawning children; starting `coding-session`; creating worktrees; `git`; Master / Phase templates (**`master-plan`**, **`phase-plan`**).
+**Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); **`AGENT_RUN_REQUEST_V1`** for **`coding-session`**; running **`coding-session`** on this lane; worktrees; `git`; Master / Phase templates (**`master-plan`**, **`phase-plan`**).
 
 Stop after the step 5 handoff block.
 
-When spawned, end with a child result containing `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`, `outputs.parentPlanLinkStatus` (`linked` | `blocked` | `unknown`), `outputs.readyForImplementation`, `outputs.implementationReadinessReasons`, `outputs.implementationApprovalStatus` (`pending` until the developer explicitly chooses implementation handoff), `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner: "pr-plan-agent"`, and `outputs.continuationStatus`.
+## Completion (spawned)
 
-Set `outputs.continuationStatus` as follows:
+### Host protocol line (required)
 
-- `terminal` when `readyForImplementation: true`, parent link is trusted, implementation approval is explicitly granted or out of scope for this run, and no blocking `remainingTasks` remain.
-- `active` when the plan is drafted but parent link repair, explicit fill sketches, or implementation handoff decision remains.
-- `terminal` with `readyForImplementation: false` only when the upstream agent or developer explicitly marks the PR plan deferred, abandoned, or out of scope.
+Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status`, `summary`, `outputs`, `errors` (use `[]` when none). Populate `outputs` from the list below. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). Re-emit an **updated** line after user-requested follow-up on this lane (same `correlationId`). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
+
+Required `outputs` fields:
+
+- `outputs.targetPlanPath`, `outputs.targetPlanSlug`
+- `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex`
+- `outputs.parentPlanLinkStatus` — `linked` | `blocked` | `unknown`
+- `outputs.readyForImplementation`, `outputs.implementationReadinessReasons`
+- `outputs.implementationHandoffStatus` — `not-offered` | `offered` | `continue-to-coding-session` (step 5c option 4 chosen); planning menu only — not `developerApprovedImplementation`
+- `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
+- `outputs.continuationOwner`: `"pr-plan-agent"`
+- `outputs.continuationStatus`:
+  - `terminal` when `readyForImplementation: true`, parent link is trusted, handoff menu is complete (or out of scope), and no blocking `remainingTasks`
+  - `active` when parent link repair, fill sketches, or implementation handoff decision remains
+  - `terminal` with `readyForImplementation: false` only when upstream or developer marks the PR plan deferred, abandoned, or out of scope
+
+Stop after the terminal line. Do not spawn **`coding-session`** from this skill.
+
+## Completion (inline)
+
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+Spawned from **`new-plan`** or decomposition paths in normal flow. If run inline, use the same `outputs` semantics as **`## Completion (spawned)`** in prose only.
