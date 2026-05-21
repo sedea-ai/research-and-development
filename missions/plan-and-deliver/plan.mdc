@@ -475,6 +475,26 @@ When Mission Control hosts a **`plan and deliver`** dispatch, the extension may 
 
 Manual **Ship recap** paste on the leader dispatch remains valid and should be used when host sync did not run or rows look stale.
 
+### §8 troubleshooting (when the ledger looks wrong)
+
+Use this when the **plan and deliver** leader dispatch cannot propose **`resolved`**, §8 rows look stale, or detached ship work finished but the leader lane shows no progress.
+
+| Symptom | Likely cause | What to do |
+|---------|--------------|------------|
+| No §8 update after a ship child finished | Child terminal omitted **`outputs.targetPlanPath`**, **`outputs.shipPhase`**, or **`outputs.rowStatus`** | Re-emit or paste **Ship recap** with all three fields; fix the child skill terminal per § *Mission Control section 8 sync* |
+| No silent **`Mission Control: ship-ledger sync (section 8).`** message | Host sync skipped (missing `outputs`), older Mission Control build, or work ran outside MC | Paste **Ship recap** on the leader dispatch; treat **`ship-ledger.v1.json`** in the dispatch bundle as source of truth if present |
+| PR comment triage done but §8 stuck at `pr-open` | **`pr-review`** is **inline** on **`coding-session`** — no separate child terminal for host sync | Post **Ship recap** with `shipPhase: pr-review` and fields from **`coding-session`** / **`pr-review`** |
+| Developer says “done” but resolution blocked | *Pre-resolution checklist* — no recap parsed this session for open/blocked rows | **AskQuestion**: paste recap, planning-only close, or **`partial`** — do not guess `phase` from chat alone |
+| UI ledger disagrees with agent state | Leader tab may lag **`ship-ledger.v1.json`** | Prefer host-sync message + recap template over UI-only inference |
+
+**Three ways §8 gets truth on the leader lane** (same as **`.sedea/centers/research-and-development/docs/development-process.md`** § *Leader-lane ship recap*):
+
+1. **Host sync** — terminal **`AGENT_RESULT_RESPONSE_V1`** from **`coding-session`**, **`pre-pr-review`**, **`create-pr`**, **`deploy-walk`**, or **`plan-reconcile`** with required **`outputs`**.
+2. **Manual recap** — developer or agent posts the template block below on **this** dispatch.
+3. **Forwarded child-output** — parent lane forwards parseable results; leader parses like a recap.
+
+**Never:** treat silence on a detached lane as ship complete; advance §8 `phase` from **`pr-plan`** `readyForImplementation` alone; or emit **`resolved`** while any row is `open`/`blocked` without recap or planning-only **AskQuestion** choice.
+
 **`pr-review`** runs **inline** on the active **`coding-session`** lane (still often detached from the leader). After PR comment triage, post **Ship recap** on the leader dispatch with `shipPhase: pr-review` and fields from **`coding-session`** / **`pr-review`** (`prReviewStatus`, `githubReconciliationStatus`) — see **`skills/pr-review/SKILL.md`** § *Leader §8 recap* and **`coding-session`** § *Squad Leader bubble-up*.
 
 When the developer returns to the **plan and deliver** leader dispatch and any ship row is `open` or `blocked`, collect a **minimal recap** per PR plan (use **AskQuestion** once if they give only vague chat). Do **not** advance `phase` from **`inferred`** unless unavoidable — ask for the fields below.

@@ -570,6 +570,19 @@ On a **`plan and deliver`** Mission Control dispatch, the Squad Leader **§8** s
 - **Host sync is partial.** It covers terminal results from **`coding-session`**, **`pre-pr-review`**, **`create-pr`**, **`deploy-walk`**, and **`plan-reconcile`** when required **`outputs`** are present. It does **not** run for inline **`pr-review`** on the **`coding-session`** lane (no separate child terminal). Manual recap is still required for **`pr-review`** milestones and whenever sync was skipped (missing `targetPlanPath`, older Mission Control build, or nested parent not the Squad Leader).
 - **Manual recap still valid.** Post **Ship recap — plan and deliver** on the leader dispatch when host sync did not fire or §8 rows look stale. Each ship skill § *Squad Leader bubble-up* and § *Mission Control section 8 sync* maps terminal **`outputs`** → **`shipPhase`** / **`rowStatus`**.
 
+##### §8 troubleshooting (stale ledger or blocked dispatch close)
+
+Full checklist and *Pre-resolution checklist* live in **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8 *§8 troubleshooting (when the ledger looks wrong)*. Short version:
+
+| If… | Then… |
+|-----|--------|
+| Ship child finished but leader §8 unchanged | Child terminal must include **`targetPlanPath`**, **`shipPhase`**, **`rowStatus`** — otherwise host sync skips; paste **Ship recap** |
+| No **`Mission Control: ship-ledger sync (section 8).`** on leader | Paste recap manually; read **`ship-ledger.v1.json`** in the dispatch bundle when present |
+| **`pr-review`** finished on coding lane | No detached child terminal — post recap with `shipPhase: pr-review` |
+| Developer wants **`resolved`** but rows still `open` | Run *Pre-resolution checklist* **AskQuestion** — recap, planning-only close, or **`partial`** |
+
+**Host sync scope:** **`coding-session`**, **`pre-pr-review`**, **`create-pr`**, **`deploy-walk`**, **`plan-reconcile`** terminals only — not inline **`pr-review`**. Behavior is implemented in the **hosting repo Mission Control extension**, not in this center repository alone.
+
 - **Dispatch closure gate:** On the **plan and deliver** leader lane, do **not** propose **`MC_DISPATCH_RESOLVED_V1`** with **`resolved`** while any §8 ship row is **`open`** or **`blocked`** unless a **Ship recap** block for that row was parsed on the leader dispatch in this session (including host-sync messages), or the developer explicitly chose **planning-only** dispatch closure via **AskQuestion** (see **`plan.mdc`** §8 *Pre-resolution checklist*).
 
 #### Feedback Collection

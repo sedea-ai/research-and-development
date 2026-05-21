@@ -12,6 +12,19 @@ alwaysApply: true
 
 Planning protocol branches act on a specific `.plan.md` under the **`.sedea/operations/`** union. The target is resolved from **session input, chat context, and structured choices** — not from the IDE focused-file list alone (IDE state can drift from planning intent).
 
+## At a glance — planning vs ship (read first)
+
+| You are on… | Signal that fired | Safe next step | Do **not** |
+|-------------|-------------------|----------------|------------|
+| **`pr-plan`** or Squad Leader planning lane | `readyForImplementation: true` | Tell developer to start **`coding-session`** on a **detached** lane — **`.sedea/centers/research-and-development/docs/development-process.md`** § *Start implementation (`coding-session` entry)* | Open worktree, edit product code, or set §8 `phase` past `not-started` here |
+| **`coding-session`** (detached) | `plan-ws-completeness.mjs` exit 0 or override in worktree-open gate | Proceed with worktree + implementation | Assume planning handoff alone was enough |
+| **`coding-session`** (detached) | `developerApprovedImplementation: true` | Continue ship chain; nudge **Ship recap** on leader dispatch for §8 | Assume §8 auto-updated without recap or host sync |
+| Squad Leader **`plan and deliver`** dispatch | Parsed **Ship recap** or host-sync message | Refresh §8 rows; then resolution gates | Close dispatch **`resolved`** while rows `open`/`blocked` without recap — **`plan.mdc`** §8 *§8 troubleshooting* |
+
+**Lane rule:** Planning skills (**`pr-plan`**, **`master-plan`**, decomposition tree) ≠ ship skills (**`coding-session`** → **`pre-pr-review`** → **`create-pr`** → …). **`pr-plan` does not spawn `coding-session`.**
+
+Details: § *Planning readiness vs ship* below; ship ledger: **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8.
+
 ## Planning readiness vs ship (do not conflate)
 
 Three different signals appear in plan-and-deliver; advancing one does **not** advance the others.
