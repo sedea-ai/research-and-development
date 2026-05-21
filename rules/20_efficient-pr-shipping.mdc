@@ -129,6 +129,20 @@ Per **[`30_planning-target-resolution.mdc`](30_planning-target-resolution.mdc)**
    - **Other lanes** — generate **a PR-creating agent PR prompt** via the **`create-pr`** protocol branch. The prompt’s description starter must satisfy **Comprehensive PR descriptions** (including slice boundaries and plan lineage when applicable).
    On subsequent pushes, only commit/push/reconcile/upsert — skip **`create-pr`** handoff until a new first-push branch needs a PR.
 
+6. **Leader §8 ship recap (detached lanes).** This cadence usually runs on **`coding-session`** or another **detached** lane — not on the **plan and deliver** Squad Leader dispatch. The leader §8 table does **not** auto-update from commit/push, `upsert-pr`, or **`pr-review`** reconciliation on this lane.
+
+   After steps 1–5 finish successfully, **nudge the developer once** to paste **Ship recap — plan and deliver** on the **leader dispatch** (template: [`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`](../missions/plan-and-deliver/plan.mdc) §8 *Leader-lane ship recap*; narrative: [development-process.md](../docs/development-process.md) § *Leader-lane ship recap*). Do **not** block the lane on the recap — ship skills also nudge at terminal milestones per **`skills/README.md`** § *Leader-lane ship recap*.
+
+   Suggested `shipPhase` from this pass (when `resolve` returned a PR plan):
+
+   | Cadence outcome | Suggest `shipPhase` |
+   |-----------------|---------------------|
+   | Push only (no **`pr-review`** step 3/5 in this turn) | `implementing` |
+   | Step 3 / Step 5 GitHub reconciliation ran | `pr-review` |
+   | Step 4 linked an open PR (`upsert-pr` succeeded) | at least `pr-open` if the PR already exists |
+
+   Include `targetPlanPath` from **`resolve`**, `rowStatus: open` while work continues, and `remainingTasks` when known.
+
 Example:
 
 ```
