@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Single writer for Plan Board sidecars + plan archival.
-// Invoked by: coding-session skill, plan-reconcile, efficient-pr-shipping commit-and-push cadence, product automation.
+// Invoked by: coding-session skill, plan-reconcile, efficient-pr-shipping commit-and-push cadence, hosting repo automation.
 // Design contract: Sedea `.sedea/operations/` plan union (joint + optional per-user namespace).
 
 import * as fs from 'node:fs/promises';
@@ -12,7 +12,7 @@ import { parseDocument, Document, YAMLMap, YAMLSeq, isMap, isSeq } from 'yaml';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
-/** Repo root containing `.sedea/` (Sedea app checkout). */
+/** Repo root containing `.sedea/` (hosting repo). */
 let SEDEA_REPO_ROOT = null;
 /** Absolute plan directories (user scope first, then joint; subdirs only if present). */
 let SEDEA_PLAN_DIRS = null;
@@ -391,7 +391,7 @@ function pathCovers(candidate, cwd) {
 
 // ---------- subcommand: set-worktrees ----------
 
-// `set-worktrees --slug <slug> --json '[{"repo":"push","path":"/abs"}]'`.
+// `set-worktrees --slug <slug> --json '[{"repo":"user-auth","path":"/abs"}]'`.
 // Replaces the sidecar `worktrees:` list wholesale (one active worktree set per plan).
 // Each entry is validated; absolute paths required so downstream resolve()
 // can compare without re-normalising.
@@ -1760,7 +1760,7 @@ Subcommands:
       Print "<slug>\\t<planPath>" for the plan whose sidecar covers <cwd>.
       Exit 2 when no plan matches (rule-friendly).
 
-  set-worktrees --slug <slug> --json '[{"repo":"push","path":"/abs"}]'
+  set-worktrees --slug <slug> --json '[{"repo":"user-auth","path":"/abs"}]'
       Replace sidecar worktrees[] wholesale.
 
   set-session --slug <slug> --focus <abs>

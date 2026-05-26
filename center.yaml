@@ -3,7 +3,7 @@ description: >-
   How developers deliver new features from idea to production — planning, implementation,
   PR shipping, deploy verification, and plan hygiene. Agents and Mission Control discover
   skills from `missions/<slug>/skills/**/SKILL.md` on disk; this manifest documents the
-  checkout for audits and center-maintenance. Keep `skillEntries` in sync when adding skills.
+  center layout for audits and center-maintenance. Keep `skillEntries` in sync when adding skills.
 
 # Paths below are relative to `.sedea/centers/research-and-development/` unless noted.
 
@@ -14,7 +14,7 @@ layout:
 
 docs:
   - path: docs/development-process.md
-    summary: Protocol branch catalogue, planning modes, product cadence; canonical PR sizing sync contract (§ PR sizing — test cases and kinds of changes). Squad dispatch contract lives in plan-and-deliver/plan.mdc.
+    summary: Protocol branch catalogue, planning modes, hosting repo cadence; canonical PR sizing sync contract (§ PR sizing — test cases and kinds of changes). Squad dispatch contract lives in plan-and-deliver/plan.mdc.
 
 rules:
   - path: rules/10_plan-naming-convention.mdc

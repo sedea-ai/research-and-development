@@ -14,7 +14,7 @@ inputs:
     required: false
   worktreePath:
     type: string
-    description: Absolute implementation worktree path.
+    description: Absolute hosting repo worktree path.
     required: true
   branchName:
     type: string

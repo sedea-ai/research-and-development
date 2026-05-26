@@ -1,7 +1,7 @@
 ---
 description: >-
   Canonical operationsUserId — Mission Control context, filesystem paths, skill
-  inputs/outputs, and plan-state CLI flag. Replaces legacy user-uuid placeholders.
+  inputs/outputs, and plan-state CLI flag.
 alwaysApply: true
 ---
 
@@ -17,15 +17,9 @@ One opaque stable string identifies the developer’s private tree under **`.sed
 | Filesystem path segment | **`<operationsUserId>`** in prose placeholders | `.sedea/operations/<operationsUserId>/plans/<slug>.plan.md` |
 | `plan-state.mjs` CLI (hosting repo, no MC context) | **`--operations-user-id <id>`** before the subcommand | Same value as **`operationsUserId`**; kebab-case flag only on the CLI |
 
-## Do not use
-
-- **`user-uuid`**, **`operations-user-uuid`**, or other aliases in skill frontmatter or path examples.
-- Legacy **`.sedea/local/operations-user-id`** — not part of the operations union contract (see **`.sedea/centers/sedea/rules/0_hosting-checkout.mdc`**).
-- Asking the developer to set **git config** for the operations user id in Mission Control runs — the host supplies context.
-
 ## Plans union
 
-Per **`.sedea/centers/sedea/rules/0_hosting-checkout.mdc`**:
+Per **`.sedea/centers/sedea/rules/0_hosting-repo.mdc`**:
 
 1. **`.sedea/operations/joint/...`** — shared namespace (literal `joint`).
 2. **`.sedea/operations/<operationsUserId>/...`** — per-user private namespace.
@@ -39,25 +33,32 @@ Ellipses in path examples (for example `` `.sedea/operations/.../plans/` ``, `` 
 ## Agent behavior
 
 - If **`operationsUserId`** is missing in a spawned skill that requires it, return **`partial`** with `outputs.missingFields: ["operationsUserId"]` — do not invent an id or read from focused files alone.
-- When documenting **`plan-state.mjs`**, show **`--operations-user-id`** in command examples and state that agents pass the Mission Control **`operationsUserId`** value.
+- When documenting **`plan-state.mjs`** or **`pr-review.py`**, show **`--operations-user-id`** in command examples, **`cd "$HOSTING_ROOT"`** before the script path, and state that agents pass the Mission Control **`operationsUserId`** value.
+
+## Hosting repo cwd (scripts)
+
+**`plan-state.mjs`**, **`plan-ws-completeness.mjs`**, and **`pr-review.py`** run from **`HOSTING_ROOT`** (hosting repo containing `.sedea/`), not from a hosting repo worktree’s `git rev-parse --show-toplevel` alone. Full contract: [`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`](20_efficient-pr-shipping.mdc) § *Hosting repo cwd for scripts (canonical)*.
 
 ## Worked example (`plan-state.mjs`)
 
-Flag order is **global** — **`--operations-user-id <id>` before the subcommand** (see [`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`](20_efficient-pr-shipping.mdc) § *Commit and push cadence*).
-
-From the **hosting repository root** (directory containing `.sedea/`):
+Flag order is **global** — **`--operations-user-id <id>` before the subcommand** (see rule **20** § *Commit and push cadence*).
 
 ```bash
+WORKTREE_ROOT="$(pwd)"   # hosting repo worktree (or primary hosting repo when same)
+# Set HOSTING_ROOT: walk up until .sedea/centers/sedea/ or .sedea/ exists — see rule 20 § *Resolve HOSTING_ROOT*
+cd "$HOSTING_ROOT"
 OPS_ID="<operationsUserId from Mission Control warm-up or sedea_get_current_user>"
 
 node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
-  --operations-user-id "$OPS_ID" resolve --cwd "$PWD"
+  --operations-user-id "$OPS_ID" resolve --cwd "$WORKTREE_ROOT"
 
 node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   --operations-user-id "$OPS_ID" upsert-pr \
   --slug <slug-from-resolve> \
-  --repo "$(basename "$(git rev-parse --show-toplevel)")" \
+  --repo "$(basename "$WORKTREE_ROOT")" \
   --number <pr-number>
 ```
+
+**`pr-review.py`:** same **`HOSTING_ROOT`** — `cd "$HOSTING_ROOT" && PR_REVIEW_INPUT="<absolute-path>" python3 .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (see [`pr-review/SKILL.md`](../missions/plan-and-deliver/skills/pr-review/SKILL.md)).
 
 Without **`--operations-user-id`**, the CLI searches **`joint`** plans only and may warn that user-scoped paths were skipped — do not treat that as "no plans exist" for the developer.

@@ -24,7 +24,14 @@ If Mission Control opened a session whose only intent is **`pr-review`** / *tria
 
 ## Helper script
 
-Script: `.sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (reads PAT from `GH_TOKEN`, then hosting-repo **`.sedea/mcp.json`**, then `~/.sedea/mcp.json` — config only; **do not invoke the GitHub MCP** during **`pr-review`**).
+Script: `.sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (reads PAT from `GH_TOKEN`, then hosting-repo **`.sedea/mcp.json`**, then `~/.sedea/mcp.json` for token lookup only — see § *GitHub access*).
+
+### Hosting repo cwd (`pr-review.py` and `plan-state.mjs`)
+
+**`pr-review.py`** and **`plan-state.mjs`** run from **`HOSTING_ROOT`** (hosting repo whose root contains **`.sedea/`**), not from a worktree’s `git rev-parse --show-toplevel` alone. Canonical contract: [`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`](../../../../rules/20_efficient-pr-shipping.mdc) § *Hosting repo cwd for scripts (canonical)* and [`.sedea/centers/research-and-development/rules/31_operations-user-id.mdc`](../../../../rules/31_operations-user-id.mdc) § *Worked example*.
+
+- **`WORKTREE_ROOT`** — hosting repo worktree where you edit code (`git` / `gh` in Step 0).
+- **`HOSTING_ROOT`** — walk up until **`.sedea/centers/sedea/`** or **`.sedea/`** exists; **`cd "$HOSTING_ROOT"`** before **`node …/plan-state.mjs`** or **`python3 …/pr-review.py`**.
 
 The script reads input from (in order): **`PR_REVIEW_INPUT`** (absolute path to a JSON file — keeps payloads **outside** the repo).
 
@@ -36,9 +43,9 @@ The point is a **reviewable JSON payload** and a **stable allowlisted shell comm
    Create a temp path outside the repo, e.g. `PRR_INPUT=$(mktemp /tmp/cursor-pr-review-input.XXXXXX)` (six trailing `X`). Use the **Write** tool to write the JSON to that **absolute** path (or a **Shell** that **only** writes the file and exits — **no** `&&` to the script).
 
 2. **Second step — run the script only**  
-   A **separate** **Shell** invocation:
+   A **separate** **Shell** invocation (from **`HOSTING_ROOT`**, not the worktree root alone):
 
-   `cd <implementation-repo-root> && PR_REVIEW_INPUT="<absolute-path-from-step-1>" python3 .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py`
+   `cd "$HOSTING_ROOT" && PR_REVIEW_INPUT="<absolute-path-from-step-1>" python3 .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py`
 
    No `echo`/`printf`/heredoc, no redirection, no `&&` chaining write + script on this line.
 
@@ -67,9 +74,11 @@ Input format — **one object** (single command) or a **JSON array** of command 
 
 Supported `command` values: `threads`, `reply`, `resolve`, `minimize`, `pr-for-branch`, `reviews`, `review-comments`, `pull-reviews`, `issue-comments`, `request-review`, `summary`.
 
-### GitHub MCP is **out of scope** for `pr-review`
+### GitHub access
 
-Do **not** call **`user-github`** (or any other GitHub MCP) to list reviews, comments, or threads. That duplicates the script, stresses the agent UI with huge payloads, and is forbidden here. **All** GitHub reads and writes for this workflow go through **`cd <implementation-repo-root> && PR_REVIEW_INPUT="<absolute-path-from-step-1>" python3 .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py`** (plus `git` / `gh` in Step 0 only if you already use them for branch or URL resolution — optional; `pr-for-branch` in the script is preferred when resolving the PR from the current branch).
+**All** GitHub reads and writes for this skill use **`pr-review.py`** via the two-step **`PR_REVIEW_INPUT`** workflow (§ *Input file and script*). In Step 0 you may use `git` / `gh` in the **worktree** for branch or URL resolution; prefer **`pr-for-branch`** in the script when resolving the PR from the current branch.
+
+Superseded paths (token/config lookup only — **not** for listing threads or posting replies): GitHub MCP server ids such as **`github`** or **`user-github`** in **`.sedea/mcp.json`**. Those tools duplicate **`pr-review.py`** and inflate agent context.
 
 ## When coding-session executes `pr-review`
 
@@ -95,18 +104,20 @@ Before Step 1, attempt to upsert the resolved PR number into the Plan Board side
 If the id is omitted, only `joint` plans are visible (stderr warns once). **Slug collision:** the same slug in both trees → the **user** tree wins (listed first).
 
 ```bash
-ROOT="$(git rev-parse --show-toplevel)"
-PLAN_STATE="$ROOT/.sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs"
-# Optional first args: --operations-user-id <id>  (before the subcommand), e.g.
-# node -- "$PLAN_STATE" --operations-user-id "<id>" resolve --cwd "$PWD"
+WORKTREE_ROOT="$(pwd)"   # hosting repo worktree (after cd into it)
+# HOSTING_ROOT: walk up until .sedea/centers/sedea/ or .sedea/ exists — see rule 20 § *Resolve HOSTING_ROOT*
+cd "$HOSTING_ROOT"
+OPS_ID="<operationsUserId from Mission Control warm-up or sedea_get_current_user>"
 
-node -- "$PLAN_STATE" resolve --cwd "$PWD"
+node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+  --operations-user-id "$OPS_ID" resolve --cwd "$WORKTREE_ROOT"
 # → exit 0 prints "<slug>\t<planPath>"; exit 2 = no plan; other = error.
 
 # If resolve succeeded, upsert the PR number from Step 0 into the sidecar:
-node -- "$PLAN_STATE" upsert-pr \
+node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+  --operations-user-id "$OPS_ID" upsert-pr \
   --slug <slug-from-resolve> \
-  --repo "$(basename "$ROOT")" \
+  --repo "$(basename "$WORKTREE_ROOT")" \
   --number <pull_number-from-Step-0>
 ```
 
@@ -183,7 +194,7 @@ Do **not** include `Must fix`, `Should fix`, or `Skipped (no follow-up)` items h
 
 Acknowledge: *"Prepared <K> Code Review Follow-ups for `<slug>.plan.md` § Follow-ups; awaiting developer approval before appending."*
 
-Plan files live under **`.sedea/operations/`** on the hosting checkout. In the Sedea `app` monorepo, see `.sedea/centers/sedea/rules/0_hosting-checkout.mdc`: that tree is often its **own** git repository, gitignored or submodule-pinned from the monorepo. Edits to `*.plan.md` / `*.state.yaml` therefore may **not** appear in the implementation repo's `git status`. Sync plan changes through whatever workflow owns the operations checkout (for example a dedicated `operations` commit), not only the `app` PR — rule **20** § *Commit and push cadence* still commits implementation-repo source changes as usual when the developer requests *commit* / *push* in the same message.
+Plan files live under **`.sedea/operations/`** on the primary hosting repo. In the Sedea `app` monorepo, see `.sedea/centers/sedea/rules/0_hosting-repo.mdc`: that tree is often its **own** git repository, gitignored or submodule-pinned from the monorepo. Edits to `*.plan.md` / `*.state.yaml` therefore may **not** appear in the hosting repo worktree's `git status`. Sync plan changes through whatever workflow owns the operations repository (for example a dedicated `operations` commit), not only the `app` PR — rule **20** § *Commit and push cadence* still commits hosting-repo source changes as usual when the developer requests *commit* / *push* in the same message.
 
 ### Step 4 — Report
 

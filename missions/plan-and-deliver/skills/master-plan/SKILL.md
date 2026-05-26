@@ -66,7 +66,7 @@ If the file has changed since you last knew it, the in-file template is the sour
 
 Read the workspace paths from your session's `<user_info>` block (and any additional roots the user may have added, e.g. a **git worktree** opened as another workspace folder). Filter:
 
-- **Skip linked worktrees (do not offer them in 3a, do not treat them as the product repo).** Use the **same** linked-worktree test as step **3b §3** (`git -C <path> rev-parse --show-toplevel` vs `<path>` after resolving symlinks — if they differ, skip). Also skip when **`<path>/.git` is a file** (not a directory): that is the usual layout for a **git worktree** checkout. Extra workspace roots that exist only because the hosting editor **appended a worktree** (e.g. Mission Control MCP / “add worktree folder to workspace”) are almost always in this bucket — **ignore them** for the 3a `AskQuestion` list and for **which paths you load `.cursor/rules` from** in step 3c; they are not a second independent product repo. If **every** loaded root is filtered out as a linked worktree (or non-repo), say so explicitly and ask the user to open the **primary** checkout or monorepo root they use for planning, then re-run — do not fabricate a repo from a worktree-only workspace.
+- **Skip linked worktrees (do not offer them in 3a, do not treat them as the hosting repo).** Use the **same** linked-worktree test as step **3b §3** (`git -C <path> rev-parse --show-toplevel` vs `<path>` after resolving symlinks — if they differ, skip). Also skip when **`<path>/.git` is a file** (not a directory): that is the usual layout for a **git worktree**. Extra workspace roots that exist only because the hosting editor **appended a worktree** (e.g. Mission Control MCP / “add worktree folder to workspace”) are almost always in this bucket — **ignore them** for the 3a `AskQuestion` list and for **which paths you load `.cursor/rules` from** in step 3c; they are not a second independent hosting repo. If **every** loaded root is filtered out as a linked worktree (or non-repo), say so explicitly and ask the user to open the **primary hosting repo** or monorepo root they use for planning, then re-run — do not fabricate a repo from a worktree-only workspace.
 - **Drop** anything that doesn't look like a code repo (no `.git`, or clearly a dotfiles/config dir). When in doubt, keep it — the user can deselect.
 - **Keep** every other workspace path. Display them with a friendly label (the leaf folder name) and the absolute path as the tooltip / sub-text.
 
@@ -78,17 +78,17 @@ Each option's `id` is the absolute path; each `label` is the leaf folder name (e
 
 If the PRD or the title strongly implies a single repo (e.g. it mentions "merchant dashboard" or "push worker"), still surface the multi-select — but mention the implied repo in the prompt's preface so the user can accept the default with one click. Do not auto-select on the user's behalf; multi-repo features are common enough that the agent shouldn't presume.
 
-If only one repo remains after filtering, skip the AskQuestion and tell the user *"Only one product repo in this workspace — defaulting to <name>. Reply 'add <path>' if you want to include another."*
+If only one repo remains after filtering, skip the AskQuestion and tell the user *"Only one hosting repo in this workspace — defaulting to <name>. Reply 'add <path>' if you want to include another."*
 
 ### 3b — Sync each selected repo to its default branch
 
-Architectural rules are loaded from the working tree, not from a fixed git ref — drafting against a stale local checkout produces a Master Plan grounded in code that no longer matches `main`. Before loading rules, fast-forward each selected repo to its default branch.
+Architectural rules are loaded from the working tree, not from a fixed git ref — drafting against a stale local tree produces a Master Plan grounded in code that no longer matches `main`. Before loading rules, fast-forward each selected repo to its default branch.
 
 For every repo path returned in 3a, in turn:
 
 1. **Detect the default branch.** `git -C <repo-path> symbolic-ref refs/remotes/origin/HEAD --short` returns `origin/<branch>` (typically `origin/main`, sometimes `origin/master`). Strip the `origin/` prefix. If the symbolic-ref isn't set locally, fall back to `git -C <repo-path> remote show origin | grep "HEAD branch"`.
 2. **Refuse to touch a dirty tree.** `git -C <repo-path> status --porcelain`. Any output (modified, staged, or untracked files) ⇒ **skip this repo's sync**. Say in one line: *"<repo>: working tree has uncommitted changes on `<current-branch>` — leaving as-is. Architectural rules will load from the current branch."* Continue to the next repo. **Do not** stash, commit, discard, or stage anything; the user's WIP is sacred.
-3. **Skip linked worktrees.** Compare `git -C <repo-path> rev-parse --show-toplevel` (symlinks resolved) to `<repo-path>`. If they differ, the workspace path is a linked worktree, not the primary checkout — Git refuses to check out the same branch in two worktrees, so trying to switch would only produce noise. Say *"<repo>: linked worktree, can't share its branch with the primary checkout — leaving as-is."* and continue.
+3. **Skip linked worktrees.** Compare `git -C <repo-path> rev-parse --show-toplevel` (symlinks resolved) to `<repo-path>`. If they differ, the workspace path is a linked worktree, not the primary hosting repo — Git refuses to check out the same branch in two worktrees, so trying to switch would only produce noise. Say *"<repo>: linked worktree, can't share its branch with the primary hosting repo — leaving as-is."* and continue.
 4. **Check out and fast-forward.** When both checks pass:
 
    ```bash
@@ -98,7 +98,7 @@ For every repo path returned in 3a, in turn:
 
    If `--ff-only` fails (the local branch has diverged from `origin/<branch>`), say *"<repo>: local `<branch>` has diverged from `origin/<branch>` — leaving as-is for manual resolution."* and continue. Never use `--rebase`, `--no-ff`, or a plain `pull`; diverged branches are the user's call, not the agent's.
 
-After processing every repo, surface a one-line summary before moving to 3c so the user can spot a stale checkout *before* the rules are loaded:
+After processing every repo, surface a one-line summary before moving to 3c so the user can spot a stale tree *before* the rules are loaded:
 
 > *Synced: <repo-A> (main, fast-forwarded 12 commits), <repo-B> (master, already up to date). Skipped: <repo-C> (uncommitted changes), <repo-D> (linked worktree).*
 
@@ -280,11 +280,7 @@ _TBD_
 
 The literal `## 6. Delivery phases | PR breakdown` heading is the **deliberate, not-yet-decided** form documented in the dev-process doc's **§ 6 / § 5 contents rule**. When § 6 is drafted in a follow-up turn, the agent picks one of `Delivery phases` (the feature decomposes into phases) or `PR breakdown` (the feature is small enough to skip the phase layer) and rewrites the heading to the chosen value, dropping the other side. Until then, the dual heading communicates "decomposition pending" at a glance.
 
-Why a uniform `_TBD_`:
-
-- **Scannability.** Italic `_TBD_` reads as a clear hole; you can flick down the file and count how many holes remain. Long stub sentences like "TBD — drafted in a follow-up turn after §§ 4 + 5 are settled" hide the same information inside paragraphs that look written.
-- **Renders everywhere.** Markdown italic is visible in Cursor, on the Plan Board, on GitHub, anywhere the file gets read. HTML comments (the previous convention) only render in the source view, so § 4 and § 5 looked falsely empty before Step 6 ran.
-- **Easy to grep / find.** `rg '^_TBD_$'` against the plan file lists every pending section.
+Use uniform italic **`_TBD_`** for every pending section (scannable in Plan Board and GitHub; grep with `rg '^_TBD_$'`). Rationale and template rules: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Master Plan template*.
 
 Frontmatter rules carry over from the new-plan contract:
 
@@ -331,7 +327,7 @@ Repeat the analogous shape for §§ 1, 2, 3, 5. Leave the `_TBD_` placeholders u
 
 ### § 1 Background
 
-One paragraph, **1–2 sentences**, framed from the **product** perspective (not implementation). What is the feature, in plain language? Who is it for? What problem does it solve? Pull this directly from the PRD's overview / goals — paraphrase, don't quote at length. Implementation framing belongs in § 4 / § 5, not here.
+One paragraph, **1–2 sentences**, framed from the **hosting repo** perspective (not implementation). What is the feature, in plain language? Who is it for? What problem does it solve? Pull this directly from the PRD's overview / goals — paraphrase, don't quote at length. Implementation framing belongs in § 4 / § 5, not here.
 
 ### § 2 Benefits
 
@@ -425,8 +421,8 @@ When the band is **high**:
 
 1. **Do not** offer **§ 6 decomposition** (spawn **delivery-phases** / **pr-breakdown**) in **AskQuestion** until the **overall score** is **≤ 20** — routing on this file as-is risks an oversized § 6.
 2. **Do** tell the user explicitly to **pause decomposition** until scope is narrower (revise §§ 4–5, or split the feature).
-3. **Split guidance (required)** — Propose **2–4** concrete slices framed as **user journeys / outcomes** for merchants or their customers (e.g. *"Merchants can configure campaign guardrails before launch"*, *"Shoppers see compliant previews in the app"*). Each slice should be shippable as a **separate planning conversation** (its own Master Plan under the same roadmap topic, or a future **Delivery phases** item that is outcome-titled). **Avoid** recommending splits that are only **topology** ("frontend vs backend", "this API vs that API", "repo A vs repo B") unless you **pair** each slice with **who gains what** so the human can still reason in product terms.
-4. On the next turn, use **AskQuestion** / **`MC_ASKQUESTION_V1`** (per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**) for **revise §4**, **revise §5**, optional **draft Caveats**, or **commit plans** — not typed command tokens.
+3. **Split guidance (required)** — Propose **2–4** concrete slices framed as **user journeys / outcomes** for merchants or their customers (e.g. *"Merchants can configure campaign guardrails before launch"*, *"Shoppers see compliant previews in the app"*). Each slice should be shippable as a **separate planning conversation** (its own Master Plan under the same roadmap topic, or a future **Delivery phases** item that is outcome-titled). **Avoid** recommending splits that are only **topology** ("frontend vs backend", "this API vs that API", "repo A vs repo B") unless you **pair** each slice with **who gains what** so the human can still reason in hosting repo terms.
+4. On the next turn, use **AskQuestion** / **`MC_ASKQUESTION_V1`** (per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**) for **revise §4**, **revise §5**, optional **draft Caveats**, or **commit plans**.
 
 When band is **low** or **medium**, proceed to **Step 7**; the status line in Step 7a must mention complexity (e.g. *"Complexity: medium (overall score = 12) — §6 decomposition available in next AskQuestion."*).
 
@@ -443,7 +439,7 @@ Do **not** draft section 6 (`Delivery phases | PR breakdown`) or section 7 (Cave
 
 ## Step 7 — Next moves (AskQuestion + spawn)
 
-§§ 1–5 are drafted (including **`### Complexity score`**); §6 and §7 stay `_TBD_` until the user chooses next moves. Per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** and Sedea conduct, the user picks via **`AskQuestion`** / **`MC_ASKQUESTION_V1`** or a **numbered list** in chat; you execute **one** chosen action per turn.
+§§ 1–5 are drafted (including **`### Complexity score`**); §6 and §7 stay `_TBD_` until the user chooses next moves. Collect each next-move pick per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* (snapshot first, then **AskQuestion** on the next turn when a pick is required). Execute **one** chosen action per turn.
 
 §6 decomposition is owned by spawned **`delivery-phases`** / **`pr-breakdown`** agents (`AGENT_RUN_REQUEST_V1`). §7 **Caveats** is drafted **inline** in this skill when the user selects that option.
 
@@ -477,7 +473,7 @@ Always include **More details for option _** per conduct.
 
 ### Step 7c — One choice per turn
 
-Execute **only** what the user selected in **AskQuestion** (or the matching numbered pick). Multi-step work requires explicit multi-action approval in one user message.
+Execute **only** what the user selected in **AskQuestion** (or the matching **`option`** from **`MC_ASKQUESTION_V1`**). Multi-step work requires explicit multi-action approval in one user message.
 
 #### Route §6 decomposition (`route-6`)
 
@@ -520,7 +516,7 @@ After each completed action, re-read the plan file and run **Step 7b** again wit
 This skill writes the Master Plan file (`<slug>.plan.md` + `<slug>.state.yaml`) and populates §§ 1 through 5 in the initial turn (**§ 5 includes `### Decomposition assessment` and `### Complexity score (plan-scope signal)`**), computes the **plan-scope complexity table** per Step 6c, and when the **overall score** is **> 20** recommends user-journey splits before offering §6 decomposition in **AskQuestion**. It drafts §7 when the user selects that option, and spawns **delivery-phases** or **pr-breakdown** via **`AGENT_RUN_REQUEST_V1`** when the user selects route §6. It does **not**:
 
 - Create worktrees or start implementation.
-- Modify code or content in the selected repos. Step 3b is the only repo touch this skill makes — it runs `git status --porcelain`, `git checkout <default-branch>`, and `git pull --ff-only` to sync each selected repo's primary checkout to its default branch before loading architectural rules. It refuses to run on a dirty tree or a linked worktree, never stashes / commits / discards, and never falls back to a non-fast-forward pull.
+- Modify code or content in the selected repos. Step 3b is the only repo touch this skill makes — it runs `git status --porcelain`, `git checkout <default-branch>`, and `git pull --ff-only` to sync each selected hosting repo to its default branch before loading architectural rules. It refuses to run on a dirty tree or a linked worktree, never stashes / commits / discards, and never falls back to a non-fast-forward pull.
 - Run commit / push flow on the plans repo unless the user explicitly asks in the same message (Step 7c **commit-plans** option).
 - Draft section 6 (`Delivery phases | PR breakdown`) inline — that section is owned by the spawned **Delivery phases** and **PR breakdown** agents.
 - Spawn child phase or PR plan stubs itself after § 6 lands. The downstream § 6 agent reports the child list and may coordinate further child-spawn requests per its own contract.
