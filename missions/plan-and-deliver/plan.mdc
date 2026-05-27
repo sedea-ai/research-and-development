@@ -69,7 +69,7 @@ This diagram is the **dispatch ownership map**. It answers: which agent on this 
 
 | Role | Lane | Spawns | Does not |
 |------|------|--------|----------|
-| **Squad Leader** | Mission dispatch leader | `ad-hoc-prd` (§3), `master-plan` (§5) | Route menu for §6 decomposition; `delivery-phases`, `coding-session`, etc. |
+| **Squad Leader** | Mission dispatch leader | `ad-hoc-prd` (§3), `master-plan` (§5) | PRD approval on leader lane (owned by **Ad-Hoc PRD** child); route menu for §6 decomposition; `delivery-phases`, `coding-session`, etc. |
 | **Master Plan agent** | Child lane after §5 | `delivery-phases`, `pr-breakdown` via **AskQuestion** + `AGENT_RUN_REQUEST_V1`; drafts §7 inline | Replace Squad Leader ledger; resolve dispatch |
 | **Downstream skill agents** | Further child lanes | Per skill: e.g. `new-plan` → `phase-plan` / `pr-plan`; `coding-session` → `pre-pr-review` | `MC_DISPATCH_RESOLVED_V1` |
 | **Detached branches** | Often separate session / phrase | Invoked via `development-process.md` branch names | Automatic Squad Leader spawn from §§1–5 |
@@ -89,6 +89,8 @@ flowchart TB
     S1 --> S2["§2 Validate PRD"]:::leader
     S1 --> S3["§3 spawn ad-hoc-prd"]:::leader
     S3 --> S3W["wait AGENT_RESULT"]:::wait
+    S3W --> S3A["child: PRD approve"]:::child
+    S3A --> S3W
     S3W --> S4["§4 Planning seed"]:::leader
     S2 --> S4
     S4 --> S5["§5 spawn master-plan"]:::leader
@@ -159,9 +161,10 @@ flowchart TD
   ASK --> LINK["§2 Validate linked PRD"]:::leader
   ASK --> AH["§3 spawn ad-hoc-prd"]:::spawn
   AH --> AHW["wait child result"]:::wait
-  AHW --> APR["developer approves PRD"]:::leader
-  LINK --> SEED["§4 Collect planning seed"]:::leader
-  APR --> SEED
+  AHW --> APR["child: PRD approve / revise"]:::child
+  APR --> AHW
+  AHW --> SEED["§4 Collect planning seed"]:::leader
+  LINK --> SEED
   SEED --> MP["§5 spawn master-plan"]:::spawn
   MP --> MPW["wait child result"]:::wait
   MPW --> ACK["§6 Acknowledge status only"]:::leader
@@ -183,13 +186,14 @@ This subsection is the **Squad Leader** contract for §§3, 5, 6, and 7. Sedea h
 
 **Host vs “wait.”** Mission Control does **not** block the parent turn while a child runs. **Wait** means: announce that you are waiting for a child result, emit **`AGENT_RUN_REQUEST_V1`**, then **stop** further protocol work on the leader lane until Mission Control delivers a silent UserSend that begins with **`Mission Control: agent-result-response delivered.`** Follow the response-protocol footer in that message before §6, §7, or another spawn.
 
-**§3 resume (Ad-Hoc PRD agent).** After the first `AGENT_RESULT_RESPONSE_V1` for §3:
+**§3 resume (Ad-Hoc PRD agent).** After each `AGENT_RESULT_RESPONSE_V1` for §3:
 
 | Check | Action |
 |-------|--------|
-| `outputs.prdRef` present | Present to developer for approval (§3 procedure); do not treat success as approval |
-| `outputs.continuationStatus: terminal` | Continue to §4 after developer approval |
-| `status: partial` / missing `prdRef` | Stop; collect missing fields or retry per **`ad-hoc-prd`** **`## Completion (spawned)`** |
+| `outputs.continuationOwner: ad-hoc-prd-agent` and `outputs.continuationStatus: active` | **Acknowledge only** on the leader lane — PRD approval / revision runs on the **Ad-Hoc PRD** child lane (see **`ad-hoc-prd`** steps 5–7). Do **not** duplicate approval **AskQuestion** here. |
+| `outputs.continuationStatus: terminal` and `outputs.developerApprovedPrd: true` with `prdRef` | Continue to §4 with the approved Ad-Hoc PRD |
+| `outputs.continuationStatus: terminal` without `developerApprovedPrd: true` | Stop; child should not have closed as terminal without approval — ask developer to continue on the child lane or retry §3 |
+| `status: partial` / missing `prdRef` / missing required inputs | Stop; collect missing fields on the appropriate lane or retry per **`ad-hoc-prd`** **`## Completion (spawned)`** |
 
 **§5 resume (Master Plan agent).** Before §6, validate the child result against **`master-plan`** **`## Completion (spawned)`**:
 
@@ -277,27 +281,21 @@ Do **not** invent PRD content from the URL alone. Do **not** call **`author-prd`
 - **Target agent role:** Ad-Hoc PRD agent
 - **Assigned skill:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md`
 - **Required rule context:** Sedea center always-apply rules, this mission plan, `development-process.md`, and the `ad-hoc-prd` skill.
-- **Expected output:** Child agent result with `status: success` or `partial`, `outputs.prdPath`, `outputs.prdRef`, `outputs.prdTitle`, `outputs.missingFields`, `outputs.complexityGuard`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner`, and `outputs.continuationStatus`.
+- **Expected output:** Child agent result with `status: success` or `partial`, `outputs.prdPath`, `outputs.prdRef`, `outputs.prdTitle`, `outputs.developerApprovedPrd`, `outputs.missingFields`, `outputs.complexityGuard`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`, `outputs.continuationOwner`, and `outputs.continuationStatus`.
 - **Next-step resolution:**
-  - Child result `success` with `prdRef` → present the generated PRD to the developer and require approval before continuing to the planning seed step for **`master-plan`**.
-  - Child result `partial` with usable `prdRef` → surface remaining gaps to the developer and require approval before continuing; continue only when those gaps do not block **`master-plan`**.
-  - Child result `partial` with missing fields → collect missing inputs from the developer, then retry the child branch or switch PRD source.
-  - Child result `failure`, `aborted`, `abandoned`, or no `prdRef` → stop and ask the developer whether to retry, switch to linked PRD, or abandon this branch.
+  - Child result with `continuationOwner: ad-hoc-prd-agent` and `continuationStatus: active` → acknowledge on the leader lane only; developer continues approve / revise on the **Ad-Hoc PRD** child lane.
+  - Child result `terminal` with `developerApprovedPrd: true` and `prdRef` → continue to §4 planning seed for **`master-plan`**.
+  - Child result `partial` with missing fields → collect missing inputs (child lane when the skill is active; leader lane only when the child cannot run), then retry or switch PRD source.
+  - Child result `failure`, `aborted`, `abandoned`, or no `prdRef` when approval was expected → stop and ask whether to retry, switch to linked PRD, or abandon this branch.
 
 **Procedure**
 
 1. Compile child inputs from §1: `createIntent: true`, `title` when known, `details` from the ad-hoc task description, `operationsUserId` from Mission Control context, and any optional roadmap or related hints.
 2. Emit exactly one `AGENT_RUN_REQUEST_V1` request for the **Ad-Hoc PRD agent** using the `ad-hoc-prd` skill path and compiled inputs.
-3. Announce that the **Squad Leader** is waiting for the child result because **`master-plan`** requires a PRD artifact.
+3. Announce that the **Squad Leader** is waiting for the child lane because **`master-plan`** requires a **developer-approved** PRD artifact.
 4. Stop protocol execution until Mission Control delivers `AGENT_RESULT_RESPONSE_V1` for the same `correlationId`.
-5. Validate that the returned output includes a readable `prdRef`.
-6. Use **AskQuestion** to ask the developer whether to approve the generated Ad-Hoc PRD for **`master-plan`** input. Required options:
-   - **Approve PRD and continue to master-plan**
-   - **Revise Ad-Hoc PRD first**
-   - **Switch to linked PRD**
-   - **Abandon this branch**
-   - **More details for option _**
-7. Continue to §4 only when the developer chooses **Approve PRD and continue to master-plan**. Do not treat child success as approval.
+5. Apply **§3 resume** above. The **Ad-Hoc PRD agent** owns recap, **AskQuestion** approval, and revision (skill steps 5–7) — do **not** run a duplicate approval gate on the leader lane.
+6. Continue to §4 only when the child result is `continuationStatus: terminal`, `outputs.developerApprovedPrd: true`, and `outputs.prdRef` is readable. Do not treat the first post-write child result (`continuationStatus: active`) as approval.
 
 ### 4. Collect planning seed
 

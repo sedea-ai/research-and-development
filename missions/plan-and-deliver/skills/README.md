@@ -44,7 +44,7 @@ Squad Leader steps **§3** and **§5** and downstream decomposition agents run t
 
 | Skill | Typical spawner | Squad Leader ledger |
 |-------|-----------------|---------------------|
-| `ad-hoc-prd` | Squad Leader §3 | `prdRef` → developer approval before §4; no child lanes |
+| `ad-hoc-prd` | Squad Leader §3 | Child lane owns PRD recap + approval (steps 5–7); leader §4 only after `terminal` + `developerApprovedPrd: true`; no nested child lanes |
 | `master-plan` | Squad Leader §5 | Seed ledger; §6 ack when `continuationOwner: master-plan-agent` |
 | `delivery-phases` | Master Plan agent | Merge `childRows`, `spawnedPlans`, `activeLanes` in §7 |
 | `pr-breakdown` | Master Plan agent | Same as delivery-phases |
@@ -136,7 +136,7 @@ After emitting **`AGENT_RESULT_RESPONSE_V1`**, **stop on that lane** for the cur
 | `author-prd` (prd mission) | Yes | Also forbids downstream planning spawns |
 | `pr-plan` | Yes | May spawn **`coding-session`** in §5d before terminal; one spawn per turn |
 | `master-plan` | Yes | Procedure stop before terminal when `continuationStatus: active`; Step 7 spawns on **later** user messages only |
-| `delivery-phases`, `pr-breakdown`, `new-plan`, `ad-hoc-prd` | Yes | Step 6 / write handoff **before** terminal line; see each skill § *Completion (spawned)* |
+| `delivery-phases`, `pr-breakdown`, `new-plan`, `ad-hoc-prd` | Yes | `ad-hoc-prd`: active result after write, terminal only after developer approval; see each skill § *Completion (spawned)* |
 | Ship chain (`coding-session`, `pre-pr-review`, `create-pr`, `deploy-walk`, `plan-reconcile`) | Yes | See each skill § *Completion (spawned)* |
 | `phase-plan` | Yes | Same canonical stop sentence as **`pr-plan`** |
 

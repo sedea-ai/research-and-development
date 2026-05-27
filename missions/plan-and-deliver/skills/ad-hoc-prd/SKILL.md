@@ -95,7 +95,13 @@ Create **`docs/`** under that segment if missing.
    - `# <Title>` — handoff title (not the filename).
    - **`Master Plan:`** line — `_TBD_` plus one sentence that **`master-plan`** will create the `.plan.md` from this Ad-Hoc PRD and the developer should paste or link that path here when it exists (do **not** invent a plan path).
    - **`## 1–3`** sections filled from handoff details; `_TBD_` where unavoidable + say what is missing.
-5. **Reply / result** with workspace / `file://` link to the new file and return `prdRef` for the Squad Leader to pass into **`master-plan`**. Mention optional **manual move** to **`joint/docs/`** only if **the developer** wants shared visibility.
+5. **Present for approval** — Recap the new file (workspace / `file://` link, one-line summary of §§1–3). Use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`../README.md`** § *Recap, structured choice, act* and **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**. Minimum options:
+   - **Approve PRD** — developer accepts this Ad-Hoc PRD for **`master-plan`** input
+   - **Revise PRD** — edit the `.ad-hoc-prd.md` on this lane, then return to step 5
+   - **More details for option _**
+   Do **not** treat the write alone as developer approval. Mention optional **manual move** to **`joint/docs/`** only if **the developer** wants shared visibility.
+6. **On approve** — Set `outputs.developerApprovedPrd: true`, ensure `prdRef` / `prdPath` / `prdTitle` reflect the approved file, then emit the terminal **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: terminal` and `continuationOwner: "squad-leader"`.
+7. **On revise** — Apply edits to the Ad-Hoc PRD file, then repeat step 5 until the developer approves or abandons (report `aborted` / `abandoned` only when they clearly stop).
 
 ## Completion (spawned)
 
@@ -109,22 +115,24 @@ Required `outputs` fields:
 - `outputs.prdRef`
 - `outputs.prdTitle`
 - `outputs.operationsUserId`
+- `outputs.developerApprovedPrd` — `true` only when the developer selected **Approve PRD** on this lane; `false` on non-terminal results
 - `outputs.missingFields`
 - `outputs.roadmapHints`
 - `outputs.complexityGuard`
 - `outputs.activeLanes`
 - `outputs.openLedgerEntries`
 - `outputs.remainingTasks`
-- `outputs.continuationOwner: "squad-leader"`
+- `outputs.continuationOwner`
 - `outputs.continuationStatus`
 
-Set `continuationStatus`:
+Set `continuationOwner` and `continuationStatus`:
 
-- `terminal` when the Ad-Hoc PRD file is written and `prdRef` is available.
-- `active` only when required inputs are missing and the Squad Leader must collect them.
-- `partial` status with `continuationStatus: "active"` when file writing fails or the content is too thin to proceed without developer clarification.
+- After the initial write (step 4), before developer approval: `continuationOwner: "ad-hoc-prd-agent"`, `continuationStatus: "active"`. Emit an **`AGENT_RESULT_RESPONSE_V1`** with `developerApprovedPrd: false` so the Squad Leader **acknowledges only** — do **not** advance **`plan and deliver`** §4 from that result alone.
+- While required inputs are missing: `continuationOwner: "ad-hoc-prd-agent"`, `continuationStatus: "active"`, `developerApprovedPrd: false` — Squad Leader collects only when this skill cannot run step 5 (see missing-fields cases below).
+- On developer **Approve PRD**: `continuationOwner: "squad-leader"`, `continuationStatus: "terminal"`, `developerApprovedPrd: true`, `prdRef` populated — Squad Leader may continue to §4.
+- `partial` with `continuationStatus: "active"` when file writing fails or content is too thin to offer approval until clarification.
 
-The **Squad Leader** must present `prdRef` to the developer for approval before resuming §4/§5 of the mission protocol. This skill does not spawn **`master-plan`**, and a successful child result is not developer approval to continue planning.
+**Continuation ownership.** When spawned under **`plan and deliver`**, this lane owns the PRD approval gate (steps 5–7), mirroring **`master-plan`** post-draft follow-up. The **Squad Leader** does **not** duplicate approval **AskQuestion** on the leader lane. This skill does not spawn **`master-plan`**. A child result with `developerApprovedPrd: false` is never permission to continue planning.
 
 Ledger expectations:
 
@@ -139,7 +147,7 @@ Error states:
 - File already exists at the generated path → generate a different 8-hex suffix once; if still blocked, return `failure`.
 - Write failure → `status: "failure"` or `partial` if recoverable, with `errors[].message` and `remainingTasks`.
 
-Stop after the terminal line. Do not emit another `AGENT_RUN_REQUEST_V1` or run the next protocol step in the same turn (see **`../README.md`** § *Terminal stop (normative)*). Do not spawn **`master-plan`** from this skill.
+Stop after each **`AGENT_RESULT_RESPONSE_V1`** for the current turn (see **`../README.md`** § *Terminal stop (normative)*). When `continuationStatus` is `active`, the developer continues on **this** lane (approve, revise, or clarify); re-emit an **updated** terminal line with the same `correlationId` when approval completes or scope changes. Do not emit another `AGENT_RUN_REQUEST_V1` or spawn **`master-plan`** from this skill.
 
 ## Completion (inline)
 
