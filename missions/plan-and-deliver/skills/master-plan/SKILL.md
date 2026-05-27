@@ -422,7 +422,7 @@ When the band is **high**:
 1. **Do not** offer **§ 6 decomposition** (spawn **delivery-phases** / **pr-breakdown**) in **AskQuestion** until the **overall score** is **≤ 20** — routing on this file as-is risks an oversized § 6.
 2. **Do** tell the user explicitly to **pause decomposition** until scope is narrower (revise §§ 4–5, or split the feature).
 3. **Split guidance (required)** — Propose **2–4** concrete slices framed as **user journeys / outcomes** for merchants or their customers (e.g. *"Merchants can configure campaign guardrails before launch"*, *"Shoppers see compliant previews in the app"*). Each slice should be shippable as a **separate planning conversation** (its own Master Plan under the same roadmap topic, or a future **Delivery phases** item that is outcome-titled). **Avoid** recommending splits that are only **topology** ("frontend vs backend", "this API vs that API", "repo A vs repo B") unless you **pair** each slice with **who gains what** so the human can still reason in hosting repo terms.
-4. On the next turn, use **AskQuestion** / **`MC_ASKQUESTION_V1`** (per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**) for **revise §4**, **revise §5**, optional **draft Caveats**, or **commit plans**.
+4. Offer structured choice via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** (per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**) for **revise §4**, **revise §5**, optional **draft Caveats**, or **commit plans** — prefer one message with journey-split recap + modal when possible.
 
 When band is **low** or **medium**, proceed to **Step 7**; the status line in Step 7a must mention complexity (e.g. *"Complexity: medium (overall score = 12) — §6 decomposition available in next AskQuestion."*).
 
@@ -439,19 +439,21 @@ Do **not** draft section 6 (`Delivery phases | PR breakdown`) or section 7 (Cave
 
 ## Step 7 — Next moves (AskQuestion + spawn)
 
-§§ 1–5 are drafted (including **`### Complexity score`**); §6 and §7 stay `_TBD_` until the user chooses next moves. Collect each next-move pick per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* (snapshot first, then **AskQuestion** on the next turn when a pick is required). Execute **one** chosen action per turn.
+§§ 1–5 are drafted (including **`### Complexity score`**); §6 and §7 stay `_TBD_` until the user chooses next moves. Collect each next-move pick per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + **AskQuestion** / **`MC_PHASED_RESPONSE_V1`** in one message; **legacy split:** recap (§7a), then structured choice (§7b). Execute **one** chosen action per turn.
 
 §6 decomposition is owned by spawned **`delivery-phases`** / **`pr-breakdown`** agents (`AGENT_RUN_REQUEST_V1`). §7 **Caveats** is drafted **inline** in this skill when the user selects that option.
 
 **Continuation ownership.** When this skill runs as a spawned **Master Plan agent** under **`plan and deliver`**, this lane owns post–Master Plan continuation and downstream spawning. The **Squad Leader** only acknowledges status and maintains the closure ledger — no duplicate route **AskQuestion** on the leader lane. Include `continuationOwner: "master-plan-agent"` and `continuationStatus: "active"` in the terminal result while follow-up remains on this lane.
 
-### Step 7a — Information turn after initial draft
+### Step 7a — Recap after initial draft
 
-After **Echo to chat** (§§1–5 + complexity table), end with **one short status line only** (plan path, band, overall score). **Do not** embed the next-move menu in prose blockquotes. **Do not** invoke **AskQuestion** in the same message as the full section echo (Mission Control transcript boundary in **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**).
+After **Echo to chat** (§§1–5 + complexity table), end with **one short status line only** (plan path, band, overall score). **Do not** embed the next-move menu in prose blockquotes.
 
-### Step 7b — AskQuestion: primary next moves (separate turn)
+When using the **legacy split** (see **`../README.md`** § *Recap, structured choice, act*), do **not** invoke **AskQuestion** in the same message as the full section echo. **Preferred:** combine recap + next-move modal in one message via **AskQuestion tool** or **`MC_PHASED_RESPONSE_V1`** (`display.markdown` for status; `askQuestion` for options).
 
-On the **next turn**, invoke **AskQuestion** / **`MC_ASKQUESTION_V1`**. Build options from plan state and Step 6c band.
+### Step 7b — Structured choice: primary next moves
+
+Invoke **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`**. On the legacy split, run structured choice in a **separate** assistant message after step **7a** recap. Build options from plan state and Step 6c band.
 
 **When complexity is low or medium (C ≤ 20)** — include at minimum:
 
@@ -463,9 +465,9 @@ On the **next turn**, invoke **AskQuestion** / **`MC_ASKQUESTION_V1`**. Build op
 | `commit-plans` | Commit plans (say *commit* in chat) | Remind sedea **6_git-commit-push-gate**; do not run git unless same message asks |
 | `more` | More details for option _ | Elaborate, then re-ask |
 
-**When complexity is high (C > 20)** — **omit** `route-6` until score ≤ 20. **Do not** add `route-6` because the user says *decompose anyway* unless they pick an explicit **accept decomposition risk** option you add after the Step 6c journey-split guidance (information-only turn first). Even then, prefer **`revise`** / journey splits until score ≤ 20. The **Squad Leader** must **never** spawn **`delivery-phases`** or **`pr-breakdown`** — only this **Master Plan agent** lane may emit those spawns after **`route-6`**.
+**When complexity is high (C > 20)** — **omit** `route-6` until score ≤ 20. **Do not** add `route-6` because the user says *decompose anyway* unless they pick an explicit **accept decomposition risk** option you add after the Step 6c journey-split guidance (recap-only or in `display.markdown` when using phased). Even then, prefer **`revise`** / journey splits until score ≤ 20. The **Squad Leader** must **never** spawn **`delivery-phases`** or **`pr-breakdown`** — only this **Master Plan agent** lane may emit those spawns after **`route-6`**.
 
-Foreground **revise §4**, **revise §5**, optional **draft-7**, **commit-plans**, **more**. Show journey-split bullets from Step 6c **above** the AskQuestion turn (information-only).
+Foreground **revise §4**, **revise §5**, optional **draft-7**, **commit-plans**, **more**. Include journey-split bullets from Step 6c in recap prose or **`display.markdown`** — not as a prose choice menu; options live in the modal.
 
 Always include **More details for option _** per conduct.
 
@@ -477,7 +479,7 @@ Execute **only** what the user selected in **AskQuestion** (or the matching **`o
 
 #### Route §6 decomposition (`route-6`)
 
-1. **AskQuestion** (separate turn if needed): **Delivery phases** vs **PR breakdown** (align with **`### Decomposition assessment`** when possible).
+1. **Structured choice** — **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`**: **Delivery phases** vs **PR breakdown** (align with **`### Decomposition assessment`** when possible). Prefer one message; legacy split only when phased/tool unavailable.
 2. Emit exactly one **`AGENT_RUN_REQUEST_V1`** for the chosen skill:
    - `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` — `routeLock: "delivery-phases"`
    - `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` — `routeLock: "pr-breakdown"`
@@ -503,7 +505,7 @@ State that the user must include *commit* (and *push* if needed) in the **same**
 
 ### Observations (numbered flags)
 
-When you notice gaps while working, list **numbered observations** in the information turn (Flag 1, Flag 2, …). On the next turn, **AskQuestion** per flag or batch: **Apply fix**, **Skip**, **More details for option _**.
+When you notice gaps while working, list **numbered observations** in recap prose (Flag 1, Flag 2, …). Then **AskQuestion** / **`MC_PHASED_RESPONSE_V1`** per flag or batch: **Apply fix**, **Skip**, **More details for option _** — prefer recap + modal in one message.
 
 After handling flags, return to **Step 7b**.
 

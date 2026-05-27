@@ -65,7 +65,7 @@ Gather evidence, calibrate section policy, and draft or update a Product or Feat
    - preserve attribution so claims can be traced back to sources.
    - list unreadable or unavailable seed sources as blockers or caveats.
 3. Run the evidence-gathering loop:
-   - use `AskQuestion` to ask the user for documents, URLs, write-ups, thoughts, screenshots, mocks, user or stakeholder evidence, implementation constraints, and related PRDs when needed.
+   - use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** § **Context and structured choice** to ask for documents, URLs, write-ups, thoughts, screenshots, mocks, user or stakeholder evidence, implementation constraints, and related PRDs when needed — put each choosable path in modal `options`, not prose menus.
    - read local files and `@path` references completely.
    - fetch readable URLs when available; if a URL is inaccessible, ask for an accessible copy or pasted content.
    - extract candidate facts into the source ledger after each added material.

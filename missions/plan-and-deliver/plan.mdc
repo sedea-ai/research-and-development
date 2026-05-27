@@ -369,7 +369,7 @@ Related (optional):
 
 1. Read the Master Plan agent result.
 2. If the result includes a usable plan path and indicates the **Master Plan agent** owns continuation, acknowledge status only.
-3. **Forbidden on the Squad Leader lane:** Do **not** present **Delivery phases**, **PR breakdown**, **Caveats**, or §6 decomposition **AskQuestion** menus here. Those routes live on the **Master Plan agent** child lane only (**`master-plan/SKILL.md`** Step 7 — separate turn per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**). The leader emits **no** `AGENT_RUN_REQUEST_V1` for **`delivery-phases`** or **`pr-breakdown`** from §6.
+3. **Forbidden on the Squad Leader lane:** Do **not** present **Delivery phases**, **PR breakdown**, **Caveats**, or §6 decomposition **AskQuestion** menus here. Those routes live on the **Master Plan agent** child lane only (**`master-plan/SKILL.md`** Step 7 — recap + structured choice per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`skills/README.md`** § *Recap, structured choice, act*). The leader emits **no** `AGENT_RUN_REQUEST_V1` for **`delivery-phases`** or **`pr-breakdown`** from §6.
 4. Pause the **Squad Leader** in a resumable wait state for downstream notifications.
 
 ### 7. Maintain planning closure ledger

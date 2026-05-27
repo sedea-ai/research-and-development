@@ -62,6 +62,10 @@ warmUpRules:
 
 This pass complements, and does not replace, the later GitHub-surface **reviewer agent**.
 
+## Structured choice (Mission Control)
+
+This skill does not own approval modals — **`coding-session`** collects developer consent before spawns. When this lane must surface a pick, use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act*.
+
 ## Step 1 — Validate spawned inputs
 
 Required inputs:

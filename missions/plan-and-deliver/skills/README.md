@@ -12,19 +12,31 @@ When a skill runs **inline** on the invoker’s lane (not spawned via **`AGENT_R
 
 **plan and deliver** normally spawns planning and ship skills on child lanes; inline sections exist for dual-mode authoring and rare same-lane runs. **`pr-review`** is **inline-only** (no **`## Completion (spawned)`**).
 
-## Turn A / B / C (plan-and-deliver)
+## Recap, structured choice, act (plan-and-deliver)
 
-Mission Control **transcript boundary** for skills that mix long plan output with structured user choice. Canonical Sedea rules: **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**. Hosting-repo runtime: **`.cursor/rules/mission-control-agent-runtime.mdc`**.
+Mission Control delivery for skills that mix long plan output with structured user choice. Canonical Sedea rules: **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** § **Context and structured choice**. Hosting-repo runtime: **`.cursor/rules/mission-control-agent-runtime.mdc`**.
 
-| Turn | Purpose | This turn must not include |
-|------|---------|----------------------------|
-| **A — Context** | Plan link, one-line summary, optional short recap | `MC_ASKQUESTION_V1`, AskQuestion tool, `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1` (unless Turn C of that skill) |
-| **B — Question** | AskQuestion or `MC_ASKQUESTION_V1` only | Prose, plan body echo, numbered menus, fences before sentinel |
-| **C — Act** | Spawn, terminal result, implementation | Combining A and B in one message |
+| Stage | Purpose | Notes |
+|-------|---------|--------|
+| **Recap** | Plan link, one-line summary, optional short recap | Prefer one message with structured choice (AskQuestion tool or `MC_PHASED_RESPONSE_V1`) |
+| **Structured choice** | Modal approval / gates | No bare `MC_ASKQUESTION_V1` after recap prose in the same message |
+| **Act** | Spawn, terminal result, implementation | After the user selects in the modal |
 
-**Reference implementation:** **`pr-breakdown`** §5d–§6 (Turn A notify → Turn B approval → Turn C spawn). **`pr-plan`** §5c–§5d, **`master-plan`** §7a–§7c, **`delivery-phases`** §5d–§6 follow the same pattern.
+**Normative:** Every skill in this mission that collects a pick, approval, or ship gate MUST follow the precedence table in **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** § **Context and structured choice**. Do **not** use “Turn A/B” or similar implementation labels in developer-facing chat.
 
-**Ship skills:** use Turn B for worktree-open, review approval, and create-PR gates; keep Turn A for status or diff recap only.
+**Reference implementations (planning):**
+
+| Skill | Recap | Structured choice | Act |
+|-------|-------|-------------------|-----|
+| **`pr-breakdown`**, **`delivery-phases`** | §5d | §6 | §6 act-after-select |
+| **`pr-plan`** | §5c recap | §5c modal | §5d spawn |
+| **`master-plan`** | §7a | §7b | §7c |
+| **`phase-plan`** | §4f echo / §5c link | §5b / §5c | §5b spawn / §5d follow-up |
+| **`new-plan`** | stub + parent link | populator gate § indexed handoff | populator spawn |
+
+**Ship and ops skills:** **`coding-session`** (worktree-open, pre-PR, create-PR handoffs), **`deploy-walk`**, **`plan-reconcile`**, **`create-pr`**, **`pre-pr-review`** — structured choice for gates; recap for status, diff, or dry-run report only. Prefer **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** when recap and modal belong in one message.
+
+**Lane pick (no resolved target):** emit *Where we are now in the plan tree* snapshot, then structured choice per **30_planning-target-resolution** § *Sedea input channel* (phased or split — not prose menus).
 
 ## Planning spawn (Squad Leader §3, §5, decomposition tree)
 

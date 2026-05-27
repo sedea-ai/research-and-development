@@ -54,7 +54,11 @@ warmUpRules:
 
 # Plan reconcile
 
-Script-backed flow: **`plan-state.mjs`** owns YAML and file moves; the agent decides **which** archive candidates to take (and how to route **follow-ups**) by surfacing choices via **`AskQuestion`**.
+Script-backed flow: **`plan-state.mjs`** owns YAML and file moves; the agent decides **which** archive candidates to take (and how to route **follow-ups**) by surfacing choices via structured choice (below).
+
+## Structured choice (Mission Control)
+
+Dry-run reports, archive candidates, and follow-up triage use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + modal in one message; bare **`MC_ASKQUESTION_V1`** is sentinel-only. **Act** (`plan-state.mjs archive`, file moves) is after the developer selects.
 
 ## When this skill runs
 

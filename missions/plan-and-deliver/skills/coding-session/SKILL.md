@@ -78,6 +78,10 @@ Hand off a unit of work into a **dedicated git worktree**, with the worktree vis
 
 **Out of scope:** drafting per-PR §§ **1–4** ( **`pr-plan`** ); implementing hosting repo code when this run is **prompt-only** (see [Prompt-only handoff](#prompt-only-handoff)); opening PRs from the planning lane; **`plan-reconcile`** archive cadence except where this skill references it for cleanup narrative.
 
+## Structured choice (Mission Control)
+
+Approval gates and branch picks use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap (status, diff, validation) + modal in one message; bare **`MC_ASKQUESTION_V1`** is sentinel-only. **Act** (worktrees, spawn, `git`, code edits) is always after the developer selects in the modal.
+
 On **[Spawned implementation lane](#spawned-implementation-lane)**, **this lane** edits the hosting repo under the worktree through the implementation cut point — do not tell the developer to paste a session prompt into another chat. On **prompt-only** runs, emit the external prompt and **stop** without implementing here.
 
 ## Relationship to `pr-plan`
@@ -142,7 +146,7 @@ Otherwise:
 
 **Layer 2 — single AskQuestion** before any `git worktree add`, sidecar session write, Mission Control worktree attach, or coding-agent prompt emission.
 
-**Turn boundary:** Summarize completeness / plan path in **Turn A** (information-only) when needed; run this gate in **Turn B** only (`MC_ASKQUESTION_V1` = sentinel + JSON, no leading prose). See **`../README.md`** § *Turn A / B / C* and **`.cursor/rules/mission-control-agent-runtime.mdc`**.
+**Recap and structured choice:** Summarize completeness / plan path in a brief **recap** when helpful. Open this gate via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`** (recap in `display.markdown`), or **sentinel-only** **`MC_ASKQUESTION_V1`** — prefer one message for recap + modal. See **`../README.md`** § *Recap, structured choice, act (plan-and-deliver)*, **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**, and **`.cursor/rules/mission-control-agent-runtime.mdc`**.
 
 **When `planCompleteness: complete`** (or validation skipped / override already in the user message), required options:
 

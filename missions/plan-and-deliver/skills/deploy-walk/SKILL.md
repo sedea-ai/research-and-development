@@ -71,6 +71,10 @@ warmUpRules:
 
 This skill drives the **per-step deploy verification loop** for a PR plan's `## N. Deploy test plan` section (the per-PR template's § 7, or § 6 in legacy 7-section per-PR plans). Each numbered step in `### Before deploy` and `### After deploy` is a **GFM task list checkbox** (`1. [ ] ...`); the **developer** works through the list one box at a time, **a coding agent** provides the per-step context, the **developer** reports the outcome, the agent flips the box and appends a dated resolution note.
 
+## Structured choice (Mission Control)
+
+Target picks, deploy-with-gaps, and closure gates use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + modal in one message; bare **`MC_ASKQUESTION_V1`** is sentinel-only. **Act** (checkbox flips, status lines) follows developer selection or explicit deploy-walk commands.
+
 When spawned by **`create-pr`**, this skill is the **deploy-walk agent** for a merged PR. It owns deploy verification status and reports it upstream; it does not run implementation, PR review, or plan reconciliation.
 
 ## Not chained to `plan-reconcile`
@@ -132,7 +136,7 @@ Resolution order (highest confidence first):
 3. **Most recent agent recommendation.** The agent's last turn proposed a **deploy-walk** step command against a specific plan (e.g. *"Reply `deploy-walk present 4` when ready"*).
 4. **Single candidate in chat context.** Exactly one PR plan was read / referenced in the recent chat window — use it.
 5. **Multiple candidates.** Stop and use **AskQuestion** listing PR plans with at least one unchecked `[ ]` in their `## N. Deploy test plan`. The **developer** picks; subsequent commands stick with that plan.
-6. **No candidate.** Stop with: *"**deploy-walk** needs a target PR plan. Per **planning-target-resolution**, emit a fresh "Where we are now in the plan tree" snapshot (information-only), then collect the lane pick via **AskQuestion** or **`MC_ASKQUESTION_V1`** (§ *Sedea input channel*), then re-invoke."*
+6. **No candidate.** Stop with: *"**deploy-walk** needs a target PR plan. Per **planning-target-resolution** and **`../README.md`** § *Recap, structured choice, act*, emit a fresh "Where we are now in the plan tree" snapshot, then collect the lane pick via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** (§ *Sedea input channel* — prefer recap + modal in one message), then re-invoke."*
 
 The IDE focused-file list (host-injected **open and recently viewed files** metadata) is **not** consulted.
 

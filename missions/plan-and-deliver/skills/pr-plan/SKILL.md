@@ -89,7 +89,7 @@ The skill operates on a **target** `.plan.md` resolved before this skill runs, p
 
 When spawned by `new-plan`, `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, and `parentIndex` are already locked. Treat missing or conflicting values as a spawn-contract failure: stop with `failure` or `partial` and report the missing field. Do not fall back to IDE focus or free-form target discovery in spawned mode.
 
-If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (information-only turn); in a **separate** turn, collect the lane pick via **AskQuestion** or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel*, then continue.
+If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (recap). Collect the lane pick via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + modal in one message; **legacy split:** recap only, then structured choice in the **next** assistant message. Then continue.
 
 Acknowledge in one line: *"Target plan: `<slug>`."*
 
@@ -328,22 +328,29 @@ However:
 - If parent link is blocked, keep `continuationStatus: "active"` until **`plan-reconcile`** repairs it or the upstream agent explicitly accepts the partial state.
 - Do not run worktrees or implementation on this lane; spawn **`coding-session`** only per §5d.
 
-### 5c — Hand back (Turn A + Turn B)
+### 5c — Hand back (recap + structured choice)
 
-Run **Turn A** and **Turn B** as **separate assistant turns** (see **`../README.md`** § *Turn A / B / C*).
+Per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act (plan-and-deliver)*. Do **not** use “Turn A/B” labels in developer-facing chat.
 
-#### Turn A — Information-only
+**Preferred (one assistant message):** **AskQuestion tool** with brief recap, or **`MC_PHASED_RESPONSE_V1`** with:
 
-Do **not** include **AskQuestion**, **`MC_ASKQUESTION_V1`**, **`AGENT_RUN_REQUEST_V1`**, or **`AGENT_RESULT_RESPONSE_V1`** in Turn A.
+- `display.markdown` — link + one-line readiness summary (below)
+- `askQuestion` — modal (`modalTitle`: *PR plan — next move*; options from the table)
+
+**Legacy split (when the tool and phased envelope are unavailable):** **recap-only** message, then a **separate** structured-choice message.
+
+#### Recap (information-only when split)
+
+When using the legacy split, do **not** include **AskQuestion**, **`MC_ASKQUESTION_V1`**, **`AGENT_RUN_REQUEST_V1`**, or **`AGENT_RESULT_RESPONSE_V1`** in the recap-only message.
 
 1. A **`file://`** link to the target `.plan.md` under `.sedea/operations/.../plans/...`.
 2. One-line summary: *Drafted per-PR §§ 1–4; implementation readiness: `<ready|not ready>`; §§ 5–8 remain **`_TBD_`** for **`coding-session`** unless you request a fill sketch.*
 
 Do **not** echo the full §§ 1–4 body in chat unless the developer asked for a fill sketch in the same flow.
 
-#### Turn B — AskQuestion (next turn)
+#### Structured choice — approval modal
 
-**Next turn only** — invoke **AskQuestion** or **`MC_ASKQUESTION_V1`** (`modalTitle`: *PR plan — next move*). When using **`MC_ASKQUESTION_V1`**, sentinel + JSON only — no prose before the sentinel.
+Invoke **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** (`modalTitle`: *PR plan — next move*). When using bare **`MC_ASKQUESTION_V1`** without a phased envelope, sentinel + JSON only — no prose before the sentinel.
 
 Required options (brief `label`; put detail in `prompt` when needed):
 

@@ -18,7 +18,7 @@ When a turn **requires a user reply** before you continue (pick a planning branc
 
 **Snapshot table (information-only).** The *Next viable moves* column may use **numbered rows** so the developer can read the plan tree in one glance. Those numbers are **reference labels** for the snapshot only — when a pick is required, offer the same moves as **AskQuestion** `options` (§ above).
 
-**Transcript boundary.** When the snapshot is long, use two assistant turns per [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](../../sedea/rules/2_ask-question-instructions.mdc) § *Mission Control transcript boundary*: (1) snapshot only; (2) **AskQuestion** only with one `option` per move (brief `label`; full branch + target in `prompt` if needed).
+**Recap and structured choice.** When the snapshot is long, follow [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](../../sedea/rules/2_ask-question-instructions.mdc) § **Context and structured choice** and **`../missions/plan-and-deliver/skills/README.md`** § *Recap, structured choice, act*: **preferred** — **AskQuestion tool** or **`MC_PHASED_RESPONSE_V1`** (`display.markdown` = snapshot; `askQuestion` = one `option` per move, brief `label`, branch + target in `prompt` when needed). **Legacy split** — recap-only message, then structured choice (**AskQuestion** or sentinel-only **`MC_ASKQUESTION_V1`**) in the **next** assistant message only when 1–2 are unavailable. Do **not** stop after recap without opening the modal in the same response (phased/tool) or the immediate follow-up (split).
 
 ## At a glance — planning vs ship (read first)
 

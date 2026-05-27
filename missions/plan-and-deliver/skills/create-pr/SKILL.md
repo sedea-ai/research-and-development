@@ -71,6 +71,10 @@ warmUpRules:
 
 This skill is run by **a PR-creating agent** spawned by **`coding-session`** after **`pre-pr-review`** returns `recommendation: "go"`.
 
+## Structured choice (Mission Control)
+
+Spawn and handoff gates use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + modal in one message; bare **`MC_ASKQUESTION_V1`** is sentinel-only. **Act** (`gh pr create`, downstream spawns) is after the developer selects.
+
 ## Relationship to rule 20 (`gh pr create`)
 
 **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** forbids **`gh pr create`** on coding, planning, and review lanes. **This skill is the exception:** **a PR-creating agent** on this lane **may** call `gh pr create` (or equivalent) when gates pass and push/creation is authorized. Other agents must spawn this skill instead of opening a PR themselves.

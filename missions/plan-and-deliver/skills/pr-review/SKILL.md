@@ -22,6 +22,10 @@ If Mission Control opened a session whose only intent is **`pr-review`** / *tria
 
 **Required upstream context:** `prUrl` or `prNumber`, repository identity, worktree path, branch name, linked PR plan when available, and coding-session ledger state. If this context is missing, return to `coding-session` to recover it before running PR review.
 
+## Structured choice (Mission Control)
+
+Triage and fix loops use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* on the **`coding-session`** lane — **preferred:** recap (comment summary) + modal in one message. **Act** (code/plan edits) only after developer approval per this skill.
+
 ## Helper script
 
 Script: `.sedea/centers/research-and-development/missions/plan-and-deliver/scripts/pr-review.py` (reads PAT from `GH_TOKEN`, then hosting-repo **`.sedea/mcp.json`**, then `~/.sedea/mcp.json` for token lookup only — see § *GitHub access*).

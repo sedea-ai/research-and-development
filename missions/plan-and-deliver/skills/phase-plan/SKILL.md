@@ -75,7 +75,7 @@ The skill operates on a **target** `.plan.md` resolved before this skill runs, p
 
 When spawned by `new-plan`, `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, and `parentIndex` are already locked. Treat missing or conflicting values as a spawn-contract failure: stop with `failure` or `partial` and report the missing field. Do not fall back to IDE focus or free-form target discovery in spawned mode.
 
-If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (information-only turn); in a **separate** turn, collect the lane pick via **AskQuestion** or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel*, then continue.
+If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (recap). Collect the lane pick via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + modal in one message; **legacy split:** recap only, then structured choice in the **next** assistant message. Then continue.
 
 Acknowledge in one line: *"Target plan: `<slug>`."*
 
@@ -343,7 +343,7 @@ When this skill is running as a spawned child and `autoContinue` is not `false`,
 - `delivery-phases` → spawn `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md`
 - `pr-breakdown` → spawn `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`
 
-Before spawning, present the drafted phase plan body and the route signal to the developer via **AskQuestion**. Required options:
+Before spawning, present the drafted phase plan body and the route signal to the developer via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* — **preferred:** brief recap + modal in one message; bare **`MC_ASKQUESTION_V1`** must be sentinel-only (no prose before the sentinel). Required options:
 
 - **Approve phase plan and route**
 - **Revise phase plan first**
@@ -359,22 +359,33 @@ After emitting the child-spawn request, announce that the **Phase plan agent** i
 
 ### 5c — Hand back when route is not clear or standalone
 
-End with:
+Per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act*. Do **not** use “Turn A/B” labels in developer-facing chat.
+
+**Preferred (one assistant message):** **AskQuestion tool** with brief recap, or **`MC_PHASED_RESPONSE_V1`** with:
+
+- `display.markdown` — file link, parent decomposition hint, optional one-line assessment summary (not a full re-echo of §§ 1–4 if step **4f** already echoed them)
+- `askQuestion` — route and follow-up options below
+
+**Legacy split:** **recap-only** message (items 1–2), then **structured-choice-only** message.
+
+Recap content:
 
 1. A **file link** — absolute `file://` path to the target `.plan.md` under `.sedea/operations/.../plans/...`.
 2. The parent's indicative decomposition line for this phase: **`<Delivery phases | PR breakdown>`** (from step 3a).
-3. **Structured route options** — when waiting for the developer, invoke **AskQuestion** or **`MC_ASKQUESTION_V1`** with one `option` per protocol branch (brief `label`; detail in `prompt`). Example `options`:
+
+**Structured route options** — one `option` per protocol branch (brief `label`; detail in `prompt`). Example `options`:
 
 - **`delivery-phases`** — draft the § 5 **list** as child phases (`Delivery phases` heading).
 - **`pr-breakdown`** — draft the § 5 **list** as PR breakdown (gates **Delivery phases** vs multi-PR vs single-PR `PR breakdown`). Align with **`### Decomposition assessment`** when the choice disagrees with the parent's hint.
-4. **Revise a section** — the developer names § N and feedback; you apply one focused `StrReplace` and echo. For assessment-only edits, anchor on `## 4. Changes` … `### Decomposition assessment`.
-5. **Commit plans** — remind the developer to commit when the body reads cleanly; this skill does **not** run git.
+- **Revise a section** — the developer names § N and feedback; you apply one focused `StrReplace` and echo. For assessment-only edits, anchor on `## 4. Changes` … `### Decomposition assessment`.
+- **Commit plans** — remind the developer to commit when the body reads cleanly; this skill does **not** run git.
+- **More details for option _**
 
-**Stop** after presenting options — wait for the developer's reply. Do **not** chain **`delivery-phases`** or **`pr-breakdown`** inside this turn unless mission dispatch explicitly continues the session and route signal is clear.
+**Stop** after structured choice — wait for the developer's reply. Do **not** chain **`delivery-phases`** or **`pr-breakdown`** in the structured-choice message unless mission dispatch explicitly continues the session and route signal is clear.
 
 ## Step 5d — Follow-up turns
 
-When the developer asks to revise § N, re-read that section and apply edits via `StrReplace`; echo the result; offer the same **AskQuestion** route options on the next turn when a pick is required.
+When the developer asks to revise § N, re-read that section and apply edits via `StrReplace`; echo the result; re-offer structured choice (prefer phased or AskQuestion in one message) when a pick is required.
 
 When they choose **`delivery-phases`** or **`pr-breakdown`** via **AskQuestion**, emit one child-spawn request for the chosen **protocol branch** with inputs `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "phase-plan-agent"`, `ledgerParent`, the current `### Decomposition assessment`, and `routeLock`. Do **not** impersonate the other skill's full procedure in the same turn; announce that this agent is waiting if the result is needed to keep the mission ledger current.
 

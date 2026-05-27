@@ -213,7 +213,7 @@ Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **t
 
 2. **Link the child** using an absolute `file://` URL to the real path under `.sedea/operations/.../plans/...` so the developer can open it.
 
-3. **Populator approval gate (indexed spawn only).** If this skill was spawned with `requestedPopulatorSkill`, present the created child stub and verified parent `Plan:` link to the developer before spawning the populator. Use **AskQuestion** with required options:
+3. **Populator approval gate (indexed spawn only).** If this skill was spawned with `requestedPopulatorSkill`, present the created child stub and verified parent `Plan:` link to the developer before spawning the populator. Collect approval via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* — **preferred:** stub link + modal in one message. Required options:
    - **Approve child stub and populate now**
    - **Revise child stub first**
    - **Defer population**
@@ -238,7 +238,7 @@ Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **t
    - `failure`, `aborted`, or `abandoned` → return the same status upstream with the child stub path and the populator errors; the upstream decomposition agent decides retry/defer/abandon for that row.
    - Missing or malformed populator outputs → return `partial` and keep the row open; silence is not completion.
 
-6. **Non-indexed spawns:** no populator handoff table — suggest filling stubs or choosing the next **protocol branch** via **AskQuestion** per **30_planning-target-resolution** § *Sedea input channel*.
+6. **Non-indexed spawns:** no populator handoff table — suggest filling stubs or choosing the next **protocol branch** via **AskQuestion** / **`MC_PHASED_RESPONSE_V1`** per **30_planning-target-resolution** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act*.
 
 7. **Worktrees, broad `git` operations, and `## Child plans` on the parent** — owned by **`coding-session`**, **`plan-reconcile`**, and other cadence steps after this skill completes.
 

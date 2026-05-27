@@ -72,7 +72,7 @@ The **developer** picks the next move per **30_planning-target-resolution** § *
 
 The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`30_planning-target-resolution.mdc`](../../../../rules/30_planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts (e.g. *Target plan: `<slug>` (from prior structured choice).*). Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative. Do **not** infer the target from the IDE’s focused-file list alone.
 
-If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (information-only turn); in a **separate** turn, collect the lane pick via **AskQuestion** or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel*, then continue.
+If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (recap). Collect the lane pick via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + modal in one message; **legacy split:** recap only, then structured choice in the **next** assistant message. Then continue.
 
 Acknowledge in one line: *"Target plan: `<slug>`."*
 
@@ -223,28 +223,34 @@ Do **not** modify any other section in the same call.
 
 After writing, read the file back and confirm the section reads as intended.
 
-### 5d — Notify draft (Turn A — information-only)
+### 5d — Notify draft (recap)
 
-**Mission Control transcript boundary:** This turn is **information-only**. Do **not** include **`MC_ASKQUESTION_V1`**, the **AskQuestion** tool, **`AGENT_RESULT_RESPONSE_V1`**, or **`AGENT_RUN_REQUEST_V1`** here.
+**Structured choice delivery** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** § **Context and structured choice**. Do **not** use implementation labels like “Turn A/B” in developer-facing chat.
 
-After step **5c**, end Turn A with **only**:
+After step **5c**, finish the **recap-only** pass with **only**:
 
 1. A **`file://`** link to the target `.plan.md` under `.sedea/operations/.../plans/...` (resolved path from **`plan-state resolve`** or equivalent).
 2. One line: *Drafted `## <N>. PR breakdown` with **K** PR rows — open the plan to review the full section.*
 
 Do **not** mirror the full **`PR breakdown`** body in chat (no duplicated headings, tables, Mermaid fences, or numbered PR list). The plan file is the review surface.
 
-Count **K** from numbered rows under **`### PR list`** before Turn B (`K = 1` is valid on the single-PR path). If **K = 0**, treat as drafting failure — do not run Turn B; return failure or partial per **Completion (spawned)** / standalone handoff.
+Count **K** from numbered rows under **`### PR list`** before the approval modal (`K = 1` is valid on the single-PR path). If **K = 0**, treat as drafting failure — do not open structured-choice spawn paths; return failure or partial per **Completion (spawned)** / standalone handoff.
+
+Do **not** include **AskQuestion**, **`MC_ASKQUESTION_V1`**, **`AGENT_RESULT_RESPONSE_V1`**, or **`AGENT_RUN_REQUEST_V1`** in this recap-only pass unless you combine recap + approval into one message via **`MC_PHASED_RESPONSE_V1`** (then skip a separate step-5d-only message).
 
 ## Step 6 — Hand back with next-move options
 
-Run **Turn B** and **Turn C** as **separate assistant turns**. Never combine Turn A, Turn B, and Turn C in one message.
+**Structured choice** then **act after the developer selects** — see **`../README.md`** § *Recap, structured choice, act (plan-and-deliver)*.
 
-### Turn B — Approval (interactive only)
+### Structured choice — Approval (interactive)
 
-In a **new** assistant turn after Turn A, collect the developer’s choice via **AskQuestion** or **`MC_ASKQUESTION_V1`** only.
+**Preferred:** **AskQuestion tool** (brief recap allowed in the same message) or **`MC_PHASED_RESPONSE_V1`** with recap in `display.markdown` and options in `askQuestion` — one assistant message.
 
-- When using **`MC_ASKQUESTION_V1`**, the message must contain **only** the sentinel line and JSON object — **no** prose, plan recap, or markdown fences before or between the sentinel and JSON.
+**Legacy split (when the tool and phased envelope are unavailable):** send the step **5d** recap, then a **separate** message with **AskQuestion** or **sentinel-only** **`MC_ASKQUESTION_V1`** (no prose before the sentinel).
+
+Collect the developer’s choice via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** only in the structured-choice message — not in the same message as spawns or **`AGENT_RESULT_RESPONSE_V1`**.
+
+- When using bare **`MC_ASKQUESTION_V1`** (no phased envelope), the structured-choice message must contain **only** the sentinel line and JSON object — **no** prose, plan recap, or markdown fences before or between the sentinel and JSON.
 - Put every choosable path in **`options`** (`id` / `label`). Do **not** duplicate those choices as a numbered prose menu in the same turn.
 
 Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** when helpful):
@@ -257,27 +263,27 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 | `abandon` | Abandon this branch |
 | `more-details` | More details for option _ |
 
-**Standalone / non-spawned:** After Turn B, **stop** and wait for the developer’s next message. On **revise**, run step **6a** then repeat Turn A → Turn B. On other choices, act per the labels above without impersonating **`new-plan`** / **`pr-plan`** in the same turn.
+**Standalone / non-spawned:** After structured-choice approval, **stop** and wait for the developer’s next message. On **revise**, run step **6a** then repeat recap → structured choice. On other choices, act per the labels above without impersonating **`new-plan`** / **`pr-plan`** in the same turn.
 
-**Spawned under `master-plan`:** Turn B is mandatory before indexed child spawns. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** in Turn B.
+**Spawned under `master-plan`:** Structured-choice approval is mandatory before indexed child spawns. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** in the structured-choice message.
 
-### Turn C — Act on choice (after developer replies)
+### Act after developer selects
 
-In a **new** assistant turn after the developer selects an option in Turn B:
+In a **new** assistant turn after the developer selects an option in the approval modal:
 
 | Choice | Action |
 | --- | --- |
-| **Approve PR breakdown and spawn PR plans** | Emit one **`AGENT_RUN_REQUEST_V1`** per PR row **1…K** for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`. Each request’s `inputs` must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `ledgerParent`, `upstreamSkill: "pr-breakdown"`, and `decompositionKind: "pr-breakdown"`. Record each spawned child in the ledger (`active`, keyed by correlation id + `(parentPlanSlug, index)`). Announce waiting for **K** indexed child results. Then emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` (or `partial` when appropriate) — **not** in Turn A or Turn B. |
-| **Revise PR breakdown first** | Run step **6a**, then repeat Turn A → Turn B. Do **not** spawn children or emit terminal success until re-approved. |
+| **Approve PR breakdown and spawn PR plans** | Emit one **`AGENT_RUN_REQUEST_V1`** per PR row **1…K** for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`. Each request’s `inputs` must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `ledgerParent`, `upstreamSkill: "pr-breakdown"`, and `decompositionKind: "pr-breakdown"`. Record each spawned child in the ledger (`active`, keyed by correlation id + `(parentPlanSlug, index)`). Announce waiting for **K** indexed child results. Then emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` (or `partial` when appropriate) — **not** in the recap-only pass or structured-choice message. |
+| **Revise PR breakdown first** | Run step **6a**, then repeat recap → structured choice. Do **not** spawn children or emit terminal success until re-approved. |
 | **Defer child PR plan creation** | Emit **`AGENT_RESULT_RESPONSE_V1`** with defer semantics; do not spawn. |
 | **Abandon this branch** | Emit **`AGENT_RESULT_RESPONSE_V1`** with `status: "abandoned"` (or `partial` when work remains documented). |
-| **More details for option _** | Elaborate in prose (information-only), then run Turn B again. |
+| **More details for option _** | Elaborate in prose (information-only), then run structured choice again. |
 
 Do not return terminal **success** upstream until every spawned **`new-plan`** lane has returned terminal status or the developer explicitly defers/abandons the remaining rows (step **6b**).
 
 ## Step 6a — Follow-up turns
 
-When the **developer** asks to revise the **`PR breakdown`** block, re-read that section, apply edits via `StrReplace`, then repeat **Turn A** (link + one-line **K** summary only) and **Turn B** — do **not** combine a full section echo with **`MC_ASKQUESTION_V1`** in one message.
+When the **developer** asks to revise the **`PR breakdown`** block, re-read that section, apply edits via `StrReplace`, then repeat **recap** (link + one-line **K** summary only) and **structured choice** — prefer **`MC_PHASED_RESPONSE_V1`** or **AskQuestion** for recap + modal in one message; do **not** combine a full section echo with bare **`MC_ASKQUESTION_V1`** in one message.
 
 When the **developer** chooses spawn or populate children in standalone use, emit child-spawn requests for **`new-plan`** / **`pr-plan`** instead of impersonating those skills’ full procedures in the same turn. Stop after spawning if the result is needed for the next step.
 
@@ -300,7 +306,7 @@ Match the discipline in **`master-plan`**, **`delivery-phases`**, and **`phase-p
 
 ## Scope guard
 
-**Owns:** the parent plan’s dual-title **`PR breakdown`** section (heading + set-level body); **step 3.5** may insert **`### Decomposition assessment`** above that heading when missing; **step 5d** Turn A notifies the developer (link + one-line **K** summary — not a full chat mirror).
+**Owns:** the parent plan’s dual-title **`PR breakdown`** section (heading + set-level body); **step 3.5** may insert **`### Decomposition assessment`** above that heading when missing; **step 5d** recap notifies the developer (link + one-line **K** summary — not a full chat mirror).
 
 **Out of scope:** renaming child plans after **`new-plan`** creates them; per-PR §§ 1–4 inline (**`pr-plan`** owns the body); later per-PR sections and worktrees (**`coding-session`**, **`plan-reconcile`** per **`development-process.md`**); edits outside the dual-title block (except the assessment insert in **3.5**); `git` / commit automation; **`Delivery phases`** list body (**`delivery-phases`**); roadmap topics and PR plans (step 1 stops).
 
@@ -320,7 +326,7 @@ Required `outputs` fields:
 - `outputs.continuationOwner`: `"pr-breakdown-agent"`
 - `outputs.continuationStatus` — `active` while approval, child creation, or population remains; `terminal` when all PR rows are closed, deferred, abandoned, or out of scope
 
-Emit **`AGENT_RESULT_RESPONSE_V1`** only in **step 6 Turn C** (after the developer responds to Turn B), or when announcing spawn wait / defer / abandon — **never** in the same turn as Turn A or Turn B. Stop after the terminal line in that turn. Do not emit another `AGENT_RUN_REQUEST_V1` or run the next protocol step in the same turn as the terminal line (see **`../README.md`** § *Terminal stop (normative)*).
+Emit **`AGENT_RESULT_RESPONSE_V1`** only in **step 6 act-after-select** (after the developer responds to structured choice), or when announcing spawn wait / defer / abandon — **never** in the same message as recap-only or structured-choice approval. Stop after the terminal line in that turn. Do not emit another `AGENT_RUN_REQUEST_V1` or run the next protocol step in the same turn as the terminal line (see **`../README.md`** § *Terminal stop (normative)*).
 
 ## Completion (inline)
 

@@ -67,7 +67,7 @@ The **developer** picks the next move per **30_planning-target-resolution** § *
 
 The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`30_planning-target-resolution.mdc`](../../../../rules/30_planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts (e.g. *Target plan: `<slug>` (from prior structured choice).*). Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative. Do **not** infer the target from the IDE’s focused-file list alone.
 
-If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (information-only turn); in a **separate** turn, collect the lane pick via **AskQuestion** or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel*, then continue.
+If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (recap). Collect the lane pick via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + modal in one message; **legacy split:** recap only, then structured choice in the **next** assistant message. Then continue.
 
 Acknowledge in one line: *"Target plan: `<slug>`."*
 
@@ -160,26 +160,32 @@ Do **not** modify other sections in the same call. Do **not** add extra `## <N>.
 
 After writing, read the file back and confirm the section reads as intended.
 
-### 5d — Notify draft (Turn A — information-only)
+### 5d — Notify draft (recap)
 
-**Mission Control transcript boundary:** This turn is **information-only**. Do **not** include **`MC_ASKQUESTION_V1`**, the **AskQuestion** tool, **`AGENT_RESULT_RESPONSE_V1`**, or **`AGENT_RUN_REQUEST_V1`** here.
+**Structured choice delivery** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** § **Context and structured choice**. Do **not** use implementation labels like “Turn A/B” in developer-facing chat.
 
-After step **5c**, end Turn A with **only**:
+After step **5c**, finish the **recap-only** pass with **only**:
 
 1. A **`file://`** link to the target `.plan.md` under `.sedea/operations/.../plans/...`.
 2. One line: *Drafted `## <N>. Delivery phases` with **K** child rows — open the plan to review the full section.*
 
-Do **not** mirror the full **`Delivery phases`** body in chat. Count **K** from numbered rows before Turn B.
+Do **not** mirror the full **`Delivery phases`** body in chat. Count **K** from numbered rows before the approval modal.
+
+Do **not** include **AskQuestion**, **`MC_ASKQUESTION_V1`**, **`AGENT_RESULT_RESPONSE_V1`**, or **`AGENT_RUN_REQUEST_V1`** in this recap-only pass unless you combine recap + approval into one message via **`MC_PHASED_RESPONSE_V1`** (then skip a separate step-5d-only message).
 
 ## Step 6 — Hand back with next-move options
 
-Run **Turn B** and **Turn C** as **separate assistant turns**. Never combine Turn A, Turn B, and Turn C in one message.
+**Structured choice** then **act after the developer selects** — see **`../README.md`** § *Recap, structured choice, act (plan-and-deliver)*.
 
-### Turn B — Approval (interactive only)
+### Structured choice — Approval (interactive)
 
-In a **new** assistant turn after Turn A, collect the developer’s choice via **AskQuestion** or **`MC_ASKQUESTION_V1`** only.
+**Preferred:** **AskQuestion tool** (brief recap allowed in the same message) or **`MC_PHASED_RESPONSE_V1`** with recap in `display.markdown` and options in `askQuestion` — one assistant message.
 
-- When using **`MC_ASKQUESTION_V1`**, the message must contain **only** the sentinel line and JSON object — **no** prose, plan recap, or markdown fences before or between the sentinel and JSON.
+**Legacy split (when the tool and phased envelope are unavailable):** send the step **5d** recap, then a **separate** message with **AskQuestion** or **sentinel-only** **`MC_ASKQUESTION_V1`** (no prose before the sentinel).
+
+Collect the developer’s choice via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** only in the structured-choice message — not in the same message as spawns or **`AGENT_RESULT_RESPONSE_V1`**.
+
+- When using bare **`MC_ASKQUESTION_V1`** (no phased envelope), the structured-choice message must contain **only** the sentinel line and JSON object — **no** prose, plan recap, or markdown fences before or between the sentinel and JSON.
 - Put every choosable path in **`options`** (`id` / `label`). Do **not** duplicate choices as a numbered prose menu in the same turn.
 
 Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** when helpful):
@@ -192,26 +198,26 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 | `abandon` | Abandon this branch |
 | `more-details` | More details for option _ |
 
-**Spawned under `master-plan`:** Turn B is mandatory before indexed child spawns. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** in Turn B.
+**Spawned under `master-plan`:** Structured-choice approval is mandatory before indexed child spawns. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** in the structured-choice message.
 
-**Standalone:** After Turn B, **stop** and wait for the developer’s next message.
+**Standalone:** After structured-choice approval, **stop** and wait for the developer’s next message.
 
-### Turn C — Act on choice (after developer replies)
+### Act after developer selects
 
-In a **new** assistant turn after Turn B:
+In a **new** assistant turn after the developer selects an option in the approval modal:
 
 | Choice | Action |
 | --- | --- |
-| **Approve phase list and spawn children** | Emit one **`AGENT_RUN_REQUEST_V1`** per phase row **1…K** for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`. Record each spawned child in the ledger. Announce waiting for **K** results. Then emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` — **not** in Turn A or Turn B. |
-| **Revise phase list first** | Apply one focused `StrReplace` on the list, then repeat Turn A → Turn B. |
+| **Approve phase list and spawn children** | Emit one **`AGENT_RUN_REQUEST_V1`** per phase row **1…K** for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`. Record each spawned child in the ledger. Announce waiting for **K** results. Then emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` — **not** in the recap-only pass or structured-choice message. |
+| **Revise phase list first** | Apply one focused `StrReplace` on the list, then repeat recap → structured choice. |
 | **Defer / abandon** | Emit terminal result per labels; do not spawn. |
-| **More details for option _** | Elaborate (information-only), then run Turn B again. |
+| **More details for option _** | Elaborate (information-only), then run structured choice again. |
 
-When running as a spawned downstream agent under `master-plan`, each **`AGENT_RUN_REQUEST_V1`** in Turn C must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-plan"`, `requestedPopulatorSkill: "phase-plan"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, and `decompositionKind: "delivery-phases"`. Record each spawned child in the ledger; announce waiting for **K** results.
+When running as a spawned downstream agent under `master-plan`, each **`AGENT_RUN_REQUEST_V1`** in the act-after-select message must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-plan"`, `requestedPopulatorSkill: "phase-plan"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, and `decompositionKind: "delivery-phases"`. Record each spawned child in the ledger; announce waiting for **K** results.
 
-If **K = 0**, treat that as a drafting failure: do not run Turn B spawn paths; return failure or partial.
+If **K = 0**, treat that as a drafting failure: do not open structured-choice spawn paths; return failure or partial.
 
-For standalone/non-spawned use, re-offer Turn A → Turn B after iteration.
+For standalone/non-spawned use, re-offer recap → structured choice after iteration.
 
 ## Step 6a — Follow-up turns
 

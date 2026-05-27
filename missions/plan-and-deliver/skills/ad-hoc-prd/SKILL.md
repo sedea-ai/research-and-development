@@ -58,7 +58,7 @@ warmUpRules:
 3. **Details** — non-empty change-request body.
 4. **Operations user id** — Mission Control supplied `operationsUserId`.
 
-If any required field is missing in spawned mode, stop with `partial` and report `outputs.missingFields`; do not invent a title, write under `joint`, or continue with a guessed operations path. In standalone mode, collect missing **title** / **details** via **AskQuestion**.
+If any required field is missing in spawned mode, stop with `partial` and report `outputs.missingFields`; do not invent a title, write under `joint`, or continue with a guessed operations path. In standalone mode, collect missing **title** / **details** via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act*.
 
 **Details:** Payload text — change-request description, thread excerpt, labeled context — use to draft **§1 Problem**, **§2 Desired outcome**, and **§3 Proposed solution**. If thin, use concise **TBD** bullets and say what to confirm.
 
