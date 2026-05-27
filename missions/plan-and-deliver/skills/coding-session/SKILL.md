@@ -55,6 +55,12 @@ inputs:
     type: string
     description: Optional context label (developer dispatch, snapshot, pr-plan spawn, planning skill).
     required: false
+  planningHandoffMode:
+    type: string
+    description: >-
+      When "sections-1-4-complete" (from pr-plan §5d spawn), §§5–8 may stay _TBD_;
+      use Worktree-open gate (pr-plan spawn handoff), not executive-override framing.
+    required: false
   promptOnly:
     type: boolean
     description: >-
@@ -94,14 +100,23 @@ On **[Spawned implementation lane](#spawned-implementation-lane)**, **this lane*
 
 See **`pr-plan/SKILL.md`** § *Handoff to coding-session*.
 
+### pr-plan spawn handoff detection
+
+Treat this run as a **pr-plan spawn handoff** when **either**:
+
+- `inputs.planningHandoffMode === "sections-1-4-complete"`, or
+- `inputs.upstreamSkill === "pr-plan"` **and** `inputs.readyForImplementation === true`.
+
+When true, follow [Spawned from `pr-plan` (expected incomplete)](#spawned-from-pr-plan-expected-incomplete) and [Worktree-open gate (pr-plan spawn handoff)](#worktree-open-gate-pr-plan-spawn-handoff) — not the generic incomplete gate with “executive override” labels.
+
 ### Spawned from `pr-plan` (expected incomplete)
 
-When `inputs.upstreamSkill === "pr-plan"` and `inputs.readyForImplementation === true`:
+When [pr-plan spawn handoff detection](#pr-plan-spawn-handoff-detection) applies:
 
-1. Do **not** say the PR plan is “not fully populated,” “incomplete planning,” or that **`pr-plan`** failed.
-2. Say: *Planning handoff complete (§§1–4). §§5–8 are `_TBD_` until this lane fills them.*
-3. After **`plan-ws-completeness.mjs`** → `INCOMPLETE`, treat as **expected**, not a defect — do **not** send the developer back to **`pr-plan`** to “finish planning” unless they choose **Revise PR plan first** or **Stop — I'll complete the plan first**.
-4. At the [Worktree-open gate](#worktree-open-gate) when `planCompleteness: incomplete`, recap must state this is the normal **`pr-plan`** spawn path; pair **Start with incomplete plan (executive override)** with the expected-handoff framing (not only **Stop — I'll complete the plan first**).
+1. Do **not** say the PR plan is “not fully populated,” “incomplete planning,” “not ready,” or that **`pr-plan`** failed.
+2. Say: *Planning handoff complete (§§1–4). §§5–8 fill on this lane during implementation.*
+3. After **`plan-ws-completeness.mjs`** → `INCOMPLETE` (optional second stdout line `EXPECTED_SECTIONS_5_8_TBD`), treat as **expected**, not a defect — do **not** send the developer back to **`pr-plan`** unless they choose **Revise PR plan first** or **Stop — I'll complete the plan first** (detached / snapshot entry only — demoted on pr-plan spawn path).
+4. At the [Worktree-open gate (pr-plan spawn handoff)](#worktree-open-gate-pr-plan-spawn-handoff), use the required recap and **Continue — fill §§5–8 while implementing** as the default authorizing choice — not “executive override” wording.
 
 ## Plan-anchored context (optional inputs)
 
@@ -147,8 +162,8 @@ Otherwise:
    node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-ws-completeness.mjs --file "<absolute-plan-path>"
    ```
    - Exit **0** (`OK` / `SKIP_NOT_PER_PR`) → `planCompleteness: complete` for the worktree-open gate.
-   - Exit **1** (`INCOMPLETE`) → `planCompleteness: incomplete` — **do not** create worktrees yet; offer override only in the worktree-open gate.
-   - When `inputs.upstreamSkill === "pr-plan"` and `inputs.readyForImplementation === true`, `INCOMPLETE` is **expected** (§§5–8 still `_TBD_` by design). Use [Spawned from `pr-plan` (expected incomplete)](#spawned-from-pr-plan-expected-incomplete) wording — not “plan not fully populated.”
+   - Exit **1** (`INCOMPLETE`) → `planCompleteness: incomplete` — **do not** create worktrees yet; route to the worktree-open gate (pr-plan spawn handoff vs generic incomplete).
+   - When [pr-plan spawn handoff detection](#pr-plan-spawn-handoff-detection) applies, `INCOMPLETE` is **expected** (§§5–8 still `_TBD_` by design). If stdout includes `EXPECTED_SECTIONS_5_8_TBD`, treat as the normal §5d handoff. Use [Spawned from `pr-plan` (expected incomplete)](#spawned-from-pr-plan-expected-incomplete) wording — not “plan not fully populated.”
 
 **Multi-repo:** run the script **once** on the shared plan before the worktree-open gate.
 
@@ -158,6 +173,37 @@ Otherwise:
 
 **Recap and structured choice:** Summarize completeness / plan path in a brief **recap** when helpful. Open this gate via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`** (recap in `display.markdown`), or **sentinel-only** **`MC_ASKQUESTION_V1`** — prefer one message for recap + modal. See **`../README.md`** § *Recap, structured choice, act (plan-and-deliver)*, **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**, and **`.cursor/rules/mission-control-agent-runtime.mdc`**.
 
+**Branch first:** when [pr-plan spawn handoff detection](#pr-plan-spawn-handoff-detection) applies, use [Worktree-open gate (pr-plan spawn handoff)](#worktree-open-gate-pr-plan-spawn-handoff) below — even when `planCompleteness: complete`. Otherwise use the generic tables in this section.
+
+### Worktree-open gate (pr-plan spawn handoff)
+
+When [pr-plan spawn handoff detection](#pr-plan-spawn-handoff-detection) applies:
+
+**Required recap** (include in `display.markdown` or recap prose before the modal):
+
+*Planning handoff complete (§§1–4). §§5–8 fill on this lane during implementation.*
+
+When `planCompleteness: incomplete`, add one line: *Validation reported incomplete because §§5–8 are still `_TBD_` — expected after **pr-plan** spawn.*
+
+**Required options** (`modalTitle`: *Coding session — start implementation*; list in this order):
+
+| Option id | Label |
+|-----------|--------|
+| `continue-fill-5-8` | Continue — fill §§5–8 while implementing |
+| `revise-plan` | Revise PR plan first |
+| `change-repo` | Change repo or branch settings |
+| `defer` | Defer implementation |
+| `more-details` | More details for option _ |
+
+- Do **not** label the primary path “executive override” or imply **`pr-plan`** failed.
+- Do **not** list **Stop — I'll complete the plan first** before **Continue — fill §§5–8 while implementing** on this path (that stop option is for detached / snapshot entry in the generic incomplete gate).
+- **`continue-fill-5-8`** → `outputs.developerApprovedImplementation: true` (authorizing).
+- All other options → `developerApprovedImplementation: false`.
+
+When `planCompleteness: complete` on a pr-plan spawn handoff, use the generic **complete** option set below (rare — plan fully drafted before coding).
+
+### Generic worktree-open gate
+
 **When `planCompleteness: complete`** (or validation skipped / override already in the user message), required options:
 
 - **Start implementation now**
@@ -166,10 +212,10 @@ Otherwise:
 - **Defer implementation**
 - **More details for option _**
 
-**When `planCompleteness: incomplete`**, required options (do **not** offer plain **Start implementation now** without override):
+**When `planCompleteness: incomplete`** (and **not** [pr-plan spawn handoff detection](#pr-plan-spawn-handoff-detection)), required options (do **not** offer plain **Start implementation now** without override):
 
-- **Start with incomplete plan (executive override)** — when spawned from **`pr-plan`** with `readyForImplementation: true`, treat as the **normal** handoff path (recap: §§5–8 fill on this lane).
-- **Stop — I’ll complete the plan first**
+- **Start with incomplete plan (executive override)**
+- **Stop — I'll complete the plan first**
 - **Revise PR plan first**
 - **Change repo or branch settings**
 - **Defer implementation**
@@ -177,8 +223,9 @@ Otherwise:
 
 **Authorizing choices** (set `outputs.developerApprovedImplementation: true`):
 
-- **Start implementation now** — only when `planCompleteness: complete`.
-- **Start with incomplete plan (executive override)** — when `planCompleteness: incomplete`.
+- **Start implementation now** — only when `planCompleteness: complete` (generic gate).
+- **Continue — fill §§5–8 while implementing** (`continue-fill-5-8`) — pr-plan spawn handoff when `planCompleteness: incomplete`.
+- **Start with incomplete plan (executive override)** — generic incomplete gate only (detached / snapshot entry).
 
 All other choices → `developerApprovedImplementation: false`; end or stay `continuationStatus: active` without worktrees. A prior **`pr-plan`** menu option does not substitute for this gate.
 
