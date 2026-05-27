@@ -15,6 +15,8 @@
 // Exit codes:
 //   0 — Gate passes: not a per-PR plan body, or per-PR plan with no `_TBD_` in prose.
 //   1 — Per-PR plan still has `_TBD_` after stripping fenced code blocks (incomplete).
+//         When §§1–4 are drafted and §§5–8 still `_TBD_`, also prints EXPECTED_SECTIONS_5_8_TBD
+//         on stdout (second line) for pr-plan → coding-session handoff agents.
 //   2 — Missing --file, file not found, or not a regular file.
 
 import * as fs from 'node:fs';
@@ -59,6 +61,43 @@ function hasTbdPlaceholder(body) {
   return stripFencedCodeBlocks(body).includes('_TBD_');
 }
 
+/** Body slice from ## 1. through end of ## 4. (exclusive of ## 5.). */
+function sections1Through4Slice(body) {
+  const start = body.search(/\n##\s*1\.\s/m);
+  if (start === -1) return '';
+  const after4 = body.slice(start).search(/\n##\s*5\.\s/m);
+  if (after4 === -1) return body.slice(start);
+  return body.slice(start, start + after4);
+}
+
+function sections5AndLaterSlice(body) {
+  const start = body.search(/\n##\s*5\.\s/m);
+  if (start === -1) return '';
+  return body.slice(start);
+}
+
+/** True when §§1–4 exist and contain no `_TBD_` outside fenced code. */
+function sections1Through4Drafted(body) {
+  const slice = sections1Through4Slice(body);
+  if (!slice) return false;
+  return !stripFencedCodeBlocks(slice).includes('_TBD_');
+}
+
+/** True when §5+ exists and still has `_TBD_` (typical post–pr-plan handoff). */
+function sections5Through8StillTbd(body) {
+  const slice = sections5AndLaterSlice(body);
+  if (!slice) return false;
+  return stripFencedCodeBlocks(slice).includes('_TBD_');
+}
+
+function isExpectedPrPlanHandoffIncomplete(body) {
+  return (
+    isPerPrPlanBody(body) &&
+    sections1Through4Drafted(body) &&
+    sections5Through8StillTbd(body)
+  );
+}
+
 function main() {
   const argv = process.argv.slice(2);
   let file = null;
@@ -95,6 +134,9 @@ function main() {
   }
   if (hasTbdPlaceholder(body)) {
     process.stdout.write('INCOMPLETE\n');
+    if (isExpectedPrPlanHandoffIncomplete(body)) {
+      process.stdout.write('EXPECTED_SECTIONS_5_8_TBD\n');
+    }
     process.exit(1);
   }
   process.stdout.write('OK\n');
