@@ -120,7 +120,8 @@ flowchart TB
     PB --> NP
     NP --> POP
     POP -.->|may spawn| DP
-    POP -.->|may spawn| PB
+    POP -.->|single-PR hoist| PB
+    POP -.->|multi-PR on phase| PB
   end
 
   subgraph impl["Detached — protocol branches not SL spawns"]
@@ -145,6 +146,8 @@ flowchart TB
 ```
 
 **Legend:** yellow = Squad Leader executable steps; blue = spawned child lanes and their spawns; purple = cadence branches outside §§1–5 (see **Cadence reference** and `development-process.md`).
+
+**Single-PR hoist:** after **`phase-plan`**, a **single-PR** assessment spawns **`pr-breakdown`** on the **ancestor** plan (not on the phase file) with `hoistFromPhasePath` — see `development-process.md` § *Single-PR hoist from a phase plan* and **`phase-plan`** § **5a-hoist**.
 
 ## Hub missionInputs
 
