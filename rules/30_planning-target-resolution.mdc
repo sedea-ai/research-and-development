@@ -159,6 +159,8 @@ Normative contract: **development-process.md** § *Depth-first plan-tree travers
 
 Per PR plan path: §8 row `shipPhase: done` and `rowStatus: closed`, or explicit `deferred` / `abandoned` on the leader dispatch. Per phase row: every descendant PR plan (including hoisted PRs on an ancestor list) meets that bar.
 
+**Spawn-chain alternative:** When **`coding-session`** is a spawned child, the parent planning lane may treat **`outputs.prShipComplete: true`** on a delivered **`AGENT_RESULT_RESPONSE_V1`** as ship-complete for depth-first eligibility — without requiring a separate Squad Leader **Ship recap** on the same turn. See **`missions/plan-and-deliver/skills/README.md`** § *Upstream ship-complete notification*.
+
 ### PR-plan completeness before coding-session
 
 Snapshots should respect **coding-session** pre-worktree validation and the worktree-open gate when a PR plan would anchor a worktree session. **`readyForImplementation: true`** from **`pr-plan`** does **not** bypass validation — see § *Planning readiness vs ship* above.

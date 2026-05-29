@@ -520,6 +520,15 @@ Foreground **revise §4**, **revise §5**, optional **draft-7**, **commit-plans*
 
 Always include **More details for option _** per conduct.
 
+**When inline decomposition reports unlocked indices** (from **`expandEligibleIndices`** on **`pr-breakdown`** or **`expandNextEligibleIndex`** on **`delivery-phases`** after spawn-chain **`prShipComplete`** / **`phaseShipComplete`**):
+
+| Option id (example) | Label (brief) | Action |
+|---------------------|---------------|--------|
+| `expand-eligible-pr` | Expand eligible PR row(s) | Re-invoke inline **`pr-breakdown`** structured choice act **`expand-eligible`** or run eligible **`new-plan`** indices directly when list already approved |
+| `expand-next-phase` | Expand next eligible phase | Re-invoke inline **`delivery-phases`** act **`expand-next-eligible`** for **`expandNextEligibleIndex`** |
+
+Include these options **only** when the ledger shows non-empty eligible indices; omit when prior stage ship is still incomplete.
+
 **Stop** after emitting AskQuestion — do not execute the chosen action in the same turn.
 
 ### Step 7c — One choice per turn
@@ -533,7 +542,9 @@ Execute **only** what the user selected in **AskQuestion** (or the matching **`o
    - `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` — `routeLock: "delivery-phases"`
    - `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` — `routeLock: "pr-breakdown"`
 3. Pass inline context: `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "master-plan-agent"`, `ledgerParent: <masterPlanSlug>`, `complexityBand`, `complexityScore`, `decompositionAssessment`, `routeLock`.
-4. When the inline skill returns **`## Completion (inline)`** fields, merge `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks` into this skill’s ledger. If the inline skill opened **`phase-planner`** child lanes or **`coding-session`** from inline **`pr-plan`**, wait on this lane for their **`AGENT_RESULT_RESPONSE_V1`** deliveries per that skill’s aggregation step, then continue **`planner`** Step **7b** — **do not** emit child lanes for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`**.
+4. When the inline skill returns **`## Completion (inline)`** fields, merge `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`, **`expandEligibleIndices`**, and **`expandNextEligibleIndex`** into this skill’s ledger. If the inline skill opened **`phase-planner`** child lanes or **`coding-session`** from inline **`pr-plan`**, wait on this lane for their **`AGENT_RESULT_RESPONSE_V1`** deliveries per that skill’s aggregation step, then continue **`planner`** Step **7b** — **do not** emit child lanes for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`**.
+
+**Spawn-chain ship notifications:** When Mission Control delivers **`agent-result-response delivered`** with **`outputs.prShipComplete`** or **`outputs.phaseShipComplete`** (bubbled from **`coding-session`** → **`pr-plan`** / **`new-plan`** → **`pr-breakdown`** / **`phase-planner`** → **`delivery-phases`**), merge into the ledger per **`../README.md`** § *Upstream ship-complete notification*, **re-emit updated** **`AGENT_RESULT_RESPONSE_V1`** (same **`correlationId`**) when this lane is standalone spawned, then return to Step **7b** with expand options when indices unlock.
 
 Do **not** draft §6 in **`planner`** prose without running the inline skill.
 
@@ -594,6 +605,8 @@ Required `outputs` fields:
 - `outputs.openLedgerEntries` — phase/PR plan or lane entries the **Squad Leader** tracks (§7)
 - `outputs.spawnedPlans` — plan paths/slugs created or reported by downstream agents
 - `outputs.remainingTasks` — pending user or agent actions; empty only when `continuationStatus` is `terminal`
+- `outputs.expandEligibleIndices`, `outputs.expandNextEligibleIndex` — echo from inline decomposition after spawn-chain ship-complete merges
+- `outputs.prShipComplete`, `outputs.phaseShipComplete` — when this lane merged bubbled ship terminals from nested **`coding-session`** / **`phase-planner`** chains
 
 Stop after the terminal line. Do not emit another `AGENT_RUN_REQUEST_V1` for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`** or run the next protocol step in the same turn (see **`../README.md`** § *Terminal stop (normative)*). While `continuationStatus` is `active`, the **Squad Leader** acknowledges only (**`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §6); this lane owns **AskQuestion** + inline decomposition (Step 7) on **later** user messages on this lane — not in the same turn as the terminal line.
 

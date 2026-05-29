@@ -262,7 +262,15 @@ When the developer chooses to hand off or populate a child in standalone use, ru
 
 Only return `continuationStatus: "terminal"` when every row is explicitly `completed`, `deferred`, `abandoned`, or `out_of_scope`, and no active **`phase-planner`** lanes remain for those rows. Silence or a missing row is not completion.
 
-**Ship-complete vs planning-terminal:** a phase row unlocks the **next** parent index for **`expand-next-eligible`** only when that row is **ship-complete** (all PR plans under the phase have §8 `shipPhase: done` + `rowStatus: closed`, or explicit defer/abandon) — not when **`phase-planner`** alone returns planning-terminal. Re-offer **`expand-next-eligible`** after the developer posts **Ship recap** on the leader dispatch or host-sync updates §8.
+**Ship-complete merge (spawn chain):** When a delivered **`phase-planner`** or inline **`new-plan`** result carries **`outputs.phaseShipComplete: true`** with **`parentIndex`** matching a **`Delivery phases`** row:
+
+1. Set **`childRows[N].status: ship-complete`**.
+2. Compute **`expandNextEligibleIndex`** — lowest index with pending **`Plan:`** whose prior phase is ship-complete (index **1** after list approval).
+3. Set **`outputs.expandNextEligibleIndex`**; keep **`continuationStatus: active`** when a next phase may expand.
+4. **Re-emit updated terminal** (standalone) or **`## Completion (inline)`** (under **`planner`**) with merged **`outputs`** (same **`correlationId`**) so **`planner`** Step **7b** can offer **`expand-next-eligible`** without waiting for Squad Leader **Ship recap**.
+5. On the next structured-choice turn, include **`expand-next-eligible`** when **`expandNextEligibleIndex`** is set.
+
+**Ship-complete vs planning-terminal:** a phase row unlocks the **next** parent index for **`expand-next-eligible`** when **`outputs.phaseShipComplete: true`** arrives on the spawn chain **or** §8 shows all PRs under that phase **`rowStatus: closed`**. Planning-terminal **`phase-planner`** alone does **not** unlock the next phase index.
 
 ## One primary choice per turn — surface observations
 
@@ -285,7 +293,8 @@ Required `outputs` fields:
 - `outputs.targetPlanPath`, `outputs.targetPlanSlug`
 - `outputs.decompositionKind`: `"delivery-phases"`
 - `outputs.childCount`, `outputs.developerApprovalStatus`
-- `outputs.childRows` — `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`
+- `outputs.childRows` — `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?, phaseShipComplete?}` — use **`status: ship-complete`** when **`phaseShipComplete`** merged for that index
+- `outputs.expandNextEligibleIndex` — one-based phase index eligible for **`expand-next-eligible`** after last ship-complete merge
 - `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
 - `outputs.continuationOwner`: `"delivery-phases-agent"`
 - `outputs.continuationStatus` — `active` while approval, inline **`new-plan`**, **`phase-planner`** child lanes, or population remains; `terminal` when all child rows are `completed`, `deferred`, `abandoned`, or `out_of_scope` and no active **`phase-planner`** lanes remain

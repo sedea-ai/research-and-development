@@ -449,15 +449,17 @@ When they choose **`delivery-phases`** or **`pr-breakdown`** via **AskQuestion**
 
 ## Step 5e — Aggregate downstream result
 
-**Inline `delivery-phases` / `pr-breakdown`:** Merge each decomposition skill’s **`## Completion (inline)`** into this skill’s ledger. If inline **`new-plan`** / **`pr-plan`** reports active **`phase-planner`** or **`coding-session`** lanes, keep the row open and add them to `activeLanes`.
+**Inline `delivery-phases` / `pr-breakdown`:** Merge each decomposition skill’s **`## Completion (inline)`** into this skill’s ledger. If inline **`new-plan`** / **`pr-plan`** reports active **`phase-planner`** or **`coding-session`** lanes, keep the row open and add them to `activeLanes`. When inline decomposition reports **`prShipComplete`** for a PR under this phase, track it on the phase subtree ledger.
 
 When Mission Control delivers a child result from **`phase-planner`** or **`coding-session`** (spawned from inline decomposition on this lane):
 
 1. Match it by correlation id first, then by `outputs.targetPlanPath` / `outputs.targetPlanSlug`.
 2. Copy downstream `spawnedPlans`, `activeLanes`, `openLedgerEntries`, and `remainingTasks` into this skill's result.
-3. If downstream status is `success` and `continuationStatus: "terminal"`, this phase-planner lane may return `terminal`.
-4. If downstream status is `success` or `partial` with active lanes or remaining tasks, return `active`.
-5. If downstream status is `failure`, `aborted`, or `abandoned`, return the same status upstream and include downstream errors.
+3. When result carries **`outputs.prShipComplete: true`**: record the PR index on this phase; when **every** PR plan under this phase (per **`### PR list`** on this file or inline **`pr-breakdown`** subtree) is **`ship-complete`**, set **`outputs.phaseShipComplete: true`**, **`outputs.shipPhase: done`**, **`outputs.rowStatus: closed`** for this phase plan.
+4. **Re-emit updated terminal** (standalone spawned) or **`## Completion (inline)`** (when invoker runs this skill inline) with **`phaseShipComplete`** and **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from spawn **`inputs`** — so **`delivery-phases`** / **`planner`** can offer **`expand-next-eligible`** per **`../README.md`** § *Upstream ship-complete notification*.
+5. If downstream status is `success` and `continuationStatus: "terminal"`, this phase-planner lane may return `terminal` — unless **`phaseShipComplete`** should bubble upstream while **`continuationStatus: active`** on the parent decomposition lane.
+6. If downstream status is `success` or `partial` with active lanes or remaining tasks, return `active`.
+7. If downstream status is `failure`, `aborted`, or `abandoned`, return the same status upstream and include downstream errors.
 
 Silence or missing downstream metadata is not completion; return `partial` and keep the phase row open.
 
@@ -495,6 +497,8 @@ Required `outputs` fields:
 - `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
 - `outputs.continuationOwner`: `"phase-planner-agent"`
 - `outputs.continuationStatus` — `active` while route approval, inline decomposition, **`phase-planner`** / **`coding-session`** child lanes, or route choice remains; `terminal` when no remaining planning work on this phase plan
+- `outputs.phaseShipComplete` — `true` when every PR under this phase is ship-complete (§5e)
+- `outputs.prShipComplete` — echo when aggregating a **`coding-session`** terminal for a PR under this phase
 
 Stop after the terminal line. Do not emit **`AGENT_RUN_REQUEST_V1`** for **`delivery-phases`** or **`pr-breakdown`** (see **`../README.md`** § *Terminal stop (normative)*).
 
