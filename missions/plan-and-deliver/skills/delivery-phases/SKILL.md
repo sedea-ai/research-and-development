@@ -20,7 +20,7 @@ inputs:
     required: true
   parentAgentRole:
     type: string
-    description: Upstream owner that spawned this skill, usually master-plan-agent.
+    description: Upstream owner that invoked this skill inline, usually master-plan-agent or phase-planner-agent.
     required: false
   ledgerParent:
     type: string
@@ -60,12 +60,13 @@ The procedure below is a hard contract — do **not** skip steps, re-order them,
 - Mission dispatch or explicit request to run the **`delivery-phases`** protocol branch.
 - Natural language: decompose phases, draft delivery phases, phase decomposition.
 - After **`planner`** when the developer has already chosen **`Delivery phases`** over **`PR breakdown`** for § 6 — **`planner`** runs this skill **inline** on the same lane; this skill drafts § 6 and owns indexed phase-child creation (**`new-plan`** inline on that lane).
+- After **`phase-planner`** when route is **`delivery-phases`** — **`phase-planner`** runs this skill **inline** on the phase-planner lane; same **`new-plan`** inline handoff per row.
 
 The **developer** picks the next move per **30_planning-target-resolution** § *Sedea input channel*.
 
 ### Inline handoff — **delivery-phases** → **`new-plan`** (step 6 act-after-select)
 
-When **`parentAgentRole`** is **`master-plan-agent`** (this skill inline under **`planner`**), run **`new-plan`** **inline on this lane** for each approved row **1…K** — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`**. Load `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`, construct inline context per row from the table below, follow that skill’s steps, and merge each **`## Completion (inline)`** into this skill’s ledger (`childRows`, `spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Inline **`new-plan`** may still spawn **`phase-planner`** per its contract.
+When **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`** (this skill inline under **`planner`** or **`phase-planner`**), run **`new-plan`** **inline on this lane** for each approved row **1…K** — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`**. Load `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`, construct inline context per row from the table below, follow that skill’s steps, and merge each **`## Completion (inline)`** into this skill’s ledger (`childRows`, `spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Inline **`new-plan`** may still spawn **`phase-planner`** per its contract.
 
 | Inline context field | Value (per row **N**) |
 |----------------------|------------------------|
@@ -125,7 +126,7 @@ Acknowledge the state in one line.
 
 ## Step 4 — Decision gate (when section is `_TBD_`)
 
-When the skill was spawned with `routeLock: "delivery-phases"` (or with `parentAgentRole: "master-plan-agent"` after the developer chose **Delivery phases**), the decision is already made upstream. Acknowledge *"Route locked: Delivery phases."* and skip directly to Step 5. Do not ask the developer to choose `Delivery phases` vs `PR breakdown` again.
+When the skill was spawned with `routeLock: "delivery-phases"` (or with `parentAgentRole: "master-plan-agent"` or `"phase-planner-agent"` after the developer chose **Delivery phases**), the decision is already made upstream. Acknowledge *"Route locked: Delivery phases."* and skip directly to Step 5. Do not ask the developer to choose `Delivery phases` vs `PR breakdown` again.
 
 When no upstream route lock exists, use **AskQuestion** or **`MC_ASKQUESTION_V1`** to ask:
 
@@ -217,7 +218,7 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 | `abandon` | Abandon this branch |
 | `more-details` | More details for option _ |
 
-**Inline under `planner`:** Structured-choice approval is mandatory before indexed **`new-plan`** handoff. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** for this skill when **`parentAgentRole`** is **`master-plan-agent`** — report **`## Completion (inline)`** to the invoker instead. Run **`new-plan`** **inline** on this lane (no child lanes for **`new-plan`**); **`phase-planner`** child lanes may still open from inline **`new-plan`**.
+**Inline under `planner` or `phase-planner`:** Structured-choice approval is mandatory before indexed **`new-plan`** handoff. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** for this skill when **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`** — report **`## Completion (inline)`** to the invoker instead. Run **`new-plan`** **inline** on this lane (no child lanes for **`new-plan`**); **`phase-planner`** child lanes may still open from inline **`new-plan`**.
 
 **Standalone (spawned):** After structured-choice approval, emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` when spawning **`new-plan`** child lanes — **not** in the structured-choice message. **Stop** and wait for **`new-plan`** child results per step **6b**.
 
@@ -227,7 +228,7 @@ In a **new** assistant turn after the developer selects an option in the approva
 
 | Choice | Action |
 | --- | --- |
-| **Approve phase list and spawn children** | **Inline under `planner`:** run **`new-plan`** **inline** for each row **1…K** per [Inline handoff](#inline-handoff--delivery-phases--new-plan-step-6-act-after-select); merge each row’s **`## Completion (inline)`**; record **`phase-planner`** spawns in `activeLanes`. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** — continue on the **planner** lane and aggregate per step **6b**. **Standalone spawned:** emit one **`AGENT_RUN_REQUEST_V1`** per phase row for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md` with `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-planner"`, `requestedPopulatorSkill: "phase-planner"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, `decompositionKind: "delivery-phases"`. Record each spawned child in the ledger. Emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` — **not** in the recap-only pass or structured-choice message. |
+| **Approve phase list and spawn children** | **Inline** (`master-plan-agent` or `phase-planner-agent`): run **`new-plan`** **inline** for each row **1…K** per [Inline handoff](#inline-handoff--delivery-phases--new-plan-step-6-act-after-select); merge each row’s **`## Completion (inline)`**; record **`phase-planner`** spawns in `activeLanes`. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** — continue on the invoker lane and aggregate per step **6b**. **Standalone spawned:** emit one **`AGENT_RUN_REQUEST_V1`** per phase row for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md` with `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-planner"`, `requestedPopulatorSkill: "phase-planner"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, `decompositionKind: "delivery-phases"`. Record each spawned child in the ledger. Emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` — **not** in the recap-only pass or structured-choice message. |
 | **Revise phase list first** | Apply one focused `StrReplace` on the list, then repeat recap → structured choice. |
 | **Defer / abandon** | Emit terminal result per labels; do not spawn. |
 | **More details for option _** | Elaborate (information-only), then run structured choice again. |
@@ -246,7 +247,7 @@ When the developer chooses to hand off or populate a child in standalone use, ru
 
 ## Step 6b — Aggregate indexed child results
 
-**Inline `new-plan` under `planner`:** After each inline **`new-plan`** row completes, merge its **`## Completion (inline)`** into `childRows` and `spawnedPlans`. If inline **`new-plan`** reports an active **`phase-planner`** lane, keep the row open and add it to `activeLanes`. When Mission Control delivers a **`phase-planner`** child result, match by correlation id, then `outputs.parentPlanSlug` + `outputs.parentIndex`.
+**Inline `new-plan` under `planner` or `phase-planner`:** After each inline **`new-plan`** row completes, merge its **`## Completion (inline)`** into `childRows` and `spawnedPlans`. If inline **`new-plan`** reports an active **`phase-planner`** lane, keep the row open and add it to `activeLanes`. When Mission Control delivers a **`phase-planner`** child result, match by correlation id, then `outputs.parentPlanSlug` + `outputs.parentIndex`.
 
 **Standalone spawned `new-plan`:** When Mission Control delivers a child result from a spawned **`new-plan`** lane:
 
@@ -291,4 +292,4 @@ Complete the step 6 handoff block (or announce spawn wait) **before** the termin
 
 Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
 
-**Primary path:** **`planner`** Step 7 runs this skill **inline** (`parentAgentRole: "master-plan-agent"`). Runs **`new-plan`** **inline** on the same lane. Use the same `outputs` semantics as **`## Completion (spawned)`** in prose only — the **planner** lane merges ledger fields. **Standalone** mission dispatch may still spawn this skill on a child lane; then use **`## Completion (spawned)`** and spawn **`new-plan`** child lanes per step 6.
+**Primary path:** **`planner`** Step 7 or **`phase-planner`** Step 5 runs this skill **inline** (`parentAgentRole: "master-plan-agent"` or `"phase-planner-agent"`). Runs **`new-plan`** **inline** on the same lane. Use the same `outputs` semantics as **`## Completion (spawned)`** in prose only — the invoker lane merges ledger fields. **Standalone** mission dispatch may still spawn this skill on a child lane; then use **`## Completion (spawned)`** and spawn **`new-plan`** child lanes per step 6.
