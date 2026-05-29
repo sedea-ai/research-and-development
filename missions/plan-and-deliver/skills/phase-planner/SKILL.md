@@ -394,8 +394,8 @@ When route is `pr-breakdown-multi`, **`hoistRequired`** is false — run **`pr-b
 
 When this skill is running as a spawned child and `autoContinue` is not `false`, run the next decomposition branch **inline on this lane** **only** when route signal is clear:
 
-- `delivery-phases` → load and follow **`delivery-phases/SKILL.md`** on **this** phase plan per [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b--5a-hoist).
-- `pr-breakdown-multi` → load and follow **`pr-breakdown/SKILL.md`** on **this** phase plan with `prBreakdownShape: "multi"`.
+- `delivery-phases` → load and follow **`delivery-phases/SKILL.md`** on **this** phase plan per [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b--5a-hoist). **`delivery-phases`** drafts the full phase list first; **`new-plan`** expand uses **depth-first** ship-complete gates — do not expect all phase children in one pass.
+- `pr-breakdown-multi` → load and follow **`pr-breakdown/SKILL.md`** on **this** phase plan with `prBreakdownShape: "multi"`. **`pr-breakdown`** honors **`### Sequencing`** for parallel vs sequential PR expand.
 - `pr-breakdown-single` → follow **§ 5a-hoist** (ancestor target + inline hoist); do **not** run **`pr-breakdown`** on this phase file.
 
 Before handoff, present the drafted phase plan body and the route signal to the developer via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* — **preferred:** brief recap + modal in one message; bare **`MC_ASKQUESTION_V1`** must be sentinel-only (no prose before the sentinel). Required options:

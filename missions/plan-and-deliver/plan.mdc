@@ -52,7 +52,7 @@ Approval gates and developer choices happen inside each skill.
 
 2. **Ad-hoc plan and delivery** — For smaller, well-bounded requests: shorter ad-hoc PRD (`ad-hoc-prd`), plans under `.sedea/operations/`, expedited Master Plan → one or more PR plans when the phase layer is not needed. All checks and verifications remain mandatory.
 
-3. **Scope breakdown** — Keep deliverable complexity under control: break work into delivery phases or PRs with explicit lists and assessments (`delivery-phases`, `pr-breakdown`, `new-plan` indexed spawn).
+3. **Scope breakdown** — Keep deliverable complexity under control: break work into delivery phases or PRs with explicit lists and assessments (`delivery-phases`, `pr-breakdown`, `new-plan` indexed spawn). Parent lists show **all** phases/PRs at high level with `_TBD_` links until eligible; **depth-first expansion** gates the next row on **ship-complete** predecessors — phases always sequential; PRs follow **`### Sequencing`** stages per **development-process.md** § *Depth-first plan-tree traversal*.
 
 4. **Implementation** — Plan-anchored coding sessions: completeness gate, worktrees, sidecar state, Sedea workbench attach, copy-safe agent prompts (`coding-session`).
 
@@ -455,6 +455,7 @@ Related (optional):
 - A plan entry may close as completed, deferred, abandoned, or out of scope, but the closing status must be explicit.
 - Silence, missing metadata, or an unreported lane is not completion.
 - When a PR plan child reports `readyForImplementation` in planning `outputs`, record planning-handoff readiness on the **planning** ledger only. Planning vs ship signals and §8 phase rules: [`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`](../../rules/30_planning-target-resolution.mdc) § *Planning readiness vs ship*; §8 registration: §8 *Register or refresh* below.
+- **Depth-first indexed rows:** track each parent-list index with `listed` | `active` | `ship-complete` (or `deferred` / `abandoned`). The next **`new-plan`** expand on that parent is allowed only when **30_planning-target-resolution** § *Depth-first expansion eligibility* passes — for **Delivery phases** lists, the prior phase index must be **ship-complete** (all PRs under that phase closed on §8); for **`### PR list`**, follow parsed **`### Sequencing`** stages. Do not treat planning-terminal child lanes alone as unlocking the next index.
 
 **Procedure**
 

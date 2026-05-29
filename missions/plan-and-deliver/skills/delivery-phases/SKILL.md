@@ -51,7 +51,7 @@ warmUpRules:
 
 # Delivery phases — mode #2 decomposition
 
-This skill drives **mode #2** (Delivery phases) under Sedea's New Feature Development Process. **Input:** a target **Master Plan** or **Phase plan** whose dual-title section (`Delivery phases | PR breakdown`) is still undecided or is already committed to **`Delivery phases`**. **Output:** that section drafted as a numbered list of child phases; each row is later expanded via **`new-plan`** (indexed — **inline** when this skill runs under **`planner`**), then **`phase-planner`** (spawned) on the child stub.
+This skill drives **mode #2** (Delivery phases) under Sedea's New Feature Development Process. **Input:** a target **Master Plan** or **Phase plan** whose dual-title section (`Delivery phases | PR breakdown`) is still undecided or is already committed to **`Delivery phases`**. **Output:** that section drafted as a numbered list of child phases; each row is expanded **depth-first** via **`new-plan`** (indexed — **inline** when this skill runs under **`planner`**) after ship-complete gates, then **`phase-planner`** (spawned) on the child stub.
 
 The procedure below is a hard contract — do **not** skip steps, re-order them, or start drafting before stage is verified.
 
@@ -66,14 +66,14 @@ The **developer** picks the next move per **30_planning-target-resolution** § *
 
 ### Inline handoff — **delivery-phases** → **`new-plan`** (step 6 act-after-select)
 
-When **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`** (this skill inline under **`planner`** or **`phase-planner`**), run **`new-plan`** **inline on this lane** for each approved row **1…K** — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`**. Load `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`, construct inline context per row from the table below, follow that skill’s steps, and merge each **`## Completion (inline)`** into this skill’s ledger (`childRows`, `spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Inline **`new-plan`** may still spawn **`phase-planner`** per its contract.
+When **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`** (this skill inline under **`planner`** or **`phase-planner`**), run **`new-plan`** **inline on this lane** for **eligible** row index(es) only — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`**. **Depth-first gate:** expand **at most one** phase row per act-after-select pass — the lowest index **N** whose **`Plan:`** is still `_TBD_` and whose prior phase **N−1** is **ship-complete** per **development-process.md** § *Depth-first plan-tree traversal* and **30_planning-target-resolution** § *Depth-first expansion eligibility*. Load `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`, construct inline context per eligible row from the table below, follow that skill’s steps, and merge each **`## Completion (inline)`** into this skill’s ledger (`childRows`, `spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Inline **`new-plan`** may still spawn **`phase-planner`** per its contract.
 
 | Inline context field | Value (per row **N**) |
 |----------------------|------------------------|
 | `mode` | `"indexed-child"` |
 | `parentPlanPath` | Absolute path to this skill’s `targetPlanPath` |
 | `parentPlanSlug` | This skill’s `targetPlanSlug` |
-| `index` | Row number **N** (1…K) |
+| `index` | Row number **N** (single eligible index per expand pass for phases) |
 | `childKind` | `"phase-planner"` |
 | `requestedPopulatorSkill` | `"phase-planner"` |
 | `ledgerParent` | `ledgerParent` from this skill’s inputs when present |
@@ -212,7 +212,8 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 
 | Option id (illustrative) | Label (brief) |
 | --- | --- |
-| `approve-spawn` | Approve phase list and spawn children |
+| `approve-list` | Approve phase list — no spawn yet |
+| `expand-next-eligible` | Expand next eligible phase row |
 | `revise` | Revise phase list first |
 | `defer` | Defer child plan creation |
 | `abandon` | Abandon this branch |
@@ -228,12 +229,13 @@ In a **new** assistant turn after the developer selects an option in the approva
 
 | Choice | Action |
 | --- | --- |
-| **Approve phase list and spawn children** | **Inline** (`master-plan-agent` or `phase-planner-agent`): run **`new-plan`** **inline** for each row **1…K** per [Inline handoff](#inline-handoff--delivery-phases--new-plan-step-6-act-after-select); merge each row’s **`## Completion (inline)`**; record **`phase-planner`** spawns in `activeLanes`. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** — continue on the invoker lane and aggregate per step **6b**. **Standalone spawned:** emit one **`AGENT_RUN_REQUEST_V1`** per phase row for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md` with `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-planner"`, `requestedPopulatorSkill: "phase-planner"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, `decompositionKind: "delivery-phases"`. Record each spawned child in the ledger. Emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` — **not** in the recap-only pass or structured-choice message. |
+| **Approve phase list — no spawn yet** (`approve-list`) | Record `developerApprovalStatus: "list-approved"`; set each child row to `listed` with `_TBD_` **`Plan:`** links unchanged. Do **not** run **`new-plan`**. Offer **`expand-next-eligible`** on a later turn when the developer is ready (phase **1** is eligible immediately after list approval). |
+| **Expand next eligible phase row** (`expand-next-eligible`) | Resolve the lowest index **N** with pending **`Plan:`** whose prior phase is **ship-complete** (index **1** has no prior). **Inline:** run **`new-plan`** **once** for that **N** per [Inline handoff](#inline-handoff--delivery-phases--new-plan-step-6-act-after-select); merge **`## Completion (inline)`**; record **`phase-planner`** spawns in `activeLanes`. **Standalone spawned:** emit one **`AGENT_RUN_REQUEST_V1`** for that index only. If no row is eligible, stop with a one-line reason (prior phase ship incomplete) and surface §8 **Ship recap** needs — do not spawn. |
 | **Revise phase list first** | Apply one focused `StrReplace` on the list, then repeat recap → structured choice. |
 | **Defer / abandon** | Emit terminal result per labels; do not spawn. |
 | **More details for option _** | Elaborate (information-only), then run structured choice again. |
 
-When running **standalone spawned** (not inline under **`planner`**), each **`AGENT_RUN_REQUEST_V1`** in the act-after-select message must include the indexed-child inputs listed in the **Approve** row above. Record each spawned child in the ledger; announce waiting for **K** results on the active lane.
+When running **standalone spawned** (not inline under **`planner`**), each **`AGENT_RUN_REQUEST_V1`** in the expand pass must include the indexed-child inputs listed above for **one** eligible index. Record the spawned child in the ledger; announce waiting for that result on the active lane.
 
 If **K = 0**, treat that as a drafting failure: do not open structured-choice handoff paths; return failure or partial.
 
@@ -259,6 +261,8 @@ When the developer chooses to hand off or populate a child in standalone use, ru
 6. If the result is `failure`, `aborted`, or `abandoned`, mark the row blocked and ask the developer whether to retry that row, defer it, accept partial resolution, or abandon the branch.
 
 Only return `continuationStatus: "terminal"` when every row is explicitly `completed`, `deferred`, `abandoned`, or `out_of_scope`, and no active **`phase-planner`** lanes remain for those rows. Silence or a missing row is not completion.
+
+**Ship-complete vs planning-terminal:** a phase row unlocks the **next** parent index for **`expand-next-eligible`** only when that row is **ship-complete** (all PR plans under the phase have §8 `shipPhase: done` + `rowStatus: closed`, or explicit defer/abandon) — not when **`phase-planner`** alone returns planning-terminal. Re-offer **`expand-next-eligible`** after the developer posts **Ship recap** on the leader dispatch or host-sync updates §8.
 
 ## One primary choice per turn — surface observations
 

@@ -75,7 +75,7 @@ warmUpRules:
 
 # PR breakdown — mode #3 decomposition
 
-This skill drives **mode #3** (set-level **PR breakdown**) under Sedea's New Feature Development Process. **Input:** a target **Master Plan** or **Phase plan** whose dual-title section (`Delivery phases | PR breakdown`) is undecided or is already **`PR breakdown`**. **Output:** that section drafted as **`### Single-concern strategy`**, **`### Sequencing`**, and **`### PR list`** (numbered child PRs). Each row is expanded via **`new-plan`** (indexed — **inline** when this skill runs under **`planner`**), then **`pr-plan`** **inline** on that lane (see [`new-plan/SKILL.md`](../new-plan/SKILL.md) populator handoff).
+This skill drives **mode #3** (set-level **PR breakdown**) under Sedea's New Feature Development Process. **Input:** a target **Master Plan** or **Phase plan** whose dual-title section (`Delivery phases | PR breakdown`) is undecided or is already **`PR breakdown`**. **Output:** that section drafted as **`### Single-concern strategy`**, **`### Sequencing`**, and **`### PR list`** (numbered child PRs). Each row is expanded **depth-first** per **`### Sequencing`** ship gates via **`new-plan`** (indexed — **inline** when this skill runs under **`planner`**), then **`pr-plan`** **inline** on that lane (see [`new-plan/SKILL.md`](../new-plan/SKILL.md) populator handoff).
 
 The procedure below is a hard contract — do **not** skip steps, re-order them, or start drafting before stage is verified.
 
@@ -90,14 +90,14 @@ The **developer** picks the next move per **30_planning-target-resolution** § *
 
 ### Inline handoff — **pr-breakdown** → **`new-plan`** (step 6 act-after-select)
 
-When **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`** (this skill inline under **`planner`** or **`phase-planner`**), run **`new-plan`** **inline on this lane** for each approved row **1…K** — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`**. Load `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`, construct inline context per row from the table below, follow that skill’s steps (including inline **`pr-plan`**), and merge each **`## Completion (inline)`** into this skill’s ledger (`childRows`, `spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Inline **`new-plan`** may still spawn **`coding-session`** via inline **`pr-plan`** §5d.
+When **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`** (this skill inline under **`planner`** or **`phase-planner`**), run **`new-plan`** **inline on this lane** for **eligible** row index(es) only — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`**. **Depth-first gate:** parse **`### Sequencing`** per **development-process.md** § *Depth-first plan-tree traversal* — expand only PR indices that are **ship-eligible** (sequential: lowest pending **N** whose prior PR in the chain is ship-complete; parallel stage: all pending indices in the current stage once the prior stage is fully ship-complete). Load `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`, construct inline context per eligible row from the table below, follow that skill’s steps (including inline **`pr-plan`**), and merge each **`## Completion (inline)`** into this skill’s ledger (`childRows`, `spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Inline **`new-plan`** may still spawn **`coding-session`** via inline **`pr-plan`** §5d.
 
 | Inline context field | Value (per row **N**) |
 |----------------------|------------------------|
 | `mode` | `"indexed-child"` |
 | `parentPlanPath` | Absolute path to this skill’s `targetPlanPath` |
 | `parentPlanSlug` | This skill’s `targetPlanSlug` |
-| `index` | Row number **N** (1…K) |
+| `index` | Row number **N** (one or more eligible indices per expand pass — parallel stage may authorize multiple) |
 | `childKind` | `"pr-plan"` |
 | `requestedPopulatorSkill` | `"pr-plan"` |
 | `ledgerParent` | `ledgerParent` from this skill’s inputs when present |
@@ -182,7 +182,7 @@ Run when **`hoistFromPhasePath`** and **`scopeParentIndex`** are set and **`prBr
 5. **`StrReplace`** on the phase plan — under **`## 5. Delivery phases | PR breakdown`**, replace `_TBD_` with a short hoisted note (one paragraph): PR breakdown is authored on ancestor **`<ancestor-slug>`** row **N**; do not draft a § 5 **`PR breakdown`** list on this phase file.
 6. Draft the single-PR set-level block (**`### Single-concern strategy`**, **`### Sequencing`**, **`### PR list`** with **K = 1**) using **step 5s**, grounded in the **phase** plan scope from step 1. **Do not** retitle the ancestor's top-level § 6 / § 5 from **`Delivery phases`** to **`PR breakdown`** — the hoisted PR is row-scoped on the ancestor list.
 7. Store the drafted block in working notes for step 6 approval, or write it under a comment block in chat only until approved — **preferred:** proceed to **step 6** with `hoistPendingWrite: true` and present the draft for approval before **`new-plan`** spawn.
-8. After developer approval (step 6 **`approve-spawn`** or equivalent): **inline** (`parentAgentRole` **`master-plan-agent`** or **`phase-planner-agent`**) — run **`new-plan`** **inline** per [Inline handoff](#inline-handoff--pr-breakdown--new-plan-step-6-act-after-select) with hoist fields. **Standalone spawned** — emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`** with `inputs` including `mode: "indexed-child"`, `parentPlanPath` / `parentPlanSlug` (ancestor), `index: scopeParentIndex`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `hoistFromPhase: true`, `hoistFromPhasePath`, `hoistFromPhaseSlug`, `decompositionKind: "pr-breakdown"`, `upstreamSkill: "pr-breakdown"`, plus `ledgerParent` when known. Pass the drafted single-PR row title in `initiatingPrompt` when helpful.
+8. After developer approval (step 6 **`expand-eligible`** or **`approve-list`** followed by expand on a later turn): **inline** (`parentAgentRole` **`master-plan-agent`** or **`phase-planner-agent`**) — run **`new-plan`** **inline** per [Inline handoff](#inline-handoff--pr-breakdown--new-plan-step-6-act-after-select) with hoist fields. **Standalone spawned** — emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`** with `inputs` including `mode: "indexed-child"`, `parentPlanPath` / `parentPlanSlug` (ancestor), `index: scopeParentIndex`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `hoistFromPhase: true`, `hoistFromPhasePath`, `hoistFromPhaseSlug`, `decompositionKind: "pr-breakdown"`, `upstreamSkill: "pr-breakdown"`, plus `ledgerParent` when known. Pass the drafted single-PR row title in `initiatingPrompt` when helpful.
 
 **Skip** steps **4** and **5** (whole-plan dual-title gate and set-level rewrite on the ancestor) when step 3.6 applies — unless the developer explicitly chooses **`decomposeOnPhasePlan`** on a follow-up turn.
 
@@ -261,7 +261,7 @@ One or two sentences on how this plan keeps each PR single-concern (Strategy #6)
 
 #### `### Sequencing`
 
-How PRs relate in time — bullet list by stage and/or a small Mermaid `graph LR` when dependencies are non-trivial. Labels must match bolded titles in **`### PR list`**.
+How PRs relate in time — **authoritative for depth-first expand eligibility** (see **development-process.md** § *Depth-first plan-tree traversal*). Use staged bullets with explicit **`(sequential)`** or **`(parallel)`** labels, e.g. *Stage 1 (sequential): PR 1 → PR 2; Stage 2 (parallel): PR 3, PR 4*. Labels must match bolded titles in **`### PR list`**. Optional Mermaid supplements the bullets; when both exist, the staged bullet form governs **`new-plan`** gates.
 
 #### `### PR list`
 
@@ -337,7 +337,8 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 
 | Option id (illustrative) | Label (brief) |
 | --- | --- |
-| `approve-spawn` | Approve PR breakdown and spawn PR plans |
+| `approve-list` | Approve PR breakdown — no spawn yet |
+| `expand-eligible` | Expand eligible PR row(s) |
 | `revise` | Revise PR breakdown first |
 | `defer` | Defer child PR plan creation |
 | `abandon` | Abandon this branch |
@@ -353,7 +354,8 @@ In a **new** assistant turn after the developer selects an option in the approva
 
 | Choice | Action |
 | --- | --- |
-| **Approve PR breakdown and spawn PR plans** | **Inline** (`master-plan-agent` or `phase-planner-agent`): run **`new-plan`** **inline** for each row **1…K** per [Inline handoff](#inline-handoff--pr-breakdown--new-plan-step-6-act-after-select); merge each row’s **`## Completion (inline)`**; record **`coding-session`** spawns in `activeLanes`. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** — continue on the invoker lane and aggregate per step **6b**. **Standalone spawned:** emit one **`AGENT_RUN_REQUEST_V1`** per PR row for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md` with `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "pr-plan"`, `requestedPopulatorSkill: "pr-plan"`, `ledgerParent`, `upstreamSkill: "pr-breakdown"`, `decompositionKind: "pr-breakdown"`, and hoist fields when applicable. Record each spawned child in the ledger. Emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` (or `partial` when appropriate) — **not** in the recap-only pass or structured-choice message. |
+| **Approve PR breakdown — no spawn yet** (`approve-list`) | Record `developerApprovalStatus: "list-approved"`; keep all **`Plan:`** placeholders `_TBD_`. Do **not** run **`new-plan`**. |
+| **Expand eligible PR row(s)** (`expand-eligible`) | Parse **`### Sequencing`**; resolve eligible indices per **30_planning-target-resolution** § *Depth-first expansion eligibility*. **Inline:** run **`new-plan`** once per eligible index (parallel stage may be >1); merge each **`## Completion (inline)`**; record **`coding-session`** spawns in `activeLanes`. **Standalone spawned:** one **`AGENT_RUN_REQUEST_V1`** per eligible index. If none eligible, stop with reason (prior PR/stage ship incomplete) and nudge **Ship recap** — do not spawn. |
 | **Revise PR breakdown first** | Run step **6a**, then repeat recap → structured choice. Do **not** spawn children or emit terminal success until re-approved. |
 | **Defer child PR plan creation** | Emit **`AGENT_RESULT_RESPONSE_V1`** with defer semantics; do not spawn. |
 | **Abandon this branch** | Emit **`AGENT_RESULT_RESPONSE_V1`** with `status: "abandoned"` (or `partial` when work remains documented). |

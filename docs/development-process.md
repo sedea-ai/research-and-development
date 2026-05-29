@@ -249,6 +249,25 @@ A short **optional intro paragraph** (one or two sentences) is allowed immediate
 
 A non-PR-ready plan thus *only* lists short summaries pointing at child plans — never inlines a child's body. To break a child entry out into its own plan file, the developer picks list index **N** via **AskQuestion** or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel*; the agent runs the **`new-plan`** protocol branch (**Development tools** § *Protocol branches*) with the parent plan resolved from chat context per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`**. **N** is the ordered-list index from the parent's numbered list of children — `Delivery phases` body when the heading is `Delivery phases`, or the `### PR list` sub-section when the heading is `PR breakdown`. **`new-plan`** seeds the child plan's name from the bolded item title on item **N**'s line (indexed-child mode). **Indexed-child stub:** the child file uses a **generic** scaffold (`## Overview`, `## Phasing`, `## Out of scope`) until **`phase-planner`** or **`pr-plan`** replaces the body with the Phase plan or per-PR template — that two-step split is intentional.
 
+#### Depth-first plan-tree traversal (indexed spawn)
+
+**List-first, expand-when-eligible.** When **`delivery-phases`** or **`pr-breakdown`** drafts a parent list, the plan file shows **every** phase or PR at high level. Each row's **`Plan:`** sub-bullet stays `_TBD_` (or an equivalent spawn placeholder) until that row becomes **eligible** for **`new-plan`** indexed spawn. **Do not** scaffold all children in one approval pass.
+
+**Ship-complete gate (normative).** A row is eligible for indexed spawn only when every **blocking** predecessor is **ship-complete** on the **`plan and deliver`** §8 ship ledger (`shipPhase: done`, `rowStatus: closed`, or explicit `deferred` / `abandoned` per developer choice on that dispatch). Planning-handoff signals alone (`readyForImplementation`, populated §§1–4) do **not** unlock the next row.
+
+| Parent list | Blocking rule |
+| --- | --- |
+| **`Delivery phases`** (phase rows) | **Always sequential.** Phase **N+1** is not eligible until phase **N** is ship-complete — meaning every PR plan under phase **N** (directly or via hoist) has a closed §8 ship row. |
+| **`### PR list`** (PR rows) | **Stage-aware** per **`### Sequencing`** below. |
+
+**PR stages (reuse set-level `### Sequencing`).** The mode #3 set-level template already records which PRs are chained vs parallel (bullet stages such as *Stage 1 (sequential): PR 1 → PR 2; Stage 2 (parallel): PR 3, PR 4*). Agents **parse** that subsection — do not invent a parallel syntax elsewhere.
+
+- **Sequential chain** (within one stage, or `→` between PR numbers): PR **k+1** is not eligible until PR **k** is ship-complete.
+- **Parallel stage** (comma-separated PRs in one stage label): all PRs in that stage may become eligible **together** once the **prior stage** is fully ship-complete (every PR in the prior stage closed on §8).
+- **Single PR** (`### Sequencing` notes one PR): only item **1** exists; no sibling gate.
+
+**List approval vs expand.** Structured choice on **`delivery-phases`** / **`pr-breakdown`** separates **approve list** (wording + order + sequencing only — no child files) from **expand eligible row(s)** (run **`new-plan`** only for indices that pass the gate). See those skills §6 and **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Depth-first expansion eligibility*.
+
 ### 3. PR breakdown
 
 The PR-breakdown mode answers: *how does a PR-ready plan decompose into individual, coding-ready PRs?* Each PR is a single-concern deliverable (Strategy #6) that can ship to production on its own. This mode applies to any plan whose dual-title section is titled `PR breakdown` — typically a **PR-ready phase plan**, but also a **Master Plan** for features small enough to skip the phase layer entirely. PR breakdown is therefore optional and partial: only PR-ready plans go through this mode.
@@ -293,9 +312,9 @@ Raw changed-line count is **not** a size signal in this process. Downstream copi
 When a PR-ready plan's dual-title section is titled `PR breakdown` and populated, it has these sub-sections in order:
 
 1. **Single-concern strategy.** 1–2 sentences on how this PR-ready plan keeps each PR single-concern (Strategy #6) — typically: "every PR maps to exactly one user-visible behavior change or one internal contract change; no PR mixes concerns". Optionally followed by a short bullet list of concerns that were tempting to bundle but were intentionally split (short-bullet rule per the convention above).
-2. **Sequencing.** How PRs relate in time. Pick whichever form conveys it most clearly:
-   - Bullet list grouped by stage: *Stage 1 (sequential): PR 1 → PR 2; Stage 2 (parallel): PR 3, PR 4*. Numbers match the `### PR list` ordering so cross-references resolve at a glance.
-   - Small dependency diagram (Mermaid graph or similar).
+2. **Sequencing.** How PRs relate in time — **this subsection is the machine-readable gate** for depth-first PR expansion (see **Depth-first plan-tree traversal** above). Pick whichever form conveys it most clearly:
+   - Bullet list grouped by stage: *Stage 1 (sequential): PR 1 → PR 2; Stage 2 (parallel): PR 3, PR 4*. Numbers match the `### PR list` ordering so cross-references resolve at a glance. Label each stage **`(sequential)`** or **`(parallel)`** so agents can parse blocking vs concurrent PRs.
+   - Small dependency diagram (Mermaid graph or similar) — optional supplement; the staged bullet form remains authoritative for **`new-plan`** eligibility when both exist.
    When the bullet form is used, follows the short-bullet rule.
 3. **PR list.** A **short numbered list** — use Markdown ordered list syntax (`1.`, `2.`, `3.`, …), one numbered item per PR, in roughly the sequencing order from the **Sequencing** sub-section above. A **single numbered item** is valid when the whole plan ships as one coding-ready PR (then **`new-plan`** indexed spawn for item **1** → per-PR plan → **`pr-plan`**). Each numbered item carries the PR's slug or short title on the item line, **bolded** so the **`new-plan`** protocol branch (digit-only **N** in session) can read it as the new plan's name; under each numbered item, two nested sub-bullets (unordered `-` bullets are fine):
    - Sub-bullet 1: **Single concern.** A one-line single-concern summary — this is the per-PR § 1 sentence repeated here so **a reviewer agent** can scan the set in one glance.

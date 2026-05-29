@@ -141,6 +141,9 @@ The regular parent-confirmation gate below is **skipped** when that pre-resoluti
 - Item **N** absent — stop; extend the parent list with the relevant skill, or pick a valid index.
 - Requested `childKind` conflicts with the parent heading — stop; fix the upstream spawn request.
 - Item **N** already has a linked `Plan:` target — stop with `partial`; report the existing target instead of creating a duplicate.
+- **Depth-first eligibility failed** — stop with `partial` or `failure` and one-line reason:
+  - **`Delivery phases` parent:** index **N > 1** and phase **N−1** is not **ship-complete** on §8 (`shipPhase: done`, `rowStatus: closed`, or explicit defer/abandon on the leader dispatch). See **development-process.md** § *Depth-first plan-tree traversal* and **30_planning-target-resolution** § *Depth-first expansion eligibility*.
+  - **`PR breakdown` parent:** index **N** is not in the eligible set parsed from **`### Sequencing`** (prior sequential PR or prior parallel stage not ship-complete).
 - **N ≥ 36** — stop with the wide-branching message (single-character filename prefix supports items **1–35**).
 
 **Non-indexed name on the same pre-resolved parent:** if the session supplies a **free-text child name** instead of digit-only **N**, use that string as the plan name (sentence case rules apply); keep the parent from context; still skip the confirmation gate only when resolution rules say the parent is already locked.
@@ -266,7 +269,7 @@ When **all** of the following are true, **skip** step 3 and go straight to step 
 | `requestedPopulatorSkill` is set (`phase-planner` or `pr-plan`) | Yes |
 | `upstreamSkill` is `delivery-phases` or `pr-breakdown` | Yes |
 
-Rationale: **`delivery-phases`** and **`pr-breakdown`** already run a structured-choice gate (**Approve … and spawn children** / **Approve PR breakdown and spawn PR plans**) over the parent numbered list. Item **N** prose (scope sentence, decomposition hint) is reviewed there — re-asking on this lane is redundant.
+Rationale: **`delivery-phases`** and **`pr-breakdown`** already run structured-choice gates (**Approve … list** / **Expand eligible row(s)**) over the parent numbered list and enforce depth-first ship-complete eligibility before expand. Item **N** prose (scope sentence, decomposition hint) is reviewed there — re-asking on this lane is redundant.
 
 Set `outputs.populatorApprovalStatus: "waived-upstream"` and one line: *Parent list approved upstream — hand off to `<requestedPopulatorSkill>` on the child stub* (`pr-plan` inline; `phase-planner` spawned).
 

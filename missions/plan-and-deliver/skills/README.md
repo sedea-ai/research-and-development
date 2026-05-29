@@ -28,7 +28,7 @@ Mission Control delivery for skills that mix long plan output with structured us
 
 | Skill | Recap | Structured choice | Act |
 |-------|-------|-------------------|-----|
-| **`pr-breakdown`**, **`delivery-phases`** | §5d | §6 | §6 act-after-select |
+| **`pr-breakdown`**, **`delivery-phases`** | §5d | §6 (`approve-list` / `expand-eligible`) | §6 act-after-select (depth-first) |
 | **`pr-plan`** | §5c recap | §5c modal | §5d spawn |
 | **`planner`** | §7a | §7b | §7c |
 | **`phase-planner`** | §4f echo / §5c link | §5b / §5c | §5b spawn / §5d follow-up |
@@ -42,7 +42,7 @@ Mission Control delivery for skills that mix long plan output with structured us
 
 ## Planning spawn (Squad Leader §3, §5, decomposition tree)
 
-Squad Leader steps **§3** and **§5** spawn child lanes for **`ad-hoc-prd`** and **`planner`**. **`planner`** runs **`delivery-phases`**, **`pr-breakdown`**, and **`new-plan`** **inline**. **`phase-planner`** runs **`delivery-phases`** and **`pr-breakdown`** **inline** on its child lane. Inline **`new-plan`** runs **`pr-plan`** inline and may still spawn **`phase-planner`**. Each dual-mode file has **`## Completion (spawned)`** and **`## Completion (inline)`**.
+Squad Leader steps **§3** and **§5** spawn child lanes for **`ad-hoc-prd`** and **`planner`**. **`planner`** runs **`delivery-phases`**, **`pr-breakdown`**, and **`new-plan`** **inline**. **`phase-planner`** runs **`delivery-phases`** and **`pr-breakdown`** **inline** on its child lane. Inline **`new-plan`** runs **`pr-plan`** inline and may still spawn **`phase-planner`**. **Depth-first expansion:** parent lists show all rows; **`new-plan`** runs only for ship-eligible indices (phases sequential; PRs per **`### Sequencing`** stages) — see **development-process.md** § *Depth-first plan-tree traversal* and rule **30** § *Depth-first expansion eligibility*. Each dual-mode file has **`## Completion (spawned)`** and **`## Completion (inline)`**.
 
 | Skill | Typical invoker | Squad Leader ledger |
 |-------|-----------------|---------------------|

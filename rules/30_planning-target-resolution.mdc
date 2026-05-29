@@ -133,11 +133,31 @@ Markdown table for each in-flight plan (typically one Master Plan subtree):
 | **Plan** | Slug + display name. |
 | **Stage** | Mode #1 Master Plan, #2 Phase, #3 PR plan, roadmap topic. |
 | **Status** | Drafted sections, `_TBD_`, PR linked, archived. |
-| **Next viable moves** | **Numbered** options naming **protocol branch + target** (e.g. *1. **new-plan** — expand list item **2** under `<parent-slug>`*; *2. **phase-planner** — populate child `<path>`*). |
+| **Next viable moves** | **Numbered** options naming **protocol branch + target** (e.g. *1. **new-plan** — expand list item **2** under `<parent-slug>`*; *2. **phase-planner** — populate child `<path>`*). Mark ineligible rows in the snapshot (e.g. *blocked — PR 1 ship incomplete*) but **do not** offer them as **`AskQuestion`** `options` — see § *Depth-first expansion eligibility*. |
 
 When a pick is required, offer the same moves as **`AskQuestion`** `options` (§ *Sedea input channel*). Session and plan-path contracts for planning live in this center rule, **`planning-target-resolution`**, center skills, and **`.sedea/centers/research-and-development/docs/development-process.md`** — hosting-repo **`.cursor/rules/`** cover codebase architecture and navigation only.
 
 **Snapshot-scoped prompts** (e.g. *Option 2: **phase-planner** on `<path>`*) belong **only** inside that snapshot.
+
+## Depth-first expansion eligibility
+
+Normative contract: **development-process.md** § *Depth-first plan-tree traversal*. Agents resolve **ship-complete** from parsed **Ship recap** on the **`plan and deliver`** leader dispatch, host-sync §8 messages, or forwarded child `outputs` — not from planning-handoff alone.
+
+### Phase rows (`Delivery phases` parent)
+
+1. List every numbered phase row in the snapshot (all indices visible).
+2. **Eligible for `new-plan` expand:** the lowest index **N** with `_TBD_` **`Plan:`** where **N = 1** or phase **N−1** is ship-complete (all PR plans under phase **N−1** closed on §8).
+3. **AskQuestion** `options` for expand: at most one phase index per turn (`expand-next-eligible`).
+
+### PR rows (`### PR list` parent)
+
+1. Parse **`### Sequencing`** staged bullets — `(sequential)` chains vs `(parallel)` groups; PR numbers refer to **`### PR list`** indices.
+2. **Eligible indices:** lowest pending index in the current stage when the prior stage is fully ship-complete; within a **sequential** stage only the lowest pending **N** whose immediate predecessor in the chain is ship-complete; within a **parallel** stage all pending indices in that stage together once the prior stage is done.
+3. **AskQuestion** `options` may include multiple PR expands when a parallel stage opens.
+
+### Ship-complete definition
+
+Per PR plan path: §8 row `shipPhase: done` and `rowStatus: closed`, or explicit `deferred` / `abandoned` on the leader dispatch. Per phase row: every descendant PR plan (including hoisted PRs on an ancestor list) meets that bar.
 
 ### PR-plan completeness before coding-session
 
