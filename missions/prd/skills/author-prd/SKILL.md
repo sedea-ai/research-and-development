@@ -45,7 +45,7 @@ warmUpRules:
 
 ## Purpose
 
-Gather evidence, calibrate section policy, and draft or update a Product or Feature Requirements Document that is complete and correct enough to feed the **research-and-development** center **`plan and deliver`** mission (`.sedea/centers/research-and-development/missions/plan-and-deliver/` — Master Plan via **`master-plan`**). The document structure is flexible: mandatory sections define planning readiness, important sections raise visible gaps, and optional sections appear only when the feature needs them.
+Gather evidence, calibrate section policy, and draft or update a Product or Feature Requirements Document that is complete and correct enough to feed the **research-and-development** center **`plan and deliver`** mission (`.sedea/centers/research-and-development/missions/plan-and-deliver/` — Master Plan via **`planner`**). The document structure is flexible: mandatory sections define planning readiness, important sections raise visible gaps, and optional sections appear only when the feature needs them.
 
 ## Inputs
 

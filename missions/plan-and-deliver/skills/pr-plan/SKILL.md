@@ -3,7 +3,7 @@ name: pr-plan
 description: >-
   Populate a PR plan body: draft §§ 1–4 (Single concern, Background, Change scope,
   Reasoning) per Sedea's New Feature Development Process per-PR template. Mirrors
-  **phase-plan** for mode #3: scope from parent's `### PR list` item N, grounds § 4
+  **phase-planner** for mode #3: scope from parent's `### PR list` item N, grounds § 4
   in parent's `### Single-concern strategy` + `### Sequencing`, scopes § 3 from the
   parent's changes. §§ 5–8 and deploy scaffolding stay `_TBD_` for **coding-session**
   (and follow-up turns). Appends canonical `deploy-test-plan-verified` todo per
@@ -39,6 +39,10 @@ inputs:
     type: string
     description: Skill that requested this PR plan population, usually new-plan.
     required: false
+  parentAgentRole:
+    type: string
+    description: When new-plan-agent, report Completion (inline) to the invoker instead of AGENT_RESULT_RESPONSE_V1.
+    required: false
   autoContinue:
     type: boolean
     description: When true, report implementation readiness after PR planning; this skill still does not start coding.
@@ -53,6 +57,8 @@ warmUpRules:
 
 # PR plan: §§ 1–4 from the parent plan
 
+**Normative execution (plan and deliver):** **Inline only** on the invoker lane — **`new-plan`** step 4 with **`parentAgentRole: "new-plan-agent"`**. Report **`## Completion (inline)`**; do **not** emit **`AGENT_RESULT_RESPONSE_V1`** for **`pr-plan`**. **Exception:** §5d may emit **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** on a **new** child lane. A standalone spawned **`pr-plan`** child is non-default. See **`../README.md`** § *Normative execution mode*.
+
 This skill drives the **per-PR planning move** under Sedea's New Feature Development Process: take a freshly-spawned PR plan stub (indexed child from the parent's **`### PR list`** under **`PR breakdown`**, typically right after the **`new-plan`** protocol branch) and populate §§ **1–4** of the **per-PR template** — Single concern, Background, Change scope, Reasoning. §§ **5–8** and the § 7 deploy scaffold stay **`_TBD_`** for **`coding-session`** and later turns unless the **developer** explicitly asks for a **fill** sketch here.
 
 The agent has enough context after step 3 to draft §§ 1–4 from the parent's **`### PR list`** row, **`### Single-concern strategy`**, **`### Sequencing`**, and earlier parent sections (diagrams / changes as *context* — PR plans do **not** embed parent diagrams in the body). § 4 is consumed by **a coding agent** (PR description) and **pre-pr-review** / **a reviewer agent**; keep sentences unambiguous. This skill reports planning readiness; **worktrees and ship execution** belong to **`coding-session`** on a **separate** lane.
@@ -61,7 +67,7 @@ The procedure below is a hard contract — do **not** skip steps or start drafti
 
 ## Handoff to `coding-session` (spawned child lane)
 
-**`pr-plan`** and **`coding-session`** are **sequential skills on different lanes**. After planning handoff approval, **`pr-plan`** emits **`AGENT_RUN_REQUEST_V1`** for **`coding-session`**; the child owns worktrees, workspace attach, and **implements** the PR plan on that lane (default **spawned implementation lane** — see **`coding-session`** § *Execution mode after worktree attach*).
+**`pr-plan`** and **`coding-session`** are **sequential skills on different lanes**. After planning handoff approval, **`pr-plan`** emits **`AGENT_RUN_REQUEST_V1`** for **`coding-session`**; the child owns worktrees, workspace attach, and **implements** the PR plan on that lane (default **spawned implementation lane** — see **`coding-session`** § *Execution mode after worktree attach*). When **`pr-plan`** runs **inline under `new-plan`**, §5d still spawns **`coding-session`** from the **`new-plan`** lane — only the **`pr-plan`** populator lane is eliminated.
 
 | Concern | **`pr-plan`** (this skill) | **`coding-session`** |
 |---------|---------------------------|----------------------|
@@ -87,7 +93,9 @@ The **developer** picks the next move per **30_planning-target-resolution** § *
 
 The skill operates on a **target** `.plan.md` resolved before this skill runs, per [`30_planning-target-resolution.mdc`](../../../../rules/30_planning-target-resolution.mdc) § *Resolution order*. Acknowledge the target slug in one line when this skill starts. Resolve targets from session, snapshot, or explicit path — **planning-target-resolution** is normative. Do **not** infer the target from the IDE’s focused-file list alone.
 
-When spawned by `new-plan`, `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, and `parentIndex` are already locked. Treat missing or conflicting values as a spawn-contract failure: stop with `failure` or `partial` and report the missing field. Do not fall back to IDE focus or free-form target discovery in spawned mode.
+When spawned by `new-plan` with `parentAgentRole: "new-plan-agent"`, run **inline** on the **`new-plan`** lane: report **`## Completion (inline)`** to the invoker — do **not** emit **`AGENT_RESULT_RESPONSE_V1`**. You may still emit **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** per §5d.
+
+When spawned by `new-plan` without `parentAgentRole: "new-plan-agent"` (legacy standalone populator spawn), `targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, `parentPlanSlug`, and `parentIndex` are already locked. Treat missing or conflicting values as a spawn-contract failure: stop with `failure` or `partial` and report the missing field. Do not fall back to IDE focus or free-form target discovery in spawned mode.
 
 If there is no resolved target, **stop** and emit a fresh *Where we are now in the plan tree* snapshot (recap). Collect the lane pick via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **30_planning-target-resolution** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act* — **preferred:** recap + modal in one message; **legacy split:** recap only, then structured choice in the **next** assistant message. Then continue.
 
@@ -102,8 +110,8 @@ Read the target plan in full and apply:
 | Has `## Overview` + `## Phasing` + `## Out of scope` (**new-plan** stub) | Fresh stub, drafting needed | Step 1b → Step 2 → Step 3 → Step 4 (full body rewrite) |
 | Has `## 1. Single concern` … `## 4. Reasoning` with `_TBD_` under one or more of §§ 1–4 | Partially drafted | Step 1b → Step 2 → Step 3 → Step 4 (fill only still-`_TBD_` sections) |
 | Has §§ 1–4 all populated | Already drafted | Step 5 (handoff menu) |
-| Master Plan body (`## 4. Architectural design` + `## 6. Delivery phases \| PR breakdown`) | Wrong skill | **Stop:** use **`master-plan`**. |
-| Phase plan body (`## 1. Background` … `## 4. Changes` for mode #2) | Wrong skill | **Stop:** use **`phase-plan`**. |
+| Master Plan body (`## 4. Architectural design` + `## 6. Delivery phases \| PR breakdown`) | Wrong skill | **Stop:** use **`planner`**. |
+| Phase plan body (`## 1. Background` … `## 4. Changes` for mode #2) | Wrong skill | **Stop:** use **`phase-planner`**. |
 
 Acknowledge the body state in one line.
 
@@ -113,12 +121,12 @@ If the **new-plan** stub sections carry **non-stub user content**, merge it into
 
 Read the target plan's sidecar `<slug>.state.yaml` for `parent:`.
 
-- `parent: null` (or sidecar missing) → **stop:** PR plans require a parent under **`PR breakdown`**. Fix via **`plan-reconcile`** or by hand, or use **`master-plan`** if this file should be a Master Plan.
+- `parent: null` (or sidecar missing) → **stop:** PR plans require a parent under **`PR breakdown`**. Fix via **`plan-reconcile`** or by hand, or use **`planner`** if this file should be a Master Plan.
 - `parent:` does not resolve to an existing `.plan.md` under the same `.sedea/operations/.../plans/` tree → **stop:** fix sidecar before drafting.
-- Parent is a **roadmap topic** grouping plan → **stop:** children should be Master Plans, not PR plans; fix sidecar or use **`master-plan`**.
+- Parent is a **roadmap topic** grouping plan → **stop:** children should be Master Plans, not PR plans; fix sidecar or use **`planner`**.
 - Parent resolves; read parent's dual-title block (`## 6. …` Master, `## 5. …` Phase):
   - Heading **`PR breakdown`** → proceed.
-  - Heading **`Delivery phases`** → **stop:** use **`phase-plan`** on this file (phase child), not **`pr-plan`**.
+  - Heading **`Delivery phases`** → **stop:** use **`phase-planner`** on this file (phase child), not **`pr-plan`**.
   - Dual-title `Delivery phases | PR breakdown` still `_TBD_` → **stop:** run **`pr-breakdown`** (or **`delivery-phases`**) on the parent first.
 
 Acknowledge: *"Parent: `<parent-slug>` (mode #3 **`PR breakdown`**); proceeding."*
@@ -372,6 +380,8 @@ Required options (brief `label`; put detail in `prompt` when needed):
 
 **Stop** after §5c AskQuestion or after §5d spawn announcement — do not run **`coding-session`** procedures on this lane.
 
+**Inline under `new-plan`:** After §5c or §5d, report **`## Completion (inline)`** to the invoker — do **not** emit **`AGENT_RESULT_RESPONSE_V1`**. The **`new-plan`** lane merges ledger fields and aggregates **`coding-session`** child results per **`new-plan/SKILL.md`** step **5b**.
+
 ### 5d — Spawn `coding-session` (after `start-coding-session`)
 
 Run only when the developer chose **`start-coding-session`** and §5a readiness passes (or they explicitly accept starting with known blockers — still run §5d but pass `readyForImplementation: false` and list blockers in `initiatingPrompt`).
@@ -407,8 +417,10 @@ When Mission Control delivers **`AGENT_RESULT_RESPONSE_V1`** for the spawn `corr
 1. Match by `correlationId` first, then `outputs.targetPlanPath` / `outputs.targetPlanSlug`.
 2. Summarize for the developer: child status, whether worktrees were created, `developerApprovedImplementation`, `planCompleteness`, and `remainingTasks`.
 3. Copy `outputs.activeLanes`, `outputs.openLedgerEntries`, and child `remainingTasks` into this lane's result when reporting upstream.
-4. Do **not** treat child `developerApprovedImplementation: true` as permission to edit code on the **`pr-plan`** lane.
-5. Re-offer §5c **AskQuestion** when the developer may revise the plan or spawn again after a failed/partial child run.
+4. When child **`outputs.prShipComplete`** is **`true`**: merge **`shipPhase`**, **`rowStatus`**, **`mainPullStatus`**, **`archivedSlugs`**, and echo **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** into this lane's **`outputs`**; set **`outputs.implementationHandoffStatus: "coding-session-terminal"`**; set **`outputs.codingSessionStatus`** from child **`status`**.
+5. **Re-emit updated terminal:** On a **standalone** spawned lane, emit a fresh **`AGENT_RESULT_RESPONSE_V1`** (same **`correlationId`**) with merged **`outputs`** including **`prShipComplete`** and parent index fields — so **`new-plan`** / **`pr-breakdown`** / **`planner`** receive ship-complete without manual **Ship recap**. **Inline under `new-plan`:** report merged fields in **`## Completion (inline)`** prose instead; the **`new-plan`** lane propagates per **`new-plan/SKILL.md`** step **5b**.
+6. Do **not** treat child `developerApprovedImplementation: true` as permission to edit code on the **`pr-plan`** lane.
+7. Re-offer §5c **AskQuestion** when the developer may revise the plan or spawn again after a failed/partial child run — unless **`prShipComplete: true`** and the developer defers follow-up on this lane (upstream owns **`expand-eligible`**).
 
 ## Step 5a — Follow-up turns
 
@@ -424,11 +436,11 @@ Perform exactly what was chosen. List short **numbered observations** for gaps (
 
 **Owns:** target PR plan **body** §§ 1–4; **4a-bis** append-only capstone todo; implementation readiness assessment; optional **fill** sketches for § 5–8 when explicitly chosen.
 
-**Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); running **`coding-session`** procedures on this lane (worktrees, `git worktree`, MCP attach, implementation edits); Master / Phase templates (**`master-plan`**, **`phase-plan`**).
+**Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); running **`coding-session`** procedures on this lane (worktrees, `git worktree`, MCP attach, implementation edits); Master / Phase templates (**`planner`**, **`phase-planner`**).
 
-**In scope for spawn:** one **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** per §5d after **AskQuestion** **`start-coding-session`** with real absolute paths.
+**In scope for spawn:** one **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** per §5d after **AskQuestion** **`start-coding-session`** with real absolute paths (standalone spawned lane **or** inline under **`new-plan`**).
 
-Stop after the step 5c **AskQuestion** turn, after §5d spawn announcement, or after §5e child summary — per terminal stop rules below.
+Stop after the step 5c **AskQuestion** turn, after §5d spawn announcement, or after §5e child summary — per terminal stop rules below. When **`parentAgentRole`** is **`new-plan-agent`**, skip **`AGENT_RESULT_RESPONSE_V1`** and report **`## Completion (inline)`** instead.
 
 ## Completion (spawned)
 
@@ -445,6 +457,9 @@ Required `outputs` fields:
 - `outputs.implementationHandoffStatus` — `not-offered` | `offered` | `deferred` | `spawned-coding-session` | `coding-session-terminal` (child finished); not `developerApprovedImplementation`
 - `outputs.spawnCorrelationId` — UUID from §5d when `implementationHandoffStatus` is `spawned-coding-session` or until child terminal is merged
 - `outputs.codingSessionStatus` — echo child `status` when §5e applies
+- `outputs.prShipComplete` — `true` when §5e merged child reconcile complete (archive + main pull)
+- `outputs.mainPullStatus`, `outputs.archivedSlugs` — when §5e merged from child
+- `outputs.shipPhase`, `outputs.rowStatus` — echo child when **`prShipComplete: true`**
 - `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
 - `outputs.continuationOwner`: `"pr-plan-agent"`
 - `outputs.continuationStatus`:
@@ -452,10 +467,10 @@ Required `outputs` fields:
   - `active` when parent link repair, fill sketches, **`coding-session`** child lane is open, or §5c menu not yet offered
   - `terminal` with `readyForImplementation: false` only when upstream or developer marks the PR plan deferred, abandoned, or out of scope
 
-Complete §5d spawn (when chosen) + wait announcement **before** the terminal line when spawning. Stop after the terminal line. Do not emit a second **`AGENT_RUN_REQUEST_V1`** in the same turn after the terminal line (see **`../README.md`** § *Terminal stop (normative)*).
+Complete §5d spawn (when chosen) + wait announcement **before** the terminal line when spawning on a **standalone** spawned lane. Stop after the terminal line. Do not emit a second **`AGENT_RUN_REQUEST_V1`** in the same turn after the terminal line (see **`../README.md`** § *Terminal stop (normative)*). **Inline under `new-plan`:** do **not** emit the terminal line — use **`## Completion (inline)`** below.
 
 ## Completion (inline)
 
-Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1` for **`pr-plan`**, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*). **Exception:** §5d may still emit **`AGENT_RUN_REQUEST_V1`** for **`coding-session`**.
 
-Spawned from **`new-plan`** or decomposition paths in normal flow. If run inline, use the same `outputs` semantics as **`## Completion (spawned)`** in prose only.
+**Primary path:** **`new-plan`** step 4 runs this skill **inline** (`parentAgentRole: "new-plan-agent"`). Use the same `outputs` semantics as **`## Completion (spawned)`** in prose only — the **`new-plan`** lane merges ledger fields and aggregates **`coding-session`** per **`new-plan/SKILL.md`** step **5b**. **Standalone** mission dispatch may still spawn this skill on a child lane; then use **`## Completion (spawned)`** instead.

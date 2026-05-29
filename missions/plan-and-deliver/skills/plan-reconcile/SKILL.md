@@ -1,12 +1,9 @@
 ---
 name: plan-reconcile
 description: >-
-  Plan reconcile protocol: run plan-state.mjs reconcile (PR-tracked archival),
-  list-candidates for plans that reconcile cannot auto-decide, present picks via
-  AskQuestion, archive with plan-state.mjs archive, then follow-ups triage
-  before archiving user-selected slugs. Use under mission dispatch, natural
-  language ("plan reconcile"), or when the developer wants merge-driven archive
-  cadence — via **AskQuestion**, natural language, or mission dispatch.
+  Inline coding-session procedure for plan-state.mjs reconcile (PR-tracked archival),
+  archive candidates, follow-ups triage, and post-ship workspace cleanup. Executed by
+  the active coding-session agent only — not spawned, no warmUpRules.
 inputs:
   targetPlanPath:
     type: string
@@ -26,33 +23,39 @@ inputs:
     required: false
   prState:
     type: string
-    description: PR state from create-pr; must be merged for spawned reconcile.
+    description: PR state from coding-session; must be merged for inline reconcile from ship chain.
     required: false
   deployStatus:
     type: string
-    description: Deploy status from deploy-walk; must be done for spawned reconcile.
+    description: Deploy status from deploy-walk; must be done for inline reconcile from ship chain.
     required: false
   deployTodoStatus:
     type: string
-    description: deploy-test-plan-verified todo status; must be done for spawned reconcile.
+    description: deploy-test-plan-verified todo status; must be done for inline reconcile from ship chain.
     required: false
   ledgerParent:
     type: string
-    description: Ledger parent slug/path copied from create-pr.
+    description: Ledger parent slug/path copied from coding-session.
     required: false
   upstreamSkill:
     type: string
-    description: Skill that spawned reconcile, usually create-pr.
+    description: Invoker skill — must be coding-session when inline.
     required: false
-warmUpRules:
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/research-and-development/docs/development-process.md"
-  - ".sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc"
-  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Plan reconcile
+
+**Lane requirement (no separate warm-up).** This skill has **no** frontmatter **`warmUpRules`** by design. Run it **only** on the active **`coding-session`** lane after that session has loaded ship rules (**`20_efficient-pr-shipping`**, **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`**, **`skills/README.md`**, dev-process). Do **not** start a standalone Mission Control session on **`plan-reconcile`** alone — context will be incomplete.
+
+### Standalone dispatch (stop immediately)
+
+If Mission Control opened a session whose only intent is **`plan-reconcile`** / *plan reconcile* with **no** active **`coding-session`** context:
+
+1. **Stop** — do not run **`plan-state.mjs`** reconcile mutations.
+2. Tell the developer **`plan-reconcile`** is **inline-only** on the **`coding-session`** lane.
+3. Direct them to open or return to **`coding-session`** with the PR plan (or post-ship context) — see [`coding-session/SKILL.md`](../coding-session/SKILL.md) § *Plan-reconcile handoff (inline)* and § *Stale worktree detection (detect-only)*.
+
+**Execution owner:** the active **coding-session agent** runs this skill inline. Do **not** spawn a separate reconcile child lane.
 
 Script-backed flow: **`plan-state.mjs`** owns YAML and file moves; the agent decides **which** archive candidates to take (and how to route **follow-ups**) by surfacing choices via structured choice (below).
 
@@ -64,17 +67,17 @@ Dry-run reports, archive candidates, and follow-up triage use **AskQuestion**, *
 
 | How it starts | Requirements | Auto-start? |
 |---------------|--------------|-------------|
-| Developer says **plan reconcile** / **reconcile plans**, or mission dispatch | Valid **`operationsUserId`**; follow **Flow** below | No — explicit start |
-| **`create-pr`** spawns this skill | Developer chose reconcile on that turn; `prState: merged`; `deployStatus: done`; `deployTodoStatus: done`; `targetPlanPath` or `targetPlanSlug` | Yes |
+| Developer says **plan reconcile** / **reconcile plans** on active **`coding-session`** | Valid **`operationsUserId`**; follow **Flow** below | No — explicit start |
+| **`coding-session`** inline handoff | Developer chose reconcile on that turn; when plan-anchored from ship chain: `prState: merged`; `deployStatus: done`; `deployTodoStatus: done`; `targetPlanPath` or `targetPlanSlug` | Yes — on authorized pick only |
 | **`deploy-walk`** finishes (checklist + capstone todo **done**) | — | **No** — deploy done alone does not start reconcile |
 
 Do **not** trigger on the word **`plan`** alone — too generic.
 
-When **`deploy-walk`** just finished and the user expects archive, use **AskQuestion** once: start **`plan-reconcile`** now vs defer. Merge + deploy verification are still required for spawned reconcile from **`create-pr`**.
+When **`deploy-walk`** just finished and the user expects archive, use **AskQuestion** once: start **`plan-reconcile`** inline now vs defer. Merge + deploy verification are still required for inline reconcile from **`coding-session`** when plan-anchored on the ship chain.
 
 Detail: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *deploy-walk vs plan-reconcile (not chained)*; **`.sedea/centers/research-and-development/docs/development-process.md`** § *Plan reconcile triggers*.
 
-**Spawned gate:** if any required field is missing, stop with `partial`, keep `continuationStatus: "active"`, and report what is missing. Do not archive before merge and deploy verification are complete.
+**Inline gate (ship chain):** if any required field is missing, stop with `partial`, keep `continuationStatus: "active"` on **`coding-session`**, and report what is missing. Do not archive before merge and deploy verification are complete.
 
 ## Script CLI (hosting repo)
 
@@ -315,9 +318,9 @@ Mutations are under **`.sedea/operations/`** (and possibly center git elsewhere)
 - Promoting routed bullets into **Changes** / **Caveats** / **Delivery phases** — planning work the user does later.
 - Pushing fixes to individual PRs. If a flagged plan needs an amend, tell the user; do not silently **`gh`**-mutate from here.
 
-## Spawned result contract
+## Inline result contract
 
-When spawned by `create-pr`, end with a child result containing:
+When run inline on **`coding-session`**, report these fields in prose via **`## Completion (inline)`** so the parent can merge into coding-session `outputs`:
 
 - `outputs.targetPlanPath`
 - `outputs.targetPlanSlug`
@@ -333,59 +336,30 @@ When spawned by `create-pr`, end with a child result containing:
 - `outputs.followUpsDropped`
 - `outputs.manualFollowUps`
 - `outputs.remainingTasks`
-- `outputs.activeLanes`
-- `outputs.openLedgerEntries`
+- `outputs.shipPhase` — `done` with `rowStatus: closed` when target archived; `reconcile` when follow-ups remain; `blocked` when gates fail
+- `outputs.rowStatus` — per bubble-up semantics below
+- `outputs.blockedReason` — when `rowStatus` is `blocked`
 - `outputs.cleanedWorktrees` — when §5 cleanup ran
 - `outputs.deletedBranches` — when §5 cleanup ran
 - `outputs.mainPullStatus` — when §5 cleanup ran
-- `outputs.continuationOwner: "plan-reconcile-agent"`
-- `outputs.continuationStatus`
 
-Set `continuationStatus`:
+Stop when the target plan is archived or explicitly not archive-eligible with no remaining follow-up triage, or when flagged plans / postponed follow-ups / manual routing remain (`continuationStatus: active` on **`coding-session`**). Do not auto-invoke other skills.
 
-- `terminal` when the target plan is archived or explicitly not archive-eligible with no remaining follow-up triage.
-- `active` when flagged plans, postponed follow-ups, manual routing, or developer choices remain.
-- `partial` status with `continuationStatus: "active"` when script errors or missing merge/deploy gates block reconcile.
-
-## Squad Leader bubble-up (detached lanes)
-
-Runs on a **detached** reconcile lane. When reconcile reaches terminal success for the target PR plan, nudge the developer to post **Ship recap — plan and deliver** on the leader dispatch (**`../../plan.mdc`** §8).
-
-| Outcome | `shipPhase` | `rowStatus` | Key `outputs` for recap |
+| Outcome | `shipPhase` | `rowStatus` | Key fields for §8 recap |
 |---------|-------------|-------------|-------------------------|
 | Target archived / ship complete | `done` | `closed` | `targetPlanPath`, `archivedSlugs`, `remainingTasks` |
 | Flagged / postponed follow-ups | `reconcile` | `open` | `targetPlanPath`, `flaggedSlugs`, `postponedSlugs`, `remainingTasks` |
 | Script or gate blocked | `reconcile` | `blocked` | `targetPlanPath`, `remainingTasks`, `blockedReason` |
 
-## Mission Control section 8 sync (required terminal `outputs`)
+## Mission Control section 8 sync (via coding-session)
 
-On **every** terminal `AGENT_RESULT_RESPONSE_V1` (including follow-up re-emits), `outputs` **must** include:
-
-| Field | Rule |
-|-------|------|
-| `targetPlanPath` | Absolute PR plan `.plan.md` path — **required** |
-| `shipPhase` | `done` with `rowStatus: closed` when target archived and ship complete; `reconcile` when follow-ups remain; `blocked` when gates fail |
-| `rowStatus` | Per bubble-up table |
-| `remainingTasks` | When `rowStatus` is not `closed` |
-| `blockedReason` | When `rowStatus` is `blocked` |
-
-Mission Control syncs section 8 on the Squad Leader lane from these fields.
-
-## Completion (spawned)
-
-Required `outputs` per **## Spawned result contract**, **Mission Control section 8 sync**, and the bubble-up table. Re-emit an **updated** terminal result after user-requested follow-up on this lane (same `correlationId`).
-
-### Host protocol line (required)
-
-Emit **exactly one** line on its own: `AGENT_RESULT_RESPONSE_V1` immediately followed by a single JSON object on the **same** line. Required keys: `version` (1), `correlationId` (from the spawn request), `status`, `summary`, `outputs`, `errors` (use `[]` when none). Populate `outputs` from the sections above **including** `targetPlanPath`, `shipPhase`, and `rowStatus` on every terminal line. The emitted line must be **valid JSON** (no `{...}` placeholders in the actual output). See **`.sedea/centers/sedea/skills/README.md`** § *Spawned terminal line*.
-
-Stop after the terminal line. Do not emit another `AGENT_RUN_REQUEST_V1` or run the next protocol step in the same turn (see **`../README.md`** § *Terminal stop (normative)*).
+**`plan-reconcile`** is **not** a separate child terminal. §8 ship ledger fields reach the Squad Leader via **`coding-session`** terminal **`outputs`** or manual **Ship recap** — include `targetPlanPath`, `shipPhase`, `rowStatus`, `archivedSlugs`, `remainingTasks`, and `blockedReason` when applicable per **`../coding-session/SKILL.md`** § *Squad Leader bubble-up*.
 
 ## Completion (inline)
 
-Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+Report the fields from **## Inline result contract** in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
 
-Normally spawned after deploy or on developer request. If run inline, use the same `outputs` semantics as **## Spawned result contract** and **`## Completion (spawned)`** in prose only.
+Normally invoked inline from **`coding-session`** after deploy verification or when the developer chooses reconcile on that lane. **`plan reconcile`** phrases on the active coding-session lane use the same procedure body.
 
 ## Extensions
 

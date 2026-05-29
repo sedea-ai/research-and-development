@@ -4,10 +4,10 @@ description: >-
   Scaffold a minimal Ad-Hoc PRD (bugs / small improvements) as
   `ad_hoc_<slug>_<hex>.ad-hoc-prd.md` under **personal operations docs only:**
   `.sedea/operations/<operationsUserId>/docs/` (never `joint/docs/`).
-  Ad-Hoc PRD is upstream root input for **`master-plan`**; no existing `.plan.md`
+  Ad-Hoc PRD is upstream root input for **`planner`**; no existing `.plan.md`
   link is required. For **Ad-Hoc PRD creator** agent sessions — explicit
   mission dispatch or upstream agent only. Does not edit
-  `.plan.md` files or run/spawn **`master-plan`**.
+  `.plan.md` files or run/spawn **`planner`**.
 inputs:
   createIntent:
     type: boolean
@@ -43,7 +43,7 @@ warmUpRules:
 
 # Ad-Hoc PRD
 
-**Intent:** **Ad-Hoc PRD creator agent** turns a short **change request** (bug or small improvement) into a **minimal Ad-Hoc PRD** — a **standalone root artifact**. **Master Plans** and all other plans are **downstream** of the PRD (see **development-process**); this skill does **not** require or resolve a parent `.plan.md`, and does **not** spawn **`master-plan`**.
+**Intent:** **Ad-Hoc PRD creator agent** turns a short **change request** (bug or small improvement) into a **minimal Ad-Hoc PRD** — a **standalone root artifact**. **Master Plans** and all other plans are **downstream** of the PRD (see **development-process**); this skill does **not** require or resolve a parent `.plan.md`, and does **not** spawn **`planner`**.
 
 **File type:** **`.ad-hoc-prd.md`** so tooling recognizes the shape (§§ 1–3 + **Master Plan** placeholder line).
 
@@ -70,7 +70,7 @@ Ad-hoc means **shorter PRD input**, not lower delivery scrutiny. Do not use this
 
 - Capture broad scope, multi-system impact, unclear acceptance criteria, data migration, security/auth, rollout risk, or test uncertainty in **§3 Proposed solution** as explicit risks / unknowns.
 - If the request is obviously larger than a small change, still write the short PRD when inputs are sufficient, but set `outputs.complexityGuard: "needs-master-plan-assessment"` and include the reasons in `outputs.remainingTasks`.
-- Leave all complexity scoring, decomposition routing, and downstream agent spawning to **`master-plan`** and later skills.
+- Leave all complexity scoring, decomposition routing, and downstream agent spawning to **`planner`** and later skills.
 
 ## Operations user id (required to write)
 
@@ -93,10 +93,10 @@ Create **`docs/`** under that segment if missing.
 3. **Filename:** `ad_hoc_<slugified-title>_<8-hex>.ad-hoc-prd.md` — slugify title (lowercase, non-alphanumerics → `_`, collapse repeats, max ~48 chars) + `_<random 8 hex>` (`crypto.randomBytes(4).toString('hex')` or equivalent).
 4. **Write** under **`.sedea/operations/<operationsUserId>/docs/`**:
    - `# <Title>` — handoff title (not the filename).
-   - **`Master Plan:`** line — `_TBD_` plus one sentence that **`master-plan`** will create the `.plan.md` from this Ad-Hoc PRD and the developer should paste or link that path here when it exists (do **not** invent a plan path).
+   - **`Master Plan:`** line — `_TBD_` plus one sentence that **`planner`** will create the `.plan.md` from this Ad-Hoc PRD and the developer should paste or link that path here when it exists (do **not** invent a plan path).
    - **`## 1–3`** sections filled from handoff details; `_TBD_` where unavoidable + say what is missing.
 5. **Present for approval** — Recap the new file (workspace / `file://` link, one-line summary of §§1–3). Use **AskQuestion**, **`MC_PHASED_RESPONSE_V1`**, or **`MC_ASKQUESTION_V1`** per **`../README.md`** § *Recap, structured choice, act* and **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**. Minimum options:
-   - **Approve PRD** — developer accepts this Ad-Hoc PRD for **`master-plan`** input
+   - **Approve PRD** — developer accepts this Ad-Hoc PRD for **`planner`** input
    - **Revise PRD** — edit the `.ad-hoc-prd.md` on this lane, then return to step 5
    - **More details for option _**
    Do **not** treat the write alone as developer approval. Mention optional **manual move** to **`joint/docs/`** only if **the developer** wants shared visibility.
@@ -132,7 +132,7 @@ Set `continuationOwner` and `continuationStatus`:
 - On developer **Approve PRD**: `continuationOwner: "squad-leader"`, `continuationStatus: "terminal"`, `developerApprovedPrd: true`, `prdRef` populated — Squad Leader may continue to §4.
 - `partial` with `continuationStatus: "active"` when file writing fails or content is too thin to offer approval until clarification.
 
-**Continuation ownership.** When spawned under **`plan and deliver`**, this lane owns the PRD approval gate (steps 5–7), mirroring **`master-plan`** post-draft follow-up. The **Squad Leader** does **not** duplicate approval **AskQuestion** on the leader lane. This skill does not spawn **`master-plan`**. A child result with `developerApprovedPrd: false` is never permission to continue planning.
+**Continuation ownership.** When spawned under **`plan and deliver`**, this lane owns the PRD approval gate (steps 5–7), mirroring **`planner`** post-draft follow-up. The **Squad Leader** does **not** duplicate approval **AskQuestion** on the leader lane. This skill does not spawn **`planner`**. A child result with `developerApprovedPrd: false` is never permission to continue planning.
 
 Ledger expectations:
 
@@ -147,7 +147,7 @@ Error states:
 - File already exists at the generated path → generate a different 8-hex suffix once; if still blocked, return `failure`.
 - Write failure → `status: "failure"` or `partial` if recoverable, with `errors[].message` and `remainingTasks`.
 
-Stop after each **`AGENT_RESULT_RESPONSE_V1`** for the current turn (see **`../README.md`** § *Terminal stop (normative)*). When `continuationStatus` is `active`, the developer continues on **this** lane (approve, revise, or clarify); re-emit an **updated** terminal line with the same `correlationId` when approval completes or scope changes. Do not emit another `AGENT_RUN_REQUEST_V1` or spawn **`master-plan`** from this skill.
+Stop after each **`AGENT_RESULT_RESPONSE_V1`** for the current turn (see **`../README.md`** § *Terminal stop (normative)*). When `continuationStatus` is `active`, the developer continues on **this** lane (approve, revise, or clarify); re-emit an **updated** terminal line with the same `correlationId` when approval completes or scope changes. Do not emit another `AGENT_RUN_REQUEST_V1` or spawn **`planner`** from this skill.
 
 ## Completion (inline)
 
@@ -162,7 +162,7 @@ Use this shape for every new **`.ad-hoc-prd.md`** file.
 ```markdown
 # <Title>
 
-**Master Plan:** _TBD — run **`master-plan`** using this Ad-Hoc PRD as input; replace this line with a link to the resulting `.plan.md` when it exists._
+**Master Plan:** _TBD — run **`planner`** using this Ad-Hoc PRD as input; replace this line with a link to the resulting `.plan.md` when it exists._
 
 ## 1. Problem statement
 
@@ -179,5 +179,5 @@ Use this shape for every new **`.ad-hoc-prd.md`** file.
 
 ## Out of scope
 
-- Does **not** create or edit **`.plan.md`** files or sidecars (use **`new-plan`** / **`master-plan`** downstream).
-- Does **not** auto-run or spawn **`master-plan`**. The Squad Leader uses `outputs.prdRef` to continue the protocol.
+- Does **not** create or edit **`.plan.md`** files or sidecars (use **`new-plan`** / **`planner`** downstream).
+- Does **not** auto-run or spawn **`planner`**. The Squad Leader uses `outputs.prdRef` to continue the protocol.

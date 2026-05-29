@@ -35,9 +35,9 @@ missions:
       - missions/plan-and-deliver/skills/create-pr/SKILL.md
       - missions/plan-and-deliver/skills/delivery-phases/SKILL.md
       - missions/plan-and-deliver/skills/deploy-walk/SKILL.md
-      - missions/plan-and-deliver/skills/master-plan/SKILL.md
+      - missions/plan-and-deliver/skills/planner/SKILL.md
       - missions/plan-and-deliver/skills/new-plan/SKILL.md
-      - missions/plan-and-deliver/skills/phase-plan/SKILL.md
+      - missions/plan-and-deliver/skills/phase-planner/SKILL.md
       - missions/plan-and-deliver/skills/plan-reconcile/SKILL.md
       - missions/plan-and-deliver/skills/pr-breakdown/SKILL.md
       - missions/plan-and-deliver/skills/pr-plan/SKILL.md

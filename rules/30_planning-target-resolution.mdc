@@ -1,10 +1,10 @@
 ---
 description: >-
   How to resolve the target `.plan.md` when running plan-and-deliver protocol branches
-  (new-plan, phase-plan, pr-plan, delivery-phases, pr-breakdown, plan-reconcile). Resolution
+  (new-plan, phase-planner, pr-plan, delivery-phases, pr-breakdown, plan-reconcile). Resolution
   is from session and chat context — not from IDE focused-file list. Covers resolution order,
   snapshot emission, and "Where we are now in the plan tree" table format for planning moves
-  (§ *Sedea input channel*; § *Planning vs ship cadence*). **`master-plan`** handoff uses the same contract (Step 7 — AskQuestion + AGENT_RUN_REQUEST_V1).
+  (§ *Sedea input channel*; § *Planning vs ship cadence*). **`planner`** handoff uses the same contract (Step 7 — AskQuestion + AGENT_RUN_REQUEST_V1).
 alwaysApply: true
 ---
 
@@ -14,11 +14,11 @@ Planning protocol branches act on a specific `.plan.md` under the **`.sedea/oper
 
 ## Sedea input channel (planning picks)
 
-When a turn **requires a user reply** before you continue (pick a planning branch, confirm a target plan, choose list index **N** for **`new-plan`**), collect that pick through **AskQuestion** or **`MC_ASKQUESTION_V1`** per [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](../../sedea/rules/2_ask-question-instructions.mdc). **Supersedes** the former *AskQuestion or numbered bullet list* option in this rule. Mission Control **AskQuestion** also exposes **free-form text** on the modal — use it for extra instruction alongside an `option` pick; do not reopen choices in prose chat.
+When a turn **requires a user reply** before you continue (pick a planning branch, confirm a target plan, choose list index **N** for **`new-plan`**), collect that pick through **AskQuestion** or **`MC_ASKQUESTION_V1`** per [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc). **Supersedes** the former *AskQuestion or numbered bullet list* option in this rule. Mission Control **AskQuestion** also exposes **free-form text** on the modal — use it for extra instruction alongside an `option` pick; do not reopen choices in prose chat.
 
 **Snapshot table (information-only).** The *Next viable moves* column may use **numbered rows** so the developer can read the plan tree in one glance. Those numbers are **reference labels** for the snapshot only — when a pick is required, offer the same moves as **AskQuestion** `options` (§ above).
 
-**Recap and structured choice.** When the snapshot is long, follow [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](../../sedea/rules/2_ask-question-instructions.mdc) § **Context and structured choice** and **`../missions/plan-and-deliver/skills/README.md`** § *Recap, structured choice, act*: **preferred** — **AskQuestion tool** or **`MC_PHASED_RESPONSE_V1`** (`display.markdown` = snapshot; `askQuestion` = one `option` per move, brief `label`, branch + target in `prompt` when needed). **Legacy split** — recap-only message, then structured choice (**AskQuestion** or sentinel-only **`MC_ASKQUESTION_V1`**) in the **next** assistant message only when 1–2 are unavailable. Do **not** stop after recap without opening the modal in the same response (phased/tool) or the immediate follow-up (split).
+**Recap and structured choice.** When the snapshot is long, follow [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc) § **Context and structured choice** and **`../missions/plan-and-deliver/skills/README.md`** § *Recap, structured choice, act*: **preferred** — **AskQuestion tool** or **`MC_PHASED_RESPONSE_V1`** (`display.markdown` = snapshot; `askQuestion` = one `option` per move, brief `label`, branch + target in `prompt` when needed). **Legacy split** — recap-only message, then structured choice (**AskQuestion** or sentinel-only **`MC_ASKQUESTION_V1`**) in the **next** assistant message only when 1–2 are unavailable. Do **not** stop after recap without opening the modal in the same response (phased/tool) or the immediate follow-up (split).
 
 ## At a glance — planning vs ship (read first)
 
@@ -31,7 +31,7 @@ When a turn **requires a user reply** before you continue (pick a planning branc
 | **`coding-session`** after inline **`pr-review`** | PR comment triage finished on the coding lane | Nudge **Ship recap** on the leader dispatch (`shipPhase: pr-review`) | Assume host sync updated §8 — **`pr-review` is not host-synced** (§ *§8 ship ledger and inline `pr-review`* below) |
 | Squad Leader **`plan and deliver`** dispatch | Parsed **Ship recap** or host-sync message | Refresh §8 rows; then resolution gates | Close dispatch **`resolved`** while rows `open`/`blocked` without recap — **`plan.mdc`** §8 *§8 troubleshooting* |
 
-**Lane rule:** Planning skills (**`pr-plan`**, **`master-plan`**, decomposition tree) ≠ ship skills (**`coding-session`** → **`pre-pr-review`** → **`create-pr`** → …). **`pr-plan`** may spawn **`coding-session`** on a child lane (§5d); worktrees and implementation stay on the child.
+**Lane rule:** Planning skills (**`pr-plan`**, **`planner`**, decomposition tree) ≠ ship skills (**`coding-session`** → **`pre-pr-review`** → **`create-pr`** → …). **`pr-plan`** may spawn **`coding-session`** on a child lane (§5d); worktrees and implementation stay on the child.
 
 ## §8 ship ledger and inline `pr-review`
 
@@ -100,7 +100,7 @@ Squad Leader §8 ship rows advance from **`coding-session`** outputs or an expli
 3. When a pick is required before continuing, use **AskQuestion** (§ *Sedea input channel*) with one option per **protocol branch + target plan** (brief `label`; put branch and path in `prompt` when needed).
 4. Agent resolves the target from the **AskQuestion** response (selected `option` plus any modal free-form text per § *Resolution order* bullet 2), then invokes the relevant skill with the target pre-resolved.
 
-Mid-flow, when chat already unambiguously names the current lane (e.g. **`new-plan`** indexed-child just wrote `3_xxx_<hex>.plan.md` and the next step is clearly **phase-plan** on that file), the agent may continue without a new snapshot — see § *Resolution order* bullet 4.
+Mid-flow, when chat already unambiguously names the current lane (e.g. **`new-plan`** indexed-child just wrote `3_xxx_<hex>.plan.md` and the next step is clearly **phase-planner** on that file), the agent may continue without a new snapshot — see § *Resolution order* bullet 4.
 
 ## Resolution order
 
@@ -109,7 +109,7 @@ Highest confidence first. Stop at the first match.
 1. **Explicit in session or message.** Slug, relative path under `plans/`, or absolute `.sedea/operations/.../*.plan.md` — use verbatim.
 2. **AskQuestion response.** The developer submitted **AskQuestion** (selected `option` `id` / `label` from the most recent planning pick, plus any **free-form text** Mission Control returns with that submission). Bind the target from that `option`; treat modal free-form text as scope or path hints when unambiguous.
 3. **Snapshot pinpoint.** The latest snapshot lists exactly one option matching the branch the user chose — use that target.
-4. **Mid-flow continuation.** Chat names the current lane unambiguously (e.g. child file just written; next skill is **phase-plan** on that path). Valid while snapshot freshness holds (§ *Snapshot freshness*).
+4. **Mid-flow continuation.** Chat names the current lane unambiguously (e.g. child file just written; next skill is **phase-planner** on that path). Valid while snapshot freshness holds (§ *Snapshot freshness*).
 5. **Stop and emit fresh snapshot.** If still ambiguous, emit a new snapshot (information-only) and ask again via **AskQuestion** (§ *Sedea input channel*).
 
 Do **not** use `<open_and_recently_viewed_files>` as the primary resolver for planning targets.
@@ -133,11 +133,33 @@ Markdown table for each in-flight plan (typically one Master Plan subtree):
 | **Plan** | Slug + display name. |
 | **Stage** | Mode #1 Master Plan, #2 Phase, #3 PR plan, roadmap topic. |
 | **Status** | Drafted sections, `_TBD_`, PR linked, archived. |
-| **Next viable moves** | **Numbered** options naming **protocol branch + target** (e.g. *1. **new-plan** — expand list item **2** under `<parent-slug>`*; *2. **phase-plan** — populate child `<path>`*). |
+| **Next viable moves** | **Numbered** options naming **protocol branch + target** (e.g. *1. **new-plan** — expand list item **2** under `<parent-slug>`*; *2. **phase-planner** — populate child `<path>`*). Mark ineligible rows in the snapshot (e.g. *blocked — PR 1 ship incomplete*) but **do not** offer them as **`AskQuestion`** `options` — see § *Depth-first expansion eligibility*. |
 
 When a pick is required, offer the same moves as **`AskQuestion`** `options` (§ *Sedea input channel*). Session and plan-path contracts for planning live in this center rule, **`planning-target-resolution`**, center skills, and **`.sedea/centers/research-and-development/docs/development-process.md`** — hosting-repo **`.cursor/rules/`** cover codebase architecture and navigation only.
 
-**Snapshot-scoped prompts** (e.g. *Option 2: **phase-plan** on `<path>`*) belong **only** inside that snapshot.
+**Snapshot-scoped prompts** (e.g. *Option 2: **phase-planner** on `<path>`*) belong **only** inside that snapshot.
+
+## Depth-first expansion eligibility
+
+Normative contract: **development-process.md** § *Depth-first plan-tree traversal*. Agents resolve **ship-complete** from parsed **Ship recap** on the **`plan and deliver`** leader dispatch, host-sync §8 messages, or forwarded child `outputs` — not from planning-handoff alone.
+
+### Phase rows (`Delivery phases` parent)
+
+1. List every numbered phase row in the snapshot (all indices visible).
+2. **Eligible for `new-plan` expand:** the lowest index **N** with `_TBD_` **`Plan:`** where **N = 1** or phase **N−1** is ship-complete (all PR plans under phase **N−1** closed on §8).
+3. **AskQuestion** `options` for expand: at most one phase index per turn (`expand-next-eligible`).
+
+### PR rows (`### PR list` parent)
+
+1. Parse **`### Sequencing`** staged bullets — `(sequential)` chains vs `(parallel)` groups; PR numbers refer to **`### PR list`** indices.
+2. **Eligible indices:** lowest pending index in the current stage when the prior stage is fully ship-complete; within a **sequential** stage only the lowest pending **N** whose immediate predecessor in the chain is ship-complete; within a **parallel** stage all pending indices in that stage together once the prior stage is done.
+3. **AskQuestion** `options` may include multiple PR expands when a parallel stage opens.
+
+### Ship-complete definition
+
+Per PR plan path: §8 row `shipPhase: done` and `rowStatus: closed`, or explicit `deferred` / `abandoned` on the leader dispatch. Per phase row: every descendant PR plan (including hoisted PRs on an ancestor list) meets that bar.
+
+**Spawn-chain alternative:** When **`coding-session`** is a spawned child, the parent planning lane may treat **`outputs.prShipComplete: true`** on a delivered **`AGENT_RESULT_RESPONSE_V1`** as ship-complete for depth-first eligibility — without requiring a separate Squad Leader **Ship recap** on the same turn. See **`missions/plan-and-deliver/skills/README.md`** § *Upstream ship-complete notification*.
 
 ### PR-plan completeness before coding-session
 
@@ -182,6 +204,6 @@ Emit a fresh snapshot when:
 
 ## Skills consume the resolved target
 
-Each planning skill (**new-plan**, **phase-plan**, **pr-plan**, **delivery-phases**, **pr-breakdown**) receives the target path as **pre-resolved structured input**. When loading a skill, the agent states the target up front (one line).
+Each planning skill (**new-plan**, **phase-planner**, **pr-plan**, **delivery-phases**, **pr-breakdown**) receives the target path as **pre-resolved structured input**. When loading a skill, the agent states the target up front (one line).
 
 Skills still run their own **template / stage verification** on disk. If a skill loads without a resolved target, **stop** and resolve via this rule before proceeding.

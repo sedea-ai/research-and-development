@@ -1,11 +1,17 @@
 ---
 description: >-
-  Maintain .cursor/rules/*.mdc in the hosting repo — domain navigation
-  and codebase conventions for agents. Not Sedea center governance under .sedea/centers/.
+  Routing only: when to edit hosting-repo .cursor/rules vs R&D center rules.
+  Loaded as an R&D always-apply rule; procedures target .cursor/rules on the hosting repo.
 alwaysApply: true
 ---
 
 # Maintain repo cursor rules (`.cursor/rules/`)
+
+## How this rule is loaded
+
+This file lives under **`.sedea/centers/research-and-development/rules/`** and is **`alwaysApply: true`** on every **research-and-development** dispatch so agents see the routing table below. It does **not** author Sedea center governance under **`.sedea/centers/<centerSlug>/`**.
+
+**Apply the procedures in this document only** when the task changes **hosting-repo** navigation or codebase conventions in **`.cursor/rules/*.mdc`** on the repo that ships code (`sedea-ai/app` or a hosting worktree). For R&D delivery process, edit **`.sedea/centers/research-and-development/rules/*.mdc`** and mission assets via **`improve center rules`** / **`improve mission`** — not via this file’s edit loop alone.
 
 ## Scope
 

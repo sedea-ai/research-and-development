@@ -6,7 +6,7 @@ description: >-
   development-process § 2 + § 6/§ 5 contents rule, gates Delivery phases vs PR
   breakdown when the dual-title body is _TBD_, then drafts the parent's dual-title
   section as Delivery phases with a numbered child list. Child stubs and Plan:
-  links follow **new-plan** indexed spawn; bodies follow **phase-plan**. Target
+  links follow **new-plan** indexed handoff (inline under **planner**; spawned when standalone); bodies follow **phase-planner**. Target
   resolved per planning-target-resolution. Use under mission dispatch, **delivery-phases**
   protocol branch, or natural language (decompose phases, draft delivery phases).
 inputs:
@@ -20,7 +20,7 @@ inputs:
     required: true
   parentAgentRole:
     type: string
-    description: Upstream owner that spawned this skill, usually master-plan-agent.
+    description: Upstream owner that invoked this skill inline, usually master-plan-agent or phase-planner-agent.
     required: false
   ledgerParent:
     type: string
@@ -51,7 +51,7 @@ warmUpRules:
 
 # Delivery phases — mode #2 decomposition
 
-This skill drives **mode #2** (Delivery phases) under Sedea's New Feature Development Process. **Input:** a target **Master Plan** or **Phase plan** whose dual-title section (`Delivery phases | PR breakdown`) is still undecided or is already committed to **`Delivery phases`**. **Output:** that section drafted as a numbered list of child phases; each row is later expanded into its own phase plan via the **`new-plan`** protocol branch (indexed child), then the **`phase-plan`** protocol branch on the new child.
+This skill drives **mode #2** (Delivery phases) under Sedea's New Feature Development Process. **Input:** a target **Master Plan** or **Phase plan** whose dual-title section (`Delivery phases | PR breakdown`) is still undecided or is already committed to **`Delivery phases`**. **Output:** that section drafted as a numbered list of child phases; each row is expanded **depth-first** via **`new-plan`** (indexed — **inline** when this skill runs under **`planner`**) after ship-complete gates, then **`phase-planner`** (spawned) on the child stub.
 
 The procedure below is a hard contract — do **not** skip steps, re-order them, or start drafting before stage is verified.
 
@@ -59,9 +59,29 @@ The procedure below is a hard contract — do **not** skip steps, re-order them,
 
 - Mission dispatch or explicit request to run the **`delivery-phases`** protocol branch.
 - Natural language: decompose phases, draft delivery phases, phase decomposition.
-- After **`master-plan`** when the developer has already chosen **`Delivery phases`** over **`PR breakdown`** for § 6 — **`master-plan`** spawns this skill; this skill drafts § 6 and owns indexed phase-child spawning for that branch.
+- After **`planner`** when the developer has already chosen **`Delivery phases`** over **`PR breakdown`** for § 6 — **`planner`** runs this skill **inline** on the same lane; this skill drafts § 6 and owns indexed phase-child creation (**`new-plan`** inline on that lane).
+- After **`phase-planner`** when route is **`delivery-phases`** — **`phase-planner`** runs this skill **inline** on the phase-planner lane; same **`new-plan`** inline handoff per row.
 
 The **developer** picks the next move per **30_planning-target-resolution** § *Sedea input channel*.
+
+### Inline handoff — **delivery-phases** → **`new-plan`** (step 6 act-after-select)
+
+When **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`** (this skill inline under **`planner`** or **`phase-planner`**), run **`new-plan`** **inline on this lane** for **eligible** row index(es) only — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`new-plan`**. **Depth-first gate:** expand **at most one** phase row per act-after-select pass — the lowest index **N** whose **`Plan:`** is still `_TBD_` and whose prior phase **N−1** is **ship-complete** per **development-process.md** § *Depth-first plan-tree traversal* and **30_planning-target-resolution** § *Depth-first expansion eligibility*. Load `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`, construct inline context per eligible row from the table below, follow that skill’s steps, and merge each **`## Completion (inline)`** into this skill’s ledger (`childRows`, `spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Inline **`new-plan`** may still spawn **`phase-planner`** per its contract.
+
+| Inline context field | Value (per row **N**) |
+|----------------------|------------------------|
+| `mode` | `"indexed-child"` |
+| `parentPlanPath` | Absolute path to this skill’s `targetPlanPath` |
+| `parentPlanSlug` | This skill’s `targetPlanSlug` |
+| `index` | Row number **N** (single eligible index per expand pass for phases) |
+| `childKind` | `"phase-planner"` |
+| `requestedPopulatorSkill` | `"phase-planner"` |
+| `ledgerParent` | `ledgerParent` from this skill’s inputs when present |
+| `upstreamSkill` | `"delivery-phases"` |
+| `parentAgentRole` | `"delivery-phases-agent"` |
+| `decompositionKind` | `"delivery-phases"` |
+
+**Standalone spawned** path: emit **`AGENT_RUN_REQUEST_V1`** per row instead (see step 6 act-after-select).
 
 ## Step 1 — Identify the target plan and verify stage
 
@@ -106,7 +126,7 @@ Acknowledge the state in one line.
 
 ## Step 4 — Decision gate (when section is `_TBD_`)
 
-When the skill was spawned with `routeLock: "delivery-phases"` (or with `parentAgentRole: "master-plan-agent"` after the developer chose **Delivery phases**), the decision is already made upstream. Acknowledge *"Route locked: Delivery phases."* and skip directly to Step 5. Do not ask the developer to choose `Delivery phases` vs `PR breakdown` again.
+When the skill was spawned with `routeLock: "delivery-phases"` (or with `parentAgentRole: "master-plan-agent"` or `"phase-planner-agent"` after the developer chose **Delivery phases**), the decision is already made upstream. Acknowledge *"Route locked: Delivery phases."* and skip directly to Step 5. Do not ask the developer to choose `Delivery phases` vs `PR breakdown` again.
 
 When no upstream route lock exists, use **AskQuestion** or **`MC_ASKQUESTION_V1`** to ask:
 
@@ -192,15 +212,16 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 
 | Option id (illustrative) | Label (brief) |
 | --- | --- |
-| `approve-spawn` | Approve phase list and spawn children |
+| `approve-list` | Approve phase list — no spawn yet |
+| `expand-next-eligible` | Expand next eligible phase row |
 | `revise` | Revise phase list first |
 | `defer` | Defer child plan creation |
 | `abandon` | Abandon this branch |
 | `more-details` | More details for option _ |
 
-**Spawned under `master-plan`:** Structured-choice approval is mandatory before indexed child spawns. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** in the structured-choice message.
+**Inline under `planner` or `phase-planner`:** Structured-choice approval is mandatory before indexed **`new-plan`** handoff. Do **not** emit **`AGENT_RESULT_RESPONSE_V1`** for this skill when **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`** — report **`## Completion (inline)`** to the invoker instead. Run **`new-plan`** **inline** on this lane (no child lanes for **`new-plan`**); **`phase-planner`** child lanes may still open from inline **`new-plan`**.
 
-**Standalone:** After structured-choice approval, **stop** and wait for the developer’s next message.
+**Standalone (spawned):** After structured-choice approval, emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` when spawning **`new-plan`** child lanes — **not** in the structured-choice message. **Stop** and wait for **`new-plan`** child results per step **6b**.
 
 ### Act after developer selects
 
@@ -208,14 +229,15 @@ In a **new** assistant turn after the developer selects an option in the approva
 
 | Choice | Action |
 | --- | --- |
-| **Approve phase list and spawn children** | Emit one **`AGENT_RUN_REQUEST_V1`** per phase row **1…K** for `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`. Record each spawned child in the ledger. Announce waiting for **K** results. Then emit **`AGENT_RESULT_RESPONSE_V1`** with `continuationStatus: "active"` — **not** in the recap-only pass or structured-choice message. |
+| **Approve phase list — no spawn yet** (`approve-list`) | Record `developerApprovalStatus: "list-approved"`; set each child row to `listed` with `_TBD_` **`Plan:`** links unchanged. Do **not** run **`new-plan`**. Offer **`expand-next-eligible`** on a later turn when the developer is ready (phase **1** is eligible immediately after list approval). |
+| **Expand next eligible phase row** (`expand-next-eligible`) | Resolve the lowest index **N** with pending **`Plan:`** whose prior phase is **ship-complete** (index **1** has no prior). **Inline:** run **`new-plan`** **once** for that **N** per [Inline handoff](#inline-handoff--delivery-phases--new-plan-step-6-act-after-select); merge **`## Completion (inline)`**; record **`phase-planner`** spawns in `activeLanes`. **Standalone spawned:** emit one **`AGENT_RUN_REQUEST_V1`** for that index only. If no row is eligible, stop with a one-line reason (prior phase ship incomplete) and surface §8 **Ship recap** needs — do not spawn. |
 | **Revise phase list first** | Apply one focused `StrReplace` on the list, then repeat recap → structured choice. |
 | **Defer / abandon** | Emit terminal result per labels; do not spawn. |
 | **More details for option _** | Elaborate (information-only), then run structured choice again. |
 
-When running as a spawned downstream agent under `master-plan`, each **`AGENT_RUN_REQUEST_V1`** in the act-after-select message must include `mode: "indexed-child"`, `parentPlanPath`, `parentPlanSlug`, `index`, `childKind: "phase-plan"`, `requestedPopulatorSkill: "phase-plan"`, `ledgerParent`, `upstreamSkill: "delivery-phases"`, and `decompositionKind: "delivery-phases"`. Record each spawned child in the ledger; announce waiting for **K** results.
+When running **standalone spawned** (not inline under **`planner`**), each **`AGENT_RUN_REQUEST_V1`** in the expand pass must include the indexed-child inputs listed above for **one** eligible index. Record the spawned child in the ledger; announce waiting for that result on the active lane.
 
-If **K = 0**, treat that as a drafting failure: do not open structured-choice spawn paths; return failure or partial.
+If **K = 0**, treat that as a drafting failure: do not open structured-choice handoff paths; return failure or partial.
 
 For standalone/non-spawned use, re-offer recap → structured choice after iteration.
 
@@ -223,30 +245,42 @@ For standalone/non-spawned use, re-offer recap → structured choice after itera
 
 When the developer asks to revise the **`Delivery phases`** list, re-read that section, apply edits via `StrReplace`, echo the result, and return to the step 6 menu pattern.
 
-When the developer chooses to spawn or populate a child in standalone use, emit child-spawn requests for **`new-plan`** / **`phase-plan`** instead of impersonating those skills’ full procedures in the same turn. Stop after spawning if the result is needed for the next step.
+When the developer chooses to hand off or populate a child in standalone use, run **`new-plan`** inline or emit child-spawn requests for **`new-plan`** / **`phase-planner`** instead of impersonating those skills’ full procedures in the same turn. Stop after handoff if the result is needed for the next step.
 
 ## Step 6b — Aggregate indexed child results
 
-When Mission Control delivers a child result from a spawned **`new-plan`** lane:
+**Inline `new-plan` under `planner` or `phase-planner`:** After each inline **`new-plan`** row completes, merge its **`## Completion (inline)`** into `childRows` and `spawnedPlans`. If inline **`new-plan`** reports an active **`phase-planner`** lane, keep the row open and add it to `activeLanes`. When Mission Control delivers a **`phase-planner`** child result, match by correlation id, then `outputs.parentPlanSlug` + `outputs.parentIndex`.
+
+**Standalone spawned `new-plan`:** When Mission Control delivers a child result from a spawned **`new-plan`** lane:
 
 1. Match it to the ledger entry by correlation id first, then by `outputs.parentPlanSlug` + `outputs.parentIndex`.
 2. If the result reports a created child plan (`outputs.planPath` / `outputs.planSlug`), add it to `spawnedPlans` and mark that row `created`.
-3. If the result reports an active populator lane (`phase-plan`), keep the row open and add the populator lane to `activeLanes`.
+3. If the result reports an active **`phase-planner`** lane (spawned from inline or standalone **`new-plan`**), keep the row open and add the lane to `activeLanes`.
 4. If the result reports terminal completion with no remaining tasks, close that row as `completed`.
 5. If the result is `partial`, keep the row open and copy its `remainingTasks`.
 6. If the result is `failure`, `aborted`, or `abandoned`, mark the row blocked and ask the developer whether to retry that row, defer it, accept partial resolution, or abandon the branch.
 
-Only return `continuationStatus: "terminal"` when every row is explicitly `completed`, `deferred`, `abandoned`, or `out_of_scope`, and no active populator lanes remain. Silence or a missing row is not completion.
+Only return `continuationStatus: "terminal"` when every row is explicitly `completed`, `deferred`, `abandoned`, or `out_of_scope`, and no active **`phase-planner`** lanes remain for those rows. Silence or a missing row is not completion.
+
+**Ship-complete merge (spawn chain):** When a delivered **`phase-planner`** or inline **`new-plan`** result carries **`outputs.phaseShipComplete: true`** with **`parentIndex`** matching a **`Delivery phases`** row:
+
+1. Set **`childRows[N].status: ship-complete`**.
+2. Compute **`expandNextEligibleIndex`** — lowest index with pending **`Plan:`** whose prior phase is ship-complete (index **1** after list approval).
+3. Set **`outputs.expandNextEligibleIndex`**; keep **`continuationStatus: active`** when a next phase may expand.
+4. **Re-emit updated terminal** (standalone) or **`## Completion (inline)`** (under **`planner`**) with merged **`outputs`** (same **`correlationId`**) so **`planner`** Step **7b** can offer **`expand-next-eligible`** without waiting for Squad Leader **Ship recap**.
+5. On the next structured-choice turn, include **`expand-next-eligible`** when **`expandNextEligibleIndex`** is set.
+
+**Ship-complete vs planning-terminal:** a phase row unlocks the **next** parent index for **`expand-next-eligible`** when **`outputs.phaseShipComplete: true`** arrives on the spawn chain **or** §8 shows all PRs under that phase **`rowStatus: closed`**. Planning-terminal **`phase-planner`** alone does **not** unlock the next phase index.
 
 ## One primary choice per turn — surface observations
 
-Match the discipline in **`master-plan`** and **`phase-plan`**: perform exactly what was chosen; scope stays on the chosen pass. If you notice gaps (diagram vs phase boundary, duplicate wording, phase count vs assessment), list short **numbered observations** in the chat reply (information-only); the developer addresses them on the next turn or folds them into a revise pass. When you need an explicit accept/skip decision on flags, use **AskQuestion** or **`MC_ASKQUESTION_V1`** with one `option` per flag plus **More details for option _**.
+Match the discipline in **`planner`** and **`phase-planner`**: perform exactly what was chosen; scope stays on the chosen pass. If you notice gaps (diagram vs phase boundary, duplicate wording, phase count vs assessment), list short **numbered observations** in the chat reply (information-only); the developer addresses them on the next turn or folds them into a revise pass. When you need an explicit accept/skip decision on flags, use **AskQuestion** or **`MC_ASKQUESTION_V1`** with one `option` per flag plus **More details for option _**.
 
 ## Scope guard
 
 **Owns:** the parent plan’s dual-title **`Delivery phases`** section only (heading + list body for mode #2); decision gate when still `_TBD_`; echo for review.
 
-**Out of scope:** renaming child plans after **`new-plan`** creates them; filling phase bodies inline (**`phase-plan`** owns the body); PR breakdown content (**`pr-breakdown`**); edits outside the dual-title section; extra H2 phase headings in the parent; `git` / commit automation; roadmap topics and PR plans (step 1 stops).
+**Out of scope:** renaming child plans after **`new-plan`** creates them; filling phase bodies inline (**`phase-planner`** owns the body); PR breakdown content (**`pr-breakdown`**); edits outside the dual-title section; extra H2 phase headings in the parent; `git` / commit automation; roadmap topics and PR plans (step 1 stops).
 
 ## Completion (spawned)
 
@@ -259,10 +293,11 @@ Required `outputs` fields:
 - `outputs.targetPlanPath`, `outputs.targetPlanSlug`
 - `outputs.decompositionKind`: `"delivery-phases"`
 - `outputs.childCount`, `outputs.developerApprovalStatus`
-- `outputs.childRows` — `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?}`
+- `outputs.childRows` — `{index, title, status, planPath?, planSlug?, correlationId?, remainingTasks?, phaseShipComplete?}` — use **`status: ship-complete`** when **`phaseShipComplete`** merged for that index
+- `outputs.expandNextEligibleIndex` — one-based phase index eligible for **`expand-next-eligible`** after last ship-complete merge
 - `outputs.spawnedPlans`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
 - `outputs.continuationOwner`: `"delivery-phases-agent"`
-- `outputs.continuationStatus` — `active` while approval, child creation, or population remains; `terminal` when all child rows are `completed`, `deferred`, `abandoned`, or `out_of_scope` and no active populator lanes remain
+- `outputs.continuationStatus` — `active` while approval, inline **`new-plan`**, **`phase-planner`** child lanes, or population remains; `terminal` when all child rows are `completed`, `deferred`, `abandoned`, or `out_of_scope` and no active **`phase-planner`** lanes remain
 
 Complete the step 6 handoff block (or announce spawn wait) **before** the terminal line. Stop after the terminal line. Do not emit another `AGENT_RUN_REQUEST_V1` or run the next protocol step in the same turn (see **`../README.md`** § *Terminal stop (normative)*).
 
@@ -270,4 +305,4 @@ Complete the step 6 handoff block (or announce spawn wait) **before** the termin
 
 Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1`, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
 
-Spawned from the **Master Plan agent** or **plan and deliver** decomposition paths in normal flow. If run inline, use the same `outputs` semantics as **`## Completion (spawned)`** in prose only.
+**Primary path:** **`planner`** Step 7 or **`phase-planner`** Step 5 runs this skill **inline** (`parentAgentRole: "master-plan-agent"` or `"phase-planner-agent"`). Runs **`new-plan`** **inline** on the same lane. Use the same `outputs` semantics as **`## Completion (spawned)`** in prose only — the invoker lane merges ledger fields. **Standalone** mission dispatch may still spawn this skill on a child lane; then use **`## Completion (spawned)`** and spawn **`new-plan`** child lanes per step 6.
