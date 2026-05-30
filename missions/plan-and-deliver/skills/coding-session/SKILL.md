@@ -817,7 +817,7 @@ Run on the **developer's response turn** — **not** in the same assistant turn 
 
 Run on this lane **after** `prState: merged` **and before** [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff). Normative entry: [Act after post-create-pr pick](#act-after-post-create-pr-pick) (**`spawn-after-deploy-walk`** or **`check-pr-status`** → merged), or explicit developer message (*pull main*, *remove worktree*, *post-merge cleanup*) when merge is already confirmed.
 
-**Purpose:** Sync **`HOSTING_ROOT`** with **`origin/main`**, detach/remove the session worktree from Mission Control and git, and delete the local feature branch **before** After deploy verification — so deploy-walk runs from an updated primary clone, not a stale worktree with **`main` behind**.
+**Purpose:** Sync **`HOSTING_ROOT`** with **`origin/main`**, detach/remove the session worktree from Mission Control and git, delete the local feature branch when eligible, and rebuild native extensions on **`HOSTING_ROOT`** so the developer can **Developer: Reload Window** before After deploy verification — not from a stale worktree with **`main` behind**.
 
 **Branch delete gate (normative):** delete the local feature branch only when sidecar/**`gh`** reports linked PR(s) **`MERGED`** (`detect-stale-workspaces` **`mergedPr: true`**) **and** **`git ls-remote --heads origin <branch>`** is empty (remote head deleted after merge). Do **not** use **`git merge-base --is-ancestor`** or “safe to delete” local merge heuristics. When PR is merged but the remote branch still exists, **skip branch delete**, report one line, still remove worktree and pull **`main`** when authorized.
 
@@ -848,7 +848,7 @@ Present **`actions`**, **`skippedBranches`** (when branch delete waits on remote
 
 | Option id (illustrative) | Label (brief) |
 |--------------------------|---------------|
-| `cleanup-apply` | Run post-merge cleanup (worktree + pull main + branch when eligible) |
+| `cleanup-apply` | Run post-merge cleanup (worktree + pull main + rebuild extensions + branch when eligible) |
 | `cleanup-skip` | Skip cleanup — proceed to After deploy walk |
 | `cleanup-dry-run-only` | Dry-run only — no git mutations |
 | `more-details` | More details for option _ |
@@ -865,8 +865,11 @@ node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/p
   --operations-user-id "$OPS_ID" --apply [--slug <slug>]
 ```
 
-3. Merge script JSON into `outputs` (`cleanedWorktrees`, `deletedBranches`, `skippedBranches`, `mainPullStatus`, `postMergeCleanupStatus: success` \| `partial`).
-4. On **next** turn, continue to [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff). Do **not** run inline **`deploy-walk`** (After deploy) in the same assistant turn as cleanup **`--apply`**.
+The script pulls **`origin/main`** on **`HOSTING_ROOT`**, then runs **`./scripts/rebuild-native-extensions.sh`** when that script exists and is executable (same path the cleanup script invokes on **`--apply`**).
+
+3. Merge script JSON into `outputs` (`cleanedWorktrees`, `deletedBranches`, `skippedBranches`, `mainPullStatus`, `nativeExtensionsRebuildStatus`, `postMergeCleanupStatus: success` \| `partial`).
+4. When **`nativeExtensionsRebuildStatus`** is **`success`**, tell the developer in one line: native extensions rebuilt on **`HOSTING_ROOT`** — use **Developer: Reload Window** before After deploy verification. When rebuild **`failed`**, report stderr and keep `postMergeCleanupStatus: partial`; offer retry or **`cleanup-skip`** before After deploy.
+5. On **next** turn, continue to [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff). Do **not** run inline **`deploy-walk`** (After deploy) in the same assistant turn as cleanup **`--apply`**.
 
 **Spawned lane — post-merge cleanup sentinel (binding):** When the **AskQuestion tool** is unavailable, emit **`MC_PHASED_RESPONSE_V1`** with the same option ids (`modalTitle`: *Coding session — post-merge cleanup*).
 
@@ -982,6 +985,7 @@ When this skill runs as a spawned child, end with a child result containing at l
 - `outputs.deployPlanStepsChecked` — step numbers flipped to `[x]` in §7 during this turn (when applicable)
 - `outputs.mainPullStatus` — from [Post-merge workspace cleanup](#post-merge-workspace-cleanup) or inline **`plan-reconcile`** §5 when applicable
 - `outputs.postMergeCleanupStatus` — `success` \| `partial` \| `skipped` \| `skipped_no_stale` when post-merge cleanup ran or was bypassed
+- `outputs.nativeExtensionsRebuildStatus` — `success` \| `failed` \| `skipped_not_present` \| `dry-run` from post-merge cleanup (after **`mainPullStatus`** success)
 - `outputs.skippedBranches` — branches not deleted (PR merged but remote head still exists)
 - `outputs.archivedSlugs` — when inline **`plan-reconcile`** archived the target
 - `outputs.prShipComplete` — `true` only when **`plan-reconcile`** finished with target archived, PR **merged**, and **`mainPullStatus`** is **`success`** or **`skipped`**
@@ -1021,7 +1025,7 @@ This skill usually runs **off** the **plan and deliver** leader lane. Mission Co
 | Spawned lane implementing or review loop in progress | `implementing` | `targetPlanPath`, `shipPhase`, `rowStatus`, `implementationMode: spawned-lane`, `prePrReviewRecommendation`, `prReviewStatus` |
 | Pre-PR **go** | `pre-pr-review` | `targetPlanPath`, `shipPhase`, `rowStatus`, `prePrReviewRecommendation: go` |
 | PR opened | `pr-open` | `targetPlanPath`, `shipPhase`, `rowStatus`, `prUrl`, `prNumber` |
-| Post-merge cleanup | `post-merge-cleanup` | `targetPlanPath`, `shipPhase`, `rowStatus`, `mainPullStatus`, `cleanedWorktrees`, `postMergeCleanupStatus` |
+| Post-merge cleanup | `post-merge-cleanup` | `targetPlanPath`, `shipPhase`, `rowStatus`, `mainPullStatus`, `nativeExtensionsRebuildStatus`, `cleanedWorktrees`, `postMergeCleanupStatus` |
 | PR comment triage complete | `pr-review` | `targetPlanPath`, `shipPhase`, `rowStatus`, `prReviewStatus`, `githubReconciliationStatus` |
 | Deploy walk finished | `deploy-walk` | `targetPlanPath`, `shipPhase`, `rowStatus`, `deployStatus`, `deployTodoStatus` |
 | Reconcile / archive done | `done` or `reconcile` | `targetPlanPath`, `shipPhase`, `rowStatus`, `remainingTasks` (empty), `prShipComplete` when archived + main pulled |

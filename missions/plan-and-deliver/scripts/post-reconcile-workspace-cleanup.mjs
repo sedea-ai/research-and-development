@@ -220,10 +220,55 @@ async function syncHostingDefaultBranch(hostingRoot, defaultBranch, dryRun) {
   return { ok: true, actions, pullStatus: pull.stdout || 'ok' };
 }
 
+async function runNativeExtensionsRebuild(hostingRoot, dryRun) {
+  const scriptPath = path.join(hostingRoot, 'scripts', 'rebuild-native-extensions.sh');
+  const action = { action: 'rebuild-native-extensions', cwd: hostingRoot, script: scriptPath };
+  try {
+    await fs.access(scriptPath, fsSync.constants.X_OK);
+  } catch {
+    return { ok: true, skipped: true, status: 'skipped_not_present', actions: [] };
+  }
+  if (dryRun) {
+    return { ok: true, status: 'dry-run', actions: [{ ...action, dryRun: true }] };
+  }
+  return new Promise((resolve) => {
+    const child = spawn(scriptPath, [], { cwd: hostingRoot, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d.toString(); });
+    child.stderr.on('data', (d) => { stderr += d.toString(); });
+    child.on('error', (err) => {
+      resolve({
+        ok: false,
+        status: 'failed',
+        error: err.message,
+        actions: [action],
+      });
+    });
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({
+          ok: true,
+          status: 'success',
+          actions: [{ ...action, stdout: stdout.trim() }],
+        });
+        return;
+      }
+      resolve({
+        ok: false,
+        status: 'failed',
+        error: stderr.trim() || stdout.trim() || `exit ${code}`,
+        actions: [action],
+      });
+    });
+  });
+}
+
 const USAGE = `Usage: post-reconcile-workspace-cleanup [--operations-user-id <id>] [--dry-run | --apply] [--slug <slug>] [--default-branch <name>]
 
   --dry-run   Print planned git actions (default). Does not mutate git or sidecars.
-  --apply     Run git worktree remove, branch delete (PR merged + remote branch gone), hosting pull, prune-sessions.
+  --apply     Run git worktree remove, branch delete (PR merged + remote branch gone), hosting pull,
+              rebuild-native-extensions.sh (when present), prune-sessions.
               Agent must call sedea_remove_worktree_folder for each worktreePath before --apply.
 
   --default-branch <name>  Integration branch (default: main).
@@ -335,6 +380,18 @@ async function main() {
   report.mainPullStatus = sync.pullStatus || sync.error || null;
   if (!sync.ok && !dryRun) {
     report.errors.push({ hostingRoot, error: sync.error });
+  }
+
+  if (sync.ok) {
+    const rebuild = await runNativeExtensionsRebuild(hostingRoot, dryRun);
+    report.nativeExtensionsRebuildStatus = rebuild.status;
+    if (rebuild.actions?.length) report.actions.push(...rebuild.actions);
+    if (!rebuild.ok && !dryRun) {
+      report.errors.push({
+        hostingRoot,
+        error: rebuild.error || 'rebuild-native-extensions failed',
+      });
+    }
   }
 
   if (!dryRun) {
