@@ -54,8 +54,8 @@ Mission Control delivery for skills that mix long plan output with structured us
 
 | Skill | Recap | Structured choice | Act |
 |-------|-------|-------------------|-----|
-| **`pr-breakdown`**, **`delivery-phases`** | §5d | §6 (`approve-list` / `expand-eligible`) | §6 act-after-select (depth-first) |
-| **`pr-plan`** | §5c recap | §5c modal | §5d spawn |
+| **`pr-breakdown`**, **`delivery-phases`** | §5d | §6 (`approve-list` / `expand-eligible`) | §6 act-after-select (depth-first); **`pr-breakdown`** **`approve-list`** may auto-expand PR **1** inline under **`planner`** |
+| **`pr-plan`** | §5c recap | §5c modal (skipped when `skipPrPlanHandoffModal` auto-chain) | §5d spawn |
 | **`planner`** | §7a | §7b (incl. §7 approve after ship-complete) | §7c |
 | **`phase-planner`** | §4f echo / §5c link | §5b / §5c | §5b spawn / §5d follow-up |
 | **`new-plan`** | stub + parent link | populator gate § indexed handoff | populator spawn |

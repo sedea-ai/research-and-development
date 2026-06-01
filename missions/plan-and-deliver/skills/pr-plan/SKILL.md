@@ -48,6 +48,15 @@ inputs:
     description: Legacy spawn hint only — does not skip §5c handoff or §5d spawn. When true, still run Step 5 through §5c (and §5d when the developer picks Start coding session).
     required: false
     default: true
+  parentRowSingleConcern:
+    type: string
+    description: PR description seed from parent ### PR list item N Single concern sub-bullet; copy verbatim to ## 1. Single concern.
+    required: false
+  skipPrPlanHandoffModal:
+    type: boolean
+    description: When true (pr-breakdown approve-list auto-chain), skip §5c modal after §§1–4; report inline completion with prPlanHandoffSkipped.
+    required: false
+    default: false
 warmUpRules:
   - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
   - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
@@ -252,7 +261,9 @@ After the body first matches the per-PR template shape, run **§ 4a-bis** if `de
 
 ### 4b — § 1 Single concern
 
-One sentence. Default: copy or lightly tighten the parent's **Single concern** sub-bullet for item **N**. Keep concrete, active voice, single purpose (Strategy #6).
+One sentence. When inline context or spawn **`inputs`** include **`parentRowSingleConcern`**, write **`## 1. Single concern`** to that string **verbatim** (trim outer whitespace only — **no** paraphrase, tighten, or rewrite). That field is the parent **`### PR list`** **Single concern** sub-bullet (PR description seed).
+
+Otherwise: copy the parent's **Single concern** sub-bullet for item **N** without paraphrase when possible; only tighten when the source is ambiguous. Keep concrete, active voice, single purpose (Strategy #6).
 
 ### 4c — § 2 Background
 
@@ -338,10 +349,12 @@ However:
 
 **`autoContinue` (frontmatter / spawn `inputs`):** Does **not** authorize skipping Step **5**, §5c, or auto-spawning **`coding-session`**. After §§1–4 are written, **always** run §5a → §5c on this lane (inline under **`new-plan`** or standalone). **`autoContinue: true`** only means readiness may be reported in **`outputs`** — implementation handoff still requires §5c **Start coding session** (or explicit **`defer`**) before §5d.
 
+**Skip §5c on PR-breakdown auto-chain (binding):** When **`skipPrPlanHandoffModal: true`** (inline context from **`new-plan`** after **`pr-breakdown`** **`approve-list`** auto-expand of PR index **1**), after §5a passes run **`## Completion (inline)`** to the invoker with **`implementationHandoffStatus: not-offered`**, **`prPlanHandoffSkipped: true`**, and populated §§1–4 fields — **do not** open §5c. **`planner`** Step **7b** may offer **Start coding session** later via re-entering inline **`pr-plan`** §5c on the same **`targetPlanPath`**.
+
 **Forbidden after §§1–4 (binding — inline under `new-plan` or upstream on planner):**
 
-- Report **`## Completion (inline)`** to the invoker while **`implementationHandoffStatus`** is still **`not-offered`** (§5c not yet shown).
-- Bubble **`readyForImplementation: true`** upstream and return to **`planner`** Step **7b** master-plan menus without offering §5c on **this** lane first.
+- Report **`## Completion (inline)`** to the invoker while **`implementationHandoffStatus`** is still **`not-offered`** (§5c not yet shown) **unless** **`skipPrPlanHandoffModal: true`**.
+- Bubble **`readyForImplementation: true`** upstream and return to **`planner`** Step **7b** master-plan menus without offering §5c on **this** lane first **unless** **`skipPrPlanHandoffModal: true`** (then include **`prPlanHandoffSkipped: true`** in inline completion).
 - Treat Squad Leader §2 **existing PRD** intake (no session **`ad-hoc-prd`**) as permission to skip §5c — PRD source does **not** change the **`pr-plan`** → **`coding-session`** handoff chain.
 
 Set **`implementationHandoffStatus: "offered"`** when §5c modal is emitted; **`deferred`** when the developer picks **`defer`**; **`spawned-coding-session`** after §5d.
@@ -465,6 +478,7 @@ Required `outputs` fields:
 - `outputs.parentPlanLinkStatus` — `linked` | `blocked` | `unknown`
 - `outputs.readyForImplementation`, `outputs.implementationReadinessReasons`
 - `outputs.implementationHandoffStatus` — `not-offered` | `offered` | `deferred` | `spawned-coding-session` | `coding-session-terminal` (child finished); not `developerApprovedImplementation`
+- `outputs.prPlanHandoffSkipped` — `true` when §5c was skipped via **`skipPrPlanHandoffModal`** (auto-chain from **`pr-breakdown`** **`approve-list`**)
 - `outputs.spawnCorrelationId` — UUID from §5d when `implementationHandoffStatus` is `spawned-coding-session` or until child terminal is merged
 - `outputs.codingSessionStatus` — echo child `status` when §5e applies
 - `outputs.prShipComplete` — `true` when §5e merged child reconcile complete (archive + main pull)

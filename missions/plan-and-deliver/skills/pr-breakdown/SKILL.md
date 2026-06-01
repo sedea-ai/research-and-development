@@ -104,8 +104,12 @@ When **`parentAgentRole`** is **`master-plan-agent`** or **`phase-planner-agent`
 | `upstreamSkill` | `"pr-breakdown"` |
 | `parentAgentRole` | `"pr-breakdown-agent"` |
 | `decompositionKind` | `"pr-breakdown"` |
+| `autoChainFirstPr` | `true` only when **`approve-list`** auto-expand runs on this lane (see §6 act-after-select); otherwise omit or `false` |
+| `parentRowSingleConcern` | Full text of item **N** **Single concern** sub-bullet under **`### PR list`** (PR description seed — parse from parent `.plan.md` before handoff) |
 
 When **`hoistFromPhasePath`** is set (**step 3.6**), **K = 1**; also pass `hoistFromPhase: true`, `hoistFromPhasePath`, `hoistFromPhaseSlug`, and `scopeParentIndex` on the ancestor row.
+
+**Parse `parentRowSingleConcern`:** Read the parent plan’s **`### PR list`** block; for ordered item **N**, take the nested **Single concern.** sub-bullet body (label may read `Single concern` or `Single concern.`). Trim leading/trailing whitespace only — do not paraphrase. That string is the PR description seed for inline **`pr-plan`** §1.
 
 **Standalone spawned** path: emit **`AGENT_RUN_REQUEST_V1`** per row instead (see step 6 act-after-select).
 
@@ -267,7 +271,7 @@ How PRs relate in time — **authoritative for depth-first expand eligibility** 
 
 A **short numbered list** — one item per PR, in roughly **`### Sequencing`** order. Each item line: PR **slug or short title**, **bolded**, so the **`new-plan`** protocol branch (indexed spawn) can derive the child name (see **`new-plan`** § *Indexed child spawn*). Under each item, two nested sub-bullets:
 
-- **Single concern.** One-line proto-§ 1 summary (full prose; carved out of the short-bullet rule).
+- **Single concern.** One-line **PR description seed** (full prose; carved out of the short-bullet rule) — this is the exact text inline **`pr-plan`** must copy into child **`## 1. Single concern`** when `parentRowSingleConcern` is passed (no paraphrase or tighten).
 - **Plan.** A **`Plan:`** line whose placeholder **matches the parent file’s existing shape** when present; otherwise state the child file is pending after **`new-plan`** indexed spawn for this list item **N**. The relative Markdown link is filled when **`new-plan`** creates the child and updates the parent; **`plan-reconcile`** can repair wiring.
 
 Optional: one short intro under `## <N>. PR breakdown` before **`### Single-concern strategy`** when framing helps; skip when unnecessary.
@@ -282,7 +286,7 @@ Draft the same three sub-headings, but:
 
 - **`### Single-concern strategy`:** one or two sentences — the whole plan ships as **one** mergeable unit.
 - **`### Sequencing`:** one short bullet such as *Single PR — no sibling ordering.*
-- **`### PR list`:** **Exactly one** numbered item (`1. **<slug>**`). Derive **`<slug>`** from frontmatter `name:` or the plan title. **Single concern** sub-bullet = full proto-§ 1 for the whole change. **Plan:** same placeholder contract as **5b** for item **1**.
+- **`### PR list`:** **Exactly one** numbered item (`1. **<slug>**`). Derive **`<slug>`** from frontmatter `name:` or the plan title. **Single concern** sub-bullet = full PR description seed (proto-§ 1 for the whole change; verbatim into inline **`pr-plan`** §1). **Plan:** same placeholder contract as **5b** for item **1**.
 
 Then run **5c** with **K = 1**.
 
@@ -337,7 +341,7 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 
 | Option id (illustrative) | Label (brief) |
 | --- | --- |
-| `approve-list` | Approve PR breakdown — no spawn yet |
+| `approve-list` | Approve PR breakdown — expand first PR when eligible |
 | `expand-eligible` | Expand eligible PR row(s) |
 | `revise` | Revise PR breakdown first |
 | `defer` | Defer child PR plan creation |
@@ -354,7 +358,7 @@ In a **new** assistant turn after the developer selects an option in the approva
 
 | Choice | Action |
 | --- | --- |
-| **Approve PR breakdown — no spawn yet** (`approve-list`) | Record `developerApprovalStatus: "list-approved"`; keep all **`Plan:`** placeholders `_TBD_`. Do **not** run **`new-plan`**. |
+| **Approve PR breakdown** (`approve-list`) | Record `developerApprovalStatus: "list-approved"`. **Inline under `planner` or `phase-planner`:** when PR index **1** is depth-first eligible per **30_planning-target-resolution** § *Depth-first expansion eligibility*, **same turn** run inline **`new-plan`** for index **1** only with `autoChainFirstPr: true` and `parentRowSingleConcern` from item **1** (see [Inline handoff](#inline-handoff--pr-breakdown--new-plan-step-6-act-after-select)); merge inline **`new-plan`** / **`pr-plan`** completion. When index **1** is not eligible, keep **`Plan:`** placeholders `_TBD_` and report why — do **not** run **`new-plan`**. **Standalone spawned:** keep **`Plan:`** placeholders `_TBD_` on **`approve-list`** alone — use **`expand-eligible`** to spawn. |
 | **Expand eligible PR row(s)** (`expand-eligible`) | Parse **`### Sequencing`**; resolve eligible indices per **30_planning-target-resolution** § *Depth-first expansion eligibility*. **Inline:** run **`new-plan`** once per eligible index (parallel stage may be >1); merge each **`## Completion (inline)`**; record **`coding-session`** spawns in `activeLanes`. **Standalone spawned:** one **`AGENT_RUN_REQUEST_V1`** per eligible index. If none eligible, stop with reason (prior PR/stage ship incomplete) — do not spawn. |
 | **Revise PR breakdown first** | Run step **6a**, then repeat recap → structured choice. Do **not** spawn children or emit terminal success until re-approved. |
 | **Defer child PR plan creation** | Emit **`AGENT_RESULT_RESPONSE_V1`** with defer semantics; do not spawn. |

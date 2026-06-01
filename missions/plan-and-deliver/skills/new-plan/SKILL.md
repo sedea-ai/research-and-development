@@ -106,6 +106,8 @@ When `requestedPopulatorSkill` is **`pr-plan`**, run that skill **inline on this
 | `parentAgentRole` | `"new-plan-agent"` |
 | `ledgerParent` | `ledgerParent` from spawn inputs when present |
 | `upstreamSkill` | `"new-plan"` |
+| `parentRowSingleConcern` | From **`pr-breakdown`** inline handoff when present — PR description seed for item **N** |
+| `skipPrPlanHandoffModal` | `true` when `autoChainFirstPr: true` from **`pr-breakdown`** **`approve-list`** auto-expand; otherwise omit or `false` |
 
 When `requestedPopulatorSkill` is **`phase-planner`**, emit **`AGENT_RUN_REQUEST_V1`** per step **4** (spawned populator lane — unchanged).
 
@@ -296,7 +298,7 @@ Set `outputs.populatorApprovalStatus: "waived-upstream"` and one line: *Parent l
 
  1. Run **`pr-plan`** **inline** on this lane per [Inline handoff](#inline-handoff--new-plan--pr-plan-step-4).
  2. Merge inline completion fields; set `outputs.populatorSkill: "pr-plan"`, `outputs.populatorStatus` from inline handoff.
- 3. **Stop on this lane after inline `pr-plan` drafts §§1–4** — run **`pr-plan`** §5c (and §5d when the developer picks **Start coding session**) **before** reporting terminal **`## Completion (inline)`** upstream. **Forbidden:** finishing auto-authorized populator handoff in one turn and bubbling “PR plan complete” without §5c.
+ 3. **Stop on this lane after inline `pr-plan` drafts §§1–4** — run **`pr-plan`** §5c (and §5d when the developer picks **Start coding session**) **before** reporting terminal **`## Completion (inline)`** upstream — **except** when `skipPrPlanHandoffModal: true` (**`pr-breakdown`** **`approve-list`** auto-chain): inline **`pr-plan`** reports completion without §5c; merge `prPlanHandoffSkipped: true` and `implementationHandoffStatus: not-offered` for **`planner`** Step **7b**. **Forbidden:** finishing auto-authorized populator handoff in one turn and bubbling “PR plan complete” without §5c **unless** `skipPrPlanHandoffModal` applies.
  4. If inline **`pr-plan`** offered the §5c handoff menu or spawned **`coding-session`**, keep `continuationStatus: "active"` on this lane — follow-up turns continue inline **`pr-plan`** (§5c–§5e) before terminal **`AGENT_RESULT_RESPONSE_V1`**.
  5. Do **not** emit **`AGENT_RUN_REQUEST_V1`** for **`pr-plan`**.
 
