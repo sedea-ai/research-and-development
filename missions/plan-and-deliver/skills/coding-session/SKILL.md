@@ -127,7 +127,7 @@ On **[Spawned implementation lane](#spawned-implementation-lane)**, **this lane*
 
 ### Spawned lane — sentinel-first (binding)
 
-On spawned **`coding-session`** lanes, **in order to use the AskQuestion modal**, use **`MC_PHASED_RESPONSE_V1`** for gates (sentinel-first). Before the [Worktree-open gate](#worktree-open-gate), [Worktree-open gate (pr-plan spawn handoff)](#worktree-open-gate-pr-plan-spawn-handoff), [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy), [Review feedback approval gate](#review-feedback-approval-gate), and [Post-create-pr handoff gate](#post-create-pr-handoff-gate) — **unless** [Auto-authorize implementation (pr-plan spawn)](#auto-authorize-implementation-pr-plan-spawn) applies (no modal; proceed to worktrees):
+On spawned **`coding-session`** lanes, **in order to use the AskQuestion modal**, use **`MC_PHASED_RESPONSE_V1`** for gates (sentinel-first). Before the [Worktree-open gate](#worktree-open-gate), [Worktree-open gate (pr-plan spawn handoff)](#worktree-open-gate-pr-plan-spawn-handoff), [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy), [Pre-PR review authorization](#pre-pr-review-authorization), [Review feedback approval gate](#review-feedback-approval-gate), [Create-PR handoff after go](#create-pr-handoff-after-go), [Post-create-pr handoff gate](#post-create-pr-handoff-gate), and any turn that **awaits a developer pick** before the next **Act** — **unless** [Auto-authorize implementation (pr-plan spawn)](#auto-authorize-implementation-pr-plan-spawn) applies (no modal; proceed to worktrees):
 
 1. **Self-check:** the assistant message **starts** with **`MC_PHASED_RESPONSE_V1`** — **no** recap prose before the sentinel.
 2. Put required recap lines in **`display.markdown`** only (see pr-plan spawn handoff recap below).
@@ -144,16 +144,34 @@ Default **`<recap>`** for pr-plan spawn: *Planning handoff complete (§§1–4).
 
 On spawned **`coding-session`** lanes, Mission Control opens the AskQuestion UI only when **StreamFinal** parses the **AskQuestion tool** or a valid **`MC_PHASED_RESPONSE_V1`** block (`parsePhasedResponseFromAssistantText` in `extensions/mission-control/src/shared/phasedResponseParse.ts`). Prose menus do **not** open a modal.
 
-**Forbidden** when [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) preconditions are met (bootstrap success, implementation ready for developer review, or the developer asks *what's next* / *ready for review* while the ship chain is waiting at cut-point):
+**Forbidden** when any ship gate awaits a developer pick (cut-point, pre-PR auth, create-PR, post-create-PR, or § *Every developer-await turn*):
 
 | Anti-pattern | Why it fails |
 |--------------|--------------|
 | *Stay advisory until you pick …* / *I'll wait until you …* | Prose handoff — conduct **1** § *No idle handoff*; rule **2** § *Turn completion invariant* |
 | *Pick Ship cut-point* / *tell me to push* without **`MC_PHASED_RESPONSE_V1`** | User cannot click options — same |
+| *PR created* / PR URL only — *review on GitHub* without post-create-pr **`MC_PHASED_RESPONSE_V1`** | Same — § [Post-create-pr handoff gate](#post-create-pr-handoff-gate) step **7** |
 | Recap + diff summary **without** phased envelope on the **same** turn | **No modal** — agent failure |
 | Redirect cut-point to Squad Leader or another tab | § *Post-reload / cold session* — cut-point runs **on this lane** |
 
-**Required instead:** emit **`MC_PHASED_RESPONSE_V1`** (sentinel line **1**; recap in **`display.markdown`**; ship options in **`askQuestion`**) per § *Spawned lane — ship cut-point sentinel*. Use **Default continuation options** from rule **2** only when **no** ship gate is open.
+**Required instead:** emit **`MC_PHASED_RESPONSE_V1`** (sentinel line **1**; recap in **`display.markdown`**; ship options in **`askQuestion`**) per the gate sentinel for that step. Use **Default continuation options** from rule **2** only when **no** ship gate is open.
+
+### Every developer-await turn (binding)
+
+On spawned **`coding-session`** lanes, **any** assistant turn where the developer must **pick** before you **Act** (commit, push, spawn, `gh pr create`, edits, next ship step) **must** end with **`MC_PHASED_RESPONSE_V1`** (or **AskQuestion** tool when available on the lane). This includes — not only ship cut-point:
+
+| Await point | Modal section |
+|-------------|----------------|
+| Worktree / implementation | [Worktree-open gate](#worktree-open-gate) |
+| Review-ready / commit / Before deploy | [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) |
+| Before deploy manual step | § [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) step 4 |
+| Spawn **`pre-pr-review`** | [Pre-PR review authorization](#pre-pr-review-authorization) |
+| Pre-PR findings | [Review feedback approval gate](#review-feedback-approval-gate) |
+| Open PR | [Create-PR handoff after go](#create-pr-handoff-after-go) |
+| **After `gh pr create` succeeds** | [Post-create-pr handoff gate](#post-create-pr-handoff-gate) — **same turn**, not prose-only PR URL |
+| Waiting on child **`pre-pr-review`** | Structured choice before turn ends (rule **2** § *Default continuation options* or defer) |
+
+**Forbidden:** ending a turn with only a PR link, *PR created — review on GitHub*, *tell me when*, or *pick … in chat* when a gate table exists for that await point.
 
 ### Post-reload / cold session (binding)
 
@@ -691,7 +709,7 @@ When `targetPlanPath` resolves to a PR plan:
 
 ## Pre-PR review authorization
 
-Run **after** commit + [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) (or documented skip). Use **AskQuestion**:
+Run **after** commit + [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) (or documented skip). Use **one** **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** (`modalTitle`: *Coding session — pre-PR review*) — on spawned lanes, **sentinel-first** per § *Every developer-await turn*.
 
 | Option id (illustrative) | Label (brief) |
 |--------------------------|---------------|
@@ -702,7 +720,14 @@ Run **after** commit + [Before deploy deploy-walk handoff](#before-deploy-deploy
 
 Only **`proceed-pre-pr-review`** (or the **same user message** explicitly authorizing *run pre-pr-review* per rule **20**) authorizes [Pre-PR review handoff](#pre-pr-review-handoff).
 
-Do **not** spawn **`pre-pr-review`** in the same assistant turn as the authorization **AskQuestion**.
+Do **not** spawn **`pre-pr-review`** in the same assistant turn as the authorization modal.
+
+### Spawned lane — pre-PR authorization sentinel (binding)
+
+```
+MC_PHASED_RESPONSE_V1
+{"version":1,"display":{"markdown":"<recap>"},"askQuestion":{"modalTitle":"Coding session — pre-PR review","questions":[{"id":"pre-pr-auth","prompt":"Spawn pre-pr-review on this branch?","allowMultiple":false,"options":[{"id":"proceed-pre-pr-review","label":"Proceed — spawn pre-pr-review"},{"id":"more-changes","label":"More changes before review"},{"id":"defer-review","label":"Defer pre-PR review"},{"id":"more-details","label":"More details for option _"}]}]}}
+```
 
 ## Pre-PR review handoff
 
@@ -816,14 +841,24 @@ When **`pre-pr-review`** returns `recommendation: "go"` **and** either:
 This path is the normative **`create-pr`** handoff on this lane — it **supersedes** rule **20** § *Commit and push cadence* step 5 prompt-only wording when both apply.
 
 1. Verify the worktree branch is pushed or pushable per **efficient-pr-shipping**.
-2. Present the reviewer `go` summary, non-blocking flags, and any proposed follow-ups to the developer, then use **AskQuestion** before plan follow-up mutation or PR creation. Required options:
- - **Approve follow-ups and create PR now**
- - **Create PR without appending proposed follow-ups**
- - **Revise code or plan first**
- - **Defer PR creation**
- - **Abandon this implementation**
- - **More details for option _**
-3. Only **Approve follow-ups and create PR now** authorizes appending proposed follow-ups before PR creation. **Create PR without appending proposed follow-ups** authorizes only PR creation. Do not treat `pre-pr-review` `go` as developer approval to mutate the plan or open/prepare a PR.
+2. Present the reviewer `go` summary, non-blocking flags, and any proposed follow-ups in **`display.markdown`**, then use **one** **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** (`modalTitle`: *Coding session — create PR*) — on spawned lanes, **sentinel-first**. Required **`options`** (map labels to ids below):
+
+| Option id | Label (brief) |
+|-----------|---------------|
+| `approve-followups-create-pr` | Approve follow-ups and create PR now |
+| `create-pr-no-followups` | Create PR without appending proposed follow-ups |
+| `revise-first` | Revise code or plan first |
+| `defer-pr` | Defer PR creation |
+| `abandon` | Abandon this implementation |
+| `more-details` | More details for option _ |
+3. Only **`approve-followups-create-pr`** authorizes appending proposed follow-ups before PR creation. **`create-pr-no-followups`** authorizes only PR creation. Do not treat `pre-pr-review` `go` as developer approval to mutate the plan or open/prepare a PR.
+
+### Spawned lane — create-PR handoff sentinel (binding)
+
+```
+MC_PHASED_RESPONSE_V1
+{"version":1,"display":{"markdown":"<recap>"},"askQuestion":{"modalTitle":"Coding session — create PR","questions":[{"id":"create-pr-gate","prompt":"Create the pull request now?","allowMultiple":false,"options":[{"id":"approve-followups-create-pr","label":"Approve follow-ups and create PR now"},{"id":"create-pr-no-followups","label":"Create PR without appending proposed follow-ups"},{"id":"revise-first","label":"Revise code or plan first"},{"id":"defer-pr","label":"Defer PR creation"},{"id":"abandon","label":"Abandon this implementation"},{"id":"more-details","label":"More details for option _"}]}]}}
+```
 4. On the **developer's response turn** (not the same turn as the modal), load `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/create-pr/SKILL.md` and run it **inline on this lane** — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`create-pr`**.
 5. Construct inline context:
 
@@ -838,7 +873,7 @@ This path is the normative **`create-pr`** handoff on this lane — it **superse
 | `upstreamSkill` | `"coding-session"` |
 
 6. Follow **`create-pr`** gates and procedure (`gh pr create` when authorized). Merge **`## Completion (inline)`** into coding-session `outputs` (`prUrl`, `prNumber`, `shipPhase`, `rowStatus`, `prState`, `remainingTasks`, …).
-7. On the **next** turn after inline **`create-pr`** completes, open [Post-create-pr handoff gate](#post-create-pr-handoff-gate) on **this lane**. Keep `continuationStatus: "active"`. Do **not** auto-start inline **`pr-review`** or inline **`deploy-walk`** without the developer pick. Do **not** wait for a child **`AGENT_RESULT_RESPONSE_V1`** — there is no **`create-pr`** child lane.
+7. **Same assistant turn** — when step **6** completes with a PR URL/number (or prompt-only partial), **still** open [Post-create-pr handoff gate](#post-create-pr-handoff-gate) on **this lane** before **StreamFinal**. Put `prUrl` / `prNumber` in **`display.markdown`** and ship **`askQuestion`** per § *Spawned lane — post-create-pr sentinel*. **Forbidden:** ending the turn with only *PR created* / link prose and deferring the modal to a later turn. Keep `continuationStatus: "active"`. Do **not** auto-start inline **`pr-review`** or inline **`deploy-walk`** without the developer pick. Do **not** wait for a child **`AGENT_RESULT_RESPONSE_V1`** — there is no **`create-pr`** child lane.
 
 ### Post-create-pr handoff gate
 
