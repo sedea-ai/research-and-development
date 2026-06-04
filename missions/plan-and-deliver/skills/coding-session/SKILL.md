@@ -192,6 +192,9 @@ After Mission Control reload or window restart on **this** spawned **`coding-ses
 2. **Never** ask the developer to "switch to" or "continue in" the Coding session tab — they are messaging you here.
 3. **[Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy)**, worktree-open, and every other gate in this skill run **on this lane** — emit **`MC_PHASED_RESPONSE_V1`** here; do **not** redirect ship cut-point to another tab or to the Squad Leader.
 4. Re-read this SKILL.md and the prior transcript; resume from the last incomplete ship-chain step.
+5. **Dispatch binding (binding):** When the preamble includes `[Mission Control — post-restore cold session]`, treat **`Active dispatch UUID`**, **`Bundle directory`**, and **`Your slot id`** in that preamble as authoritative scope. Read **`parent-child-registry.v1.json`**, **`dispatch-tab.v1.json`**, and **`dispatch-events.v1.ndjson` only under that bundle directory** — never under sibling dispatch folders.
+6. **Forbidden cold-restore recovery:** `ls -lt` (or any mtime sort) across `.sedea/operations/**/dispatch/` to pick a dispatch; opening another tab's bundle because it is "newer"; mapping **PR N** without **`targetPlanSlug`** + the dispatch id stated in the preamble.
+7. When spawn context JSON is missing from the preamble but dispatch binding is present, recover handover from **this dispatch's** registry (and `dispatch-events` for the matching `correlationId`) before running tools — do not improvise cross-dispatch scope.
 
 ## Relationship to `pr-plan`
 
