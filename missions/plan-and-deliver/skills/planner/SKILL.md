@@ -25,7 +25,7 @@ inputs:
     required: true
   parent:
     type: string
-    description: Parent plan slug/path, or null when creating a new top-level plan.
+    description: Parent plan slug/path, or null for a root delivery Master Plan (default).
     required: true
   related:
     type: array
@@ -203,7 +203,7 @@ Related (optional, `<role>: <link or @path>` per bullet):
 Load and follow .sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md ...
 ```
 
-`Feature planning:`, `PRD:`, and `Parent:` are required slots. The Related block is the only optional one — empty when the feature stands alone. `Parent:` is read in step 5a; if it's empty or unresolvable, step 5a falls back to an `AskQuestion` picker so the user can still proceed.
+`Feature planning:`, `PRD:`, and `Parent:` are required slots. The Related block is the only optional one — empty when the feature stands alone. `Parent:` is read in step 5a; when empty, missing, or `null`, default to `parent: null` (root delivery plan). Use `AskQuestion` only when a **non-null** parent slug or path fails to resolve.
 
 ### 4a — Fetch the PRD
 
@@ -251,47 +251,46 @@ The plan file is created **before** drafting, so § 4 + § 5 land in a persisten
 
 ### 5a — Resolve the parent
 
-The seed prompt's `Parent:` line is the **primary** input — the user already curated the plan-tree placement, so use what they wrote. Only fall back to a picker when the line is empty or doesn't resolve.
+The seed prompt's `Parent:` line is the **primary** input — the user already curated plan placement, so use what they wrote. **Default when empty or missing:** `parent: null` (root delivery Master Plan under flat `plans/`). Only fall back to a picker when the line names a slug or path that **does not resolve**.
 
 #### Read from the seed prompt first
 
 Parse the `Parent:` line. Accepted forms (case-insensitive on the keywords):
 
-- **Slug** (e.g. `push_system_hardening_roadmap_c7e91a4f`) — use directly. Validate by checking that exactly one of `.sedea/operations/<operationsUserId>/plans/<slug>.plan.md` or `.sedea/operations/<operationsUserId>/plans/roadmap-topics/<slug>.plan.md` exists.
-- **`@path` or absolute path to a `.plan.md`** (e.g. `@.sedea/operations/<operationsUserId>/plans/roadmap-topics/push_system_hardening_roadmap_c7e91a4f.plan.md`) — extract `<slug>` from the filename (`<slug>.plan.md` → `<slug>`). Validate the file exists.
-- **`null`, `none`, or `new roadmap root`** — parent is `null`, plan goes under `.sedea/operations/<operationsUserId>/plans/roadmap-topics/`. Use this when the feature is large enough to be a roadmap topic itself.
+- **`null`, `none`, or empty** — `parent` is `null`. Master Plan file goes under `.sedea/operations/<operationsUserId>/plans/` (or `joint/plans/` when applicable). This is the **default** for net-new **`plan and deliver`** dispatches per **development-process.md** § *Root delivery plans vs legacy Hub parent intake*.
+- **Slug** (e.g. `prior_feature_master_abc12345`) — use directly. Validate that exactly one `.sedea/operations/<operationsUserId>/plans/<slug>.plan.md` (or `joint/plans/<slug>.plan.md`) exists.
+- **`@path` or absolute path to a `.plan.md`** — extract `<slug>` from the filename (`<slug>.plan.md` → `<slug>`). Validate the file exists under the flat `plans/` tree for that operations namespace.
 
-When the slot resolves cleanly, acknowledge in one line — `Parent: <slug>` (or `Parent: null (new roadmap topic)`) — and continue to 5b. Do **not** ask the user to confirm; they already wrote it.
+When the slot resolves cleanly, acknowledge in one line — `Parent: <slug>` or `Parent: null (root delivery plan)` — and continue to 5b. Do **not** ask the user to confirm when they already wrote `null` or a resolvable parent.
 
 #### Fall back to a picker when needed
 
-Fall back to the picker below if any of:
+Fall back to the picker below **only** when:
 
-- The `Parent:` line is empty (the user pasted the seed prompt without filling it in).
-- The `Parent:` line is missing entirely (a custom prompt that didn't include it).
-- The slug or `@path` doesn't resolve to a plan file under `.sedea/operations/<operationsUserId>/plans/`.
+- The `Parent:` line names a slug or `@path` that does **not** resolve to an existing `.plan.md` under `.sedea/operations/.../plans/` (flat tree only).
 
-In the unresolved case, say so in one line — `Parent slot "<raw value>" doesn't resolve to an existing plan; falling back to picker.` — then enumerate `.sedea/operations/<operationsUserId>/plans/roadmap-topics/*.plan.md` (Glob) and ask via `AskQuestion` (single-select):
+Do **not** open a parent picker when `Parent:` is empty, missing, or `null` — use `parent: null` and continue to 5b.
 
-> "Where does this Master Plan belong in the plan tree?"
+In the unresolved case, say so in one line — `Parent slot "<raw value>" doesn't resolve to an existing plan; falling back to picker.` — then ask via `AskQuestion` (single-select):
+
+> "Which existing plan should be this Master Plan's parent?"
 
 Options, in order:
 
-- One option per existing roadmap topic, `id` = slug (e.g. `push_system_hardening_roadmap_c7e91a4f`), `label` = the topic's display name from frontmatter `name:`.
-- **Make this a new roadmap topic root** (`id: __new_roadmap_root__`) — picks `parent: null` and writes the file under `plans/roadmap-topics/` instead of `plans/`. Use only when the feature is large enough to be a roadmap topic itself.
-- **Other / I'll paste a parent** (`id: __other__`) — falls back to a free-form follow-up where the user types a slug or path.
+- **Root delivery plan — no parent** (`id: __null_parent__`) — `parent: null`; file under flat `plans/`.
+- One option per **existing** plan slug the developer may intend as parent (from a Glob of `plans/*.plan.md` in the active operations tree), `id` = slug, `label` = frontmatter `name:` when present.
+- **Other / I'll paste a parent** (`id: __other__`) — free-form follow-up for slug or `@path`.
+- **More details for option _**
 
-If the PRD or the loaded architectural rules strongly imply a topic (e.g. push-related work → `push_system_hardening_roadmap`), still surface the picker but mention the implied default in the question's preface.
+Do **not** offer roadmap-topic roots, `plans/roadmap-topics/`, or Hub **`top_level_topic`** intake — those paths are legacy and out of scope for new planning.
 
 ### 5b — Pick the slug + filename
 
 - **Display name** for `name:` frontmatter: the PRD title (line 1 between the quotes).
 - **Slug base**: lowercase the title, replace spaces with `_` (or `-` to match sibling convention in the target folder).
 - **Slug suffix**: 8-char random hex (`crypto.randomBytes(4).toString('hex')` equivalent).
-- **Filename**:
- - Parent is a roadmap topic → `.sedea/operations/<operationsUserId>/plans/<slug>.plan.md`.
- - Parent is `null` (new roadmap topic root) → `.sedea/operations/<operationsUserId>/plans/roadmap-topics/<slug>.plan.md`.
-- **Sidecar**: `<same-dir>/<slug>.state.yaml`.
+- **Filename**: `.sedea/operations/<operationsUserId>/plans/<slug>.plan.md` (or `joint/plans/<slug>.plan.md`) — **always** the flat `plans/` directory; `parent: null` does **not** change the path.
+- **Sidecar**: `<same-dir>/<slug>.state.yaml` with `parent: <resolved-parent-slug-or-null>`.
 
 ### 5c — Write the plan file (Master Plan template body)
 
@@ -406,7 +405,7 @@ Sources for identifying related features, in priority order:
 
 1. **User-supplied related documents from step 4b that describe a feature** (highest signal — the user already curated relevance and stated the role). The role description is your starting point; map it to one of the four relationship verbs above.
 2. The PRD itself — often names dependencies / sequels / parallel efforts in passing.
-3. *Fallback only when 1 and 2 are empty:* roadmap topics enumerated in step 5a. Read each topic's frontmatter `name:` and skim its `## Overview` for overlap. Don't auto-flag every topic that mentions a shared concept; only flag genuine sync needs.
+3. *Fallback only when 1 and 2 are empty:* other `.plan.md` files under the same operations `plans/` tree (Glob) — read frontmatter `name:` and skim overview sections for overlap. Don't auto-flag every plan that mentions a shared concept; only flag genuine sync needs.
 4. *Fallback only when 1, 2, and 3 are empty:* architectural rules loaded in step 3 — they sometimes flag domain concepts that hint at adjacent features.
 
 If you can't identify any related features from this context, write the single bullet `_None identified from current context — confirm in review._` instead of inventing relationships. Empty here is **fine**; many features stand alone.
@@ -484,7 +483,7 @@ When the band is **high**:
 
 1. **§6 is available — prefer Delivery phases.** A **high** score means §§4–5 carry a large design surface on **this** Master Plan. That is exactly when **mode #2 — Delivery phases** applies: inline **`delivery-phases`** drafts outcome-titled phase rows; each child gets **`phase-planner`** (scoped §§1–4 + **`### Decomposition assessment`**, **no** numeric withhold — see **`phase-planner/SKILL.md`** Step 5) and may further decompose per phase. **Do not** withhold **`route-6`** because the score is > 20 — that blocks the primary mitigation.
 2. **Routing guidance (required)** — Before Step 7, state explicitly: score > 20 → recommend **Route §6 → Delivery phases**; **PR breakdown** on this Master Plan usually **undersizes** the problem (skips the phase layer that absorbs complexity).
-3. **Optional alternative — separate Master Plans** — When the feature is really **multiple independent outcomes**, propose **2–4** user-journey slices shippable as **separate planning conversations** (each its own Master Plan under the same roadmap topic). Present this as an **alternative** to single-plan **Delivery phases**, **not** as a prerequisite before §6. **Avoid** topology-only splits ("frontend vs backend") unless each slice names **who gains what**.
+3. **Optional alternative — separate Master Plans** — When the feature is really **multiple independent outcomes**, propose **2–4** user-journey slices shippable as **separate planning conversations** (each its own root or child Master Plan). Present this as an **alternative** to single-plan **Delivery phases**, **not** as a prerequisite before §6. **Avoid** topology-only splits ("frontend vs backend") unless each slice names **who gains what**.
 4. Proceed to **Step 7** — Step **7b** **must include `route-6`** at high band (same as low/medium).
 
 When band is **low** or **medium**, proceed to **Step 7**; the status line in Step 7a must mention complexity (e.g. *"Complexity: medium (overall score = 12) — §6 decomposition available in next AskQuestion."*).

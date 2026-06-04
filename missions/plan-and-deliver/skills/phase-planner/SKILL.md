@@ -112,8 +112,7 @@ If the body is the new-plan stub but `## Overview` / `## Phasing` / `## Out of s
 Read the target plan's sidecar `<slug>.state.yaml` for `parent:`. Apply:
 
 - `parent: null` (or sidecar missing) → **stop** with: *"This plan has no parent (`parent: null` or sidecar missing). Phase plans hang under a Master Plan or another Phase plan in **`Delivery phases`** mode. Fix the sidecar via **`plan-reconcile`** (or by hand), or use the **`planner`** protocol branch if this file should be a Master Plan."*
-- `parent: <slug>` does not resolve to an existing `.plan.md` under the same `.sedea/operations/.../plans/` tree as this target (`plan-state resolve` / parent absolute path) → **stop** with: *"Sidecar `parent: <slug>` doesn't resolve to an existing plan. Fix the sidecar before drafting."*
-- Parent is a **roadmap topic** top-level plan (`parent:` points at a plan whose process role is roadmap grouping) → **stop** with: *"Phase plans hang under Master / Phase parents in **`Delivery phases`**. Fix the sidecar parent, or use the **`planner`** protocol branch if this file should be a Master Plan."*
+- `parent: <slug>` does not resolve to an existing `.plan.md` under the same flat `.sedea/operations/.../plans/` tree as this target (`plan-state resolve` / parent absolute path) → **stop** with: *"Sidecar `parent: <slug>` doesn't resolve to an existing plan. Fix the sidecar before drafting."*
 - Parent resolves; read parent's body. Locate parent's dual-title section (`## 6. ...` for Master Plan parent, `## 5. ...` for Phase plan parent) and apply:
  - Heading is `Delivery phases` → proceed.
  - Heading is `PR breakdown` → **stop** with: *"Parent plan's decomposition is `PR breakdown`, so its children are PR plans, not phase plans. Use the **`pr-plan`** protocol branch to populate this plan's body instead."*

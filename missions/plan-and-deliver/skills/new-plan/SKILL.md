@@ -158,7 +158,7 @@ Everything else (slug shape, frontmatter, sidecar, after-write steps, scope guar
 
 ## Parent derivation (context-aware)
 
-A plan without a parent is a **top-level topic** (top-level plan: `parent: null` in the sidecar) or an orphan until you assign one. **Top-level topic** is a naming role in the process doc — files still live in the flat `plans/` directory next to everything else. Resolve a candidate in this order (align with **planning-target-resolution**; highest confidence first), then confirm before writing (unless **Indexed child spawn** already skipped the gate):
+A plan without a parent is a **root delivery plan** (`parent: null` in the sidecar) — files always live in the flat `plans/` directory (`.sedea/operations/<operationsUserId>/plans/` or `joint/plans/`). There is **no** `roadmap-topics/` subtree for new plans. Resolve a candidate in this order (align with **planning-target-resolution**; highest confidence first), then confirm before writing (unless **Indexed child spawn** already skipped the gate):
 
 1. **Explicit in session or message** — slug, path under `plans/`, or absolute `.sedea/operations/.../*.plan.md`.
 2. **Session anchor** — from hosting repo root:
@@ -169,13 +169,13 @@ A plan without a parent is a **top-level topic** (top-level plan: `parent: null`
 
  Exit **0** means `$PWD` is inside a worktree listed in some plan’s sidecar; that plan is a strong passive parent candidate. Optional scope: **`--operations-user-id <id>`** before the subcommand (Mission Control **`operationsUserId`** in agent runs); if omitted, only `joint` plans are searched.
 3. **Recent chat references** — last turns name a slug or absolute plan path.
-4. **Nothing resolved** — ask the developer for a parent slug, or the literal `null` for a **top-level topic** (top-level plan, `parent: null`).
+4. **Nothing resolved** — ask the developer for a parent slug, or the literal `null` for a **root delivery plan** (`parent: null`).
 
 Lock the parent using the bullets above; **planning-target-resolution** is normative for combining signals.
 
 **Confirm** before writing on this path (unless **Indexed child spawn** already skipped the gate). Wrong parent is the expensive failure mode. Example:
 
-> Parent: `<parent-slug>` (from `plan-state resolve`). OK? Reply yes to write, paste a different slug, or `null` for a **top-level topic** (top-level plan).
+> Parent: `<parent-slug>` (from `plan-state resolve`). OK? Reply yes to write, paste a different slug, or `null` for a **root delivery plan**.
 
 If two candidates conflict, present both and ask.
 
@@ -188,7 +188,7 @@ If two candidates conflict, present both and ask.
 - **Suffix:** append 8 hex chars (e.g. `crypto.randomBytes(4).toString('hex')`) for uniqueness.
 - **Paths:** under `.sedea/operations/joint/plans/` or `.sedea/operations/<operationsUserId>/plans/` (same directory for `.plan.md` and `.state.yaml`). Indexed: `<C>_<slugBase>_<hex>.plan.md` / `.state.yaml`; otherwise `<slugBase>_<hex>.plan.md` / `.state.yaml`.
 
-All new plans are sibling files in the flat `.../plans/` directory for the resolved operations tree (`joint` or `<operationsUserId>`). **Top-level topic** names a top-level plan with `parent: null` in the sidecar — same flat `.../plans/` path as any other plan file.
+All new plans are sibling files in the flat `.../plans/` directory for the resolved operations tree (`joint` or `<operationsUserId>`). **Root delivery plan** means `parent: null` in the sidecar — same flat `.../plans/` path as child plans; never scaffold under `roadmap-topics/`.
 
 ### Handling 10–35 children
 
@@ -245,7 +245,7 @@ worktrees: []
 prs: []
 ```
 
-Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **top-level topic** (`parent: null`) or an explicit orphan. Header comment matches `plan-state.mjs` output style.
+Always write the sidecar. `parent:` required; use YAML `null` unquoted for a **root delivery plan** or an explicit parent slug. Header comment matches `plan-state.mjs` output style.
 
 ## After writing
 
