@@ -586,7 +586,7 @@ Ship skills run on **detached** lanes; the Squad Leader transcript often shows *
 
 ### Mission Control host sync (section 8)
 
-When Mission Control hosts a **`plan and deliver`** dispatch, the extension **must** auto-sync §8 from ship child terminals (hosting repo behavior in the hosting repo Mission Control extension — not defined in this center repo alone). Host implementation contract: **`extensions/mission-control/docs/plan-and-deliver-section-8-ship-ledger.md`**; manifest: **`center.yaml`** `governance.hostSync`.
+When Mission Control hosts a **`plan and deliver`** dispatch, the extension **must** auto-sync §8 from ship child terminals (hosting repo behavior in the **hosting repo Mission Control host integration** — not defined in this center repo alone). Host implementation contract: **`.cursor/rules/dot-sedea.mdc`** (or equivalent host overlay on the active hosting repo) and **`center.yaml`** `governance.hostSync`. See **`.sedea/centers/research-and-development/docs/development-process.md`** § *Leader-lane §8 host sync* — **Host sync scope*.
 
 | Step | Behavior |
 |------|----------|
