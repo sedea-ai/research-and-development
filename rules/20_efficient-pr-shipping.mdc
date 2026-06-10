@@ -1,9 +1,11 @@
 ---
 description: "Ship PRs fast — parallel worktrees, one PR per worktree, single concern per PR, agent-only PR creation, never auto-PR. Loaded by a coding agent; covers commit and push cadence, worktree naming, comprehensive PR descriptions, and worktree setup conventions."
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Efficient PR shipping
+
+**On-demand rule.** Mission Control warm-up loads [`.sedea/centers/research-and-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole R&D `alwaysApply: true` bootstrap. Read **this file** when you need worktrees, commit/push cadence, ship chain, and PR creation gates — not on every dispatch warm-up.
 
 Sedea's workflow for shipping multi-PR plans fast.
 
