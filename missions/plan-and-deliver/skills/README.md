@@ -63,7 +63,7 @@ Mission Control delivery for skills that mix long plan output with structured us
 | **`phase-planner`** | §4f echo / §5c route modal; Step **5f** after **`prPlanHandoffSkipped`** | §5b inline decompose / Step **5f** **`coding-session`** spawn |
 | **`new-plan`** | stub + parent link + populator gate | populator spawn |
 
-**Ship and ops skills:** **`coding-session`** (worktree-open, inline bootstrap wait, implementation continuation gate, **pre-PR ship gate** — no push/create-PR modals until **`pre-pr-review`** **`go`** except executive override, **auto** pre-PR spawn after cut-point + Before deploy, **auto** inline **create-pr** on clean **go**, inline **`pr-review`**, **agent-delegated approve + merge** when authorized, **auto** post-merge cleanup when merged, inline **deploy-walk**, inline **plan-reconcile**), **`worktree-bootstrap`**, **`pre-pr-review`** — structured choice for gates that still require a developer pick (cut-point, review feedback, post-create-PR, remainder); recap for status, diff, or dry-run report only. **`pr-review`** Step **4** — disposition gate uses **contextual** `options` from triage counts (see § *Build disposition options*). Prefer **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** when recap and modal belong in one message. Gate detail: **`coding-session/SKILL.md`** § *Pre-PR ship gate (push/PR)* and § *Implementation continuation gate*.
+**Ship and ops skills:** **`coding-session`** (worktree-open, center **`worktree-setup.sh`** bootstrap hints, implementation continuation gate, **pre-PR ship gate** — no push/create-PR modals until **`pre-pr-review`** **`go`** except executive override, **auto** pre-PR spawn after cut-point + Before deploy, **auto** inline **create-pr** on clean **go**, inline **`pr-review`**, **agent-delegated approve + merge** when authorized, **auto** post-merge cleanup when merged, inline **deploy-walk**, inline **plan-reconcile**), **`worktree-bootstrap`** (**deprecated** — exception-only inline retry; normative bootstrap is center setup on **`coding-session`**), **`pre-pr-review`** — structured choice for gates that still require a developer pick (cut-point, review feedback, post-create-PR, remainder); recap for status, diff, or dry-run report only. **`pr-review`** Step **4** — disposition gate uses **contextual** `options` from triage counts (see § *Build disposition options*). Prefer **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** when recap and modal belong in one message. Gate detail: **`coding-session/SKILL.md`** § *Pre-PR ship gate (push/PR)* and § *Implementation continuation gate*.
 
 **Lane pick (no resolved target):** emit *Where we are now in the plan tree* snapshot, then structured choice per **30_planning-target-resolution** § *Sedea input channel* (phased or split — not prose menus).
 
@@ -114,10 +114,24 @@ These skills run on **detached** or **nested** lanes (often **not** the Squad Le
 | Skill | Typical spawner | Outputs section | §8 ship phase hints |
 |-------|-----------------|-----------------|---------------------|
 | `coding-session` | Developer / mission dispatch; **`pr-plan`** spawn (default **spawned-lane** implement) | `## Implementation handoff result` (+ **`## Completion (inline)`** if same-lane) | Layer 2: `developerApprovedImplementation` after worktree-open gate; `shipPhase: implementing` when spawned child codes on lane (not prompt-only stop) |
-| `worktree-bootstrap` | **`coding-session`** after worktree attach | `## Spawned result contract` | `worktree`; `bootstrapStatus` |
+| `worktree-bootstrap` | **Deprecated** — do not spawn by default; normative bootstrap is center **`worktree-setup.sh`** on **`coding-session`**. Exception-only **inline** retry when setup failed (see **`coding-session/SKILL.md`** § *Worktree bootstrap (inline mandatory)*) | `## Spawned result contract` (legacy in-flight dispatches only) | `worktree`; `bootstrapStatus` |
 | `pre-pr-review` | `coding-session` | Step 8 — Report and result | `pre-pr-review`; `recommendation: go` |
 
 The Squad Leader **§8** ship ledger updates via Mission Control **host sync** when ship child lanes emit terminals with required **`outputs`**. See **`../plan.mdc`** §8 *Mission Control host sync* and **development-process.md** § *Leader-lane §8 host sync*.
+
+### Worktree-bootstrap skill drain gate
+
+**`worktree-bootstrap`** is **deprecated** — normative bootstrap is center **`.sedea/centers/sedea/scripts/worktree-setup.sh`** on **`coding-session`**. Skill files remain **read-only** until all drain criteria pass; **do not delete** the skill directory in the deprecation PR.
+
+| # | Gate (all required before skill file deletion) |
+|---|-----------------------------------------------|
+| **D1** | Phase 2 consumer wiring merged — **`coding-session`** and **`promote-center-submodule-pin`** call center setup + MCP attach/detach on the default path |
+| **D2** | This deprecation PR merged — spawn table redirect, **`coding-session`** spawn-by-default removal, deprecate banner on **`worktree-bootstrap/SKILL.md`** |
+| **D3** | Phase 4 docs sweep merged — **`development-process.md`**, rule **20**, and related prose no longer treat **`worktree-bootstrap`** as normative |
+| **D4** | **Zero** open Mission Control dispatches with active **`worktree-bootstrap`** child lanes (in-flight sessions drained) |
+| **D5** | **`verify-lane-warmup-parity.mjs --bootstrap full`** still passes with **`worktree-bootstrap`** role retained until **D4**; remove role from parity manifests only after **D1–D4** |
+
+**Until drain:** Spawners **must not** emit **`AGENT_RUN_REQUEST_V1`** for **`worktree-bootstrap`** except documented break-glass; **`coding-session`** uses center setup hints and **inline** retry only.
 
 ### §8 terminal contract (ship skills)
 
@@ -199,7 +213,7 @@ node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/v
 node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-lane-warmup-parity.mjs --bootstrap slim
 ```
 
-**Roles covered (7):** **`squad-leader`**, **`author-prd`**, **`planner`**, **`coding-session`**, **`phase-planner`**, **`pre-pr-review`**, **`worktree-bootstrap`**. Each role's manifest uses skill frontmatter **`laneRules`** + **`warmUpRules`** merged per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md). Sign-off record: same doc § *Parity sign-off record*.
+**Roles covered (7):** **`squad-leader`**, **`author-prd`**, **`planner`**, **`coding-session`**, **`phase-planner`**, **`pre-pr-review`**, **`worktree-bootstrap`** (deprecated — retained for parity until [drain gate](#worktree-bootstrap-skill-drain-gate) **D4**). Each role's manifest uses skill frontmatter **`laneRules`** + **`warmUpRules`** merged per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md). Sign-off record: same doc § *Parity sign-off record*.
 
 **`--bootstrap full`** — today's host scan (must pass on manifest table changes). **`--bootstrap slim`** — §5.3 merge gate before **`alwaysApply` frontmatter flip** (expected fail until phase 5 bootstrap + flip).
 

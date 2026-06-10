@@ -83,6 +83,7 @@ const ROLE_MANIFESTS = {
     skillRelPath: 'missions/plan-and-deliver/skills/pre-pr-review/SKILL.md',
   },
   'worktree-bootstrap': {
+    // Deprecated role — retained for parity until drain gate D4 (see skills/README.md § worktree-bootstrap skill drain gate).
     laneRules: [
       '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
       '.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc',

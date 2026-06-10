@@ -1,14 +1,12 @@
 ---
 name: worktree-bootstrap
 description: >-
- Prepare a fresh git worktree after Mission Control attach per hosting-repo
- dot-sedea bootstrap mode (script-bootstrap, full, extensions-only-link, or
- submodule-init). Normative path: **inline** on the **`coding-session`** lane — the parent
- waits for bootstrap success before any implementation. Spawned execution is an exception
- only when a protocol step explicitly requires a child lane. Does not commit, spawn
- deploy-walk, or run the ship chain — those wait for bootstrap success on the parent.
- Does not implement product code on open PRs, or edit plan files unless the spawner
- requests a skip attestation path.
+ **Deprecated (read-only).** Normative bootstrap is center **`worktree-setup.sh`**
+ on **`coding-session`** (fast bootstrap inside setup; map hint **`bootstrapStatus`**).
+ This skill remains for in-flight dispatch drain and **exception-only** inline retry
+ when setup failed — not spawn-by-default. Does not commit, spawn deploy-walk, or run
+ the ship chain. Does not implement product code on open PRs, or edit plan files unless
+ the spawner requests a skip attestation path.
 inputs:
   worktreePath:
     type: string
@@ -60,6 +58,8 @@ warmUpRules:
 
 # Worktree bootstrap
 
+> **Deprecated (read-only):** Normative bootstrap is **`.sedea/centers/sedea/scripts/worktree-setup.sh`** on the **`coding-session`** lane — see [`coding-session/SKILL.md`](../coding-session/SKILL.md) § *Center worktree scripts (binding)* and § *Worktree bootstrap (mandatory)*. This skill file stays on disk until [drain criteria](../README.md#worktree-bootstrap-skill-drain-gate) pass; do **not** spawn by default.
+
 ## Warm-up manifest (spawned)
 
 Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up*. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Normative path is **inline** on **`coding-session`**; manifest applies when spawned or warm-up replay. **No `alwaysApply` frontmatter flip.**
@@ -93,7 +93,7 @@ This skill prepares a fresh **`WORKTREE_ROOT`** after Mission Control attach. **
 
 Full compile, linked primary-clone build artifacts, and add-on sync per dot-sedea apply **only** on **`full`** / linked-build overlay profiles — not on every script repo.
 
-**Normative invocation:** **`coding-session`** runs this skill **inline** on the same lane after worktree attach and **waits** for `outputs.bootstrapStatus: success` before implementation. Spawn (`AGENT_RUN_REQUEST_V1`) is **not** the default — use only when a protocol step explicitly requires a spawned bootstrap child; the parent must still wait for success before implementing.
+**Normative invocation (superseded):** **`coding-session`** maps **`bootstrapStatus`** from center **`worktree-setup.sh`** on the default path — **do not** invoke this skill after successful setup. **Exception-only:** **`coding-session`** may read this skill **inline** when setup failed and the developer attests retry (see [`coding-session/SKILL.md`](../coding-session/SKILL.md) § *Worktree bootstrap (inline mandatory)*). **Forbidden:** spawn (`AGENT_RUN_REQUEST_V1`) for this skill on the default path.
 
 Running bootstrap is **not** developer approval for worktrees — layer 2 **`developerApprovedImplementation`** stays on the parent **`coding-session`** lane.
 

@@ -598,16 +598,7 @@ Follow that skill’s **Completion (inline)** — report `bootstrapStatus`, `boo
 | “Bootstrap note” in ship recap without `bootstrapStatus` in outputs | Set outputs; stop at failure before implementation |
 | Retry with undocumented `--skip-*` | Developer attestation first; record in `bootstrapSkipFlags` |
 
-### Spawned bootstrap (exception only)
-
-When center **`worktree-setup.sh`** succeeded with success-class **`bootstrapStatus`**, **do not** spawn **`worktree-bootstrap`**.
-
-When a protocol step **explicitly** requires a spawned bootstrap child (setup unavailable or attested retry path):
-
-1. Emit **`AGENT_RUN_REQUEST_V1`** for **`worktree-bootstrap/SKILL.md`** with the same `inputs` as the inline table above.
-2. Set `outputs.bootstrapLaneCorrelationId` to the spawn UUID; set `outputs.bootstrapStatus: pending`.
-3. **Wait** for the child **`AGENT_RESULT_RESPONSE_V1`** — copy `outputs.bootstrapStatus`, `outputs.bootstrapFailureReason`, and `outputs.bootstrapSkipFlags`; **do not** implement on this lane while pending or failed.
-4. On **`success`**, clear `outputs.bootstrapLaneCorrelationId` and continue to Generic flow step 5.
+**Forbidden (default path):** Emit **`AGENT_RUN_REQUEST_V1`** for **`worktree-bootstrap/SKILL.md`**. Center **`worktree-setup.sh`** owns bootstrap on the default path; retry uses **inline** [`worktree-bootstrap/SKILL.md`](../worktree-bootstrap/SKILL.md) per [Worktree bootstrap (inline mandatory)](#worktree-bootstrap-inline-mandatory) only.
 
 ## Multi-repo flow (shared worktree name)
 
@@ -1462,7 +1453,7 @@ When this skill runs as a spawned child, end with a child result containing at l
 - `outputs.repoPaths`
 - `outputs.worktrees` (array of `{repo, path, worktreeName, attached}`)
 - `outputs.bootstrapStatus` — `success` \| `failed` \| `pending` \| omitted when bootstrap not run
-- `outputs.bootstrapLaneCorrelationId` — spawn UUID while `bootstrapStatus: pending` on the **spawned-bootstrap exception** path only; omit on inline bootstrap
+- `outputs.bootstrapLaneCorrelationId` — **legacy / omit** — spawned **`worktree-bootstrap`** path removed; inline retry only
 - `outputs.bootstrapFailureReason` — when `bootstrapStatus: failed`
 - `outputs.bootstrapSkipFlags` — optional array of `--skip-*` flags used with developer attestation
 - `outputs.worktreeName`
