@@ -57,6 +57,11 @@ inputs:
     description: When true (pr-breakdown approve-list auto-chain), skip §5c modal after §§1–4; report inline completion with prPlanHandoffSkipped.
     required: false
     default: false
+laneRules:
+  - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
+  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
 warmUpRules:
   - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
   - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
@@ -75,6 +80,28 @@ The agent has enough context after step 3 to draft §§ 1–4 from the parent's 
 The procedure below is a hard contract — do **not** skip steps or start drafting before the target is verified as a PR plan stub.
 
 **Worktree removal ownership (binding).** This skill populates plans only — **do not remove worktrees you do not own.** Worktree create/remove belongs to **`coding-session`** after §5d handoff. **`git worktree list` is read-only** unless rule **0** § *Worktree ownership* preconditions hold. See [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Worktree ownership*.
+
+## Warm-up manifest (spawned)
+
+Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up*. Normative **inline** on invoker lane; manifest applies when standalone spawned or warm-up replay. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. **No `alwaysApply` frontmatter flip.**
+
+### `skillWarmUp` — frontmatter `warmUpRules`
+
+| Path | Purpose |
+|------|---------|
+| `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc` | Squad Leader ledger, spawn/wait |
+| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+| `.sedea/centers/research-and-development/docs/development-process.md` | NFD process templates |
+| `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
+
+### `laneRules` — frontmatter `laneRules`
+
+| Path | Purpose |
+|------|---------|
+| `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice, AskQuestion |
+| `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
+| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md` | This skill procedure |
+| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
 
 ## Handoff to `coding-session` (spawned child lane)
 
