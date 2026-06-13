@@ -1,14 +1,14 @@
 ---
 description: >-
-  Cosmetic change — bullet-list intake for UI/styling-only tweaks (few lines each,
-  no functional changes); single PR plan via new-plan + pr-plan, then coding-session
-  ship chain. Reuses plan-and-deliver skills.
+  Quick fix — bullet-list intake for small cosmetic UI/styling and simple functional
+  changes (complexity ≤6, developer responsibility); single PR plan via new-plan +
+  pr-plan, then coding-session ship chain. Reuses plan-and-deliver skills.
 alwaysApply: false
 ---
 
 # Mission plan
 
-**Execution model:** Squad Leader collects a cosmetic-only bullet list, spawns a **Cosmetic Plan agent** that scaffolds a minimal parent plan and runs **`new-plan`** + **`pr-plan`** inline. **`pr-plan`** spawns **`coding-session`** (§5d). Ship execution stays on the detached **`coding-session`** lane; the Squad Leader tracks planning closure and ship progress, then proposes dispatch resolution.
+**Execution model:** Squad Leader collects a developer-confirmed quick-fix bullet list, spawns a **Quick Fix Plan agent** that scaffolds a minimal parent plan and runs **`new-plan`** + **`pr-plan`** inline. **`pr-plan`** spawns **`coding-session`** (§5d). Ship execution stays on the detached **`coding-session`** lane; the Squad Leader tracks planning closure and ship progress, then proposes dispatch resolution.
 
 **Skill reuse:** [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/) — **`new-plan`**, **`pr-plan`**, **`coding-session`**. Spawn contracts: [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md).
 
@@ -16,11 +16,13 @@ alwaysApply: false
 
 | Constraint | Rule |
 |------------|------|
-| **Scope** | Cosmetic UI/styling only — few lines per item, **no functional behavior changes** |
-| **Intake** | Short bullet list; items may be unrelated but all must be cosmetic |
+| **Scope** | Small fixes — cosmetic UI/styling and **simple functional changes**; few lines per item |
+| **Complexity** | **≤6** — developer **must** only task this dispatch with low-complexity work |
+| **Developer responsibility** | Developer confirms each dispatch item is complexity **6 or under** before opening; agent validates at intake |
+| **Intake** | Short bullet list; items may be unrelated but each must qualify under scope and complexity |
 | **PR count** | **Exactly one** PR plan per dispatch (single indexed child) |
 | **Skipped** | Full **`author-prd`**, **`planner`** Master Plan, **`pr-breakdown`**, **`delivery-phases`**, **`phase-planner`** |
-| **Out of scope redirect** | Functional changes, multi-PR decomposition, or complexity needing Master Plan → **`plan and deliver a single phase`** or **`plan and deliver`** (detached dispatch) |
+| **Out of scope redirect** | Complexity **>6**, multi-PR decomposition, or work needing Master Plan → **`plan and deliver a single phase`** or **`plan and deliver`** (detached dispatch) |
 | **Ship chain** | Same detached **`coding-session`** order as plan-and-deliver §8 |
 
 ### Operations filesystem invariant (binding)
@@ -33,7 +35,7 @@ Same as plan-and-deliver — [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.
 
 ## Objectives
 
-1. **Cosmetic intake** — Collect a developer-confirmed bullet list of cosmetic-only changes (UI, styling, copy tweaks) with no functional scope.
+1. **Quick-fix intake** — Collect a developer-confirmed bullet list of small fixes (cosmetic UI/styling, copy tweaks, and simple functional changes) with complexity **≤6**.
 
 2. **Single PR plan** — Produce one PR plan under `.sedea/operations/` via minimal parent scaffold, **`new-plan`** (indexed child), and **`pr-plan`** inline (§§1–4 populated).
 
@@ -49,9 +51,9 @@ flowchart TB
   classDef child fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
   classDef detached fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
 
-  CMD(["cosmetic change"]):::leader
+  CMD(["quick fix"]):::leader
   CMD --> INT["§2 Intake bullet list"]:::leader
-  INT --> CP["§3 Spawn Cosmetic Plan agent"]:::child
+  INT --> CP["§3 Spawn Quick Fix Plan agent"]:::child
   CP --> NP["§4 new-plan + pr-plan inline"]:::child
   NP --> CS["§5 pr-plan spawns coding-session"]:::detached
   CS --> SHIP["Detached ship chain"]:::detached
@@ -62,7 +64,7 @@ flowchart TB
 | Role | Lane | Runs |
 |------|------|------|
 | **Squad Leader** | Leader | §§1–3 intake and spawn; §6–§8 ledger and resolution |
-| **Cosmetic Plan agent** | Child §3 | Minimal parent plan + **`new-plan`** + **`pr-plan`** inline |
+| **Quick Fix Plan agent** | Child §3 | Minimal parent plan + **`new-plan`** + **`pr-plan`** inline |
 | **Coding session** | Detached (spawned from **`pr-plan`**) | Full **`coding-session`** ship chain |
 
 **Squad Leader `laneRules` (binding).**
@@ -71,78 +73,79 @@ flowchart TB
 |------|------|
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice on every turn |
 | `.sedea/centers/sedea/rules/4_mission.mdc` | Mission protocol, spawn/reload |
-| `.sedea/centers/research-and-development/missions/cosmetic-change/plan.mdc` | **This** mission plan |
+| `.sedea/centers/research-and-development/missions/quick-fix/plan.mdc` | **This** mission plan |
 | `.sedea/centers/research-and-development/docs/development-process.md` | Cadence and protocol branches |
 
-**Cosmetic Plan agent spawn `warmUpRules` (binding):** Merge target skill frontmatter defaults but **replace** `plan-and-deliver/plan.mdc` with **`cosmetic-change/plan.mdc`**.
+**Quick Fix Plan agent spawn `warmUpRules` (binding):** Merge target skill frontmatter defaults but **replace** `plan-and-deliver/plan.mdc` with **`quick-fix/plan.mdc`**.
 
 ## Protocol
 
 ### 1. Infer intent from the opening command phrase
 
 - **Type:** Branching logic
-- **Intent:** Match **`cosmetic change`** and prepare intake.
+- **Intent:** Match **`quick fix`** and prepare intake.
 - **Inputs:** Opening message; **`mission.yaml`** command inventory.
-- **Expected output:** Intent **`cosmetic-change`**; optional scope remainder for §2.
+- **Expected output:** Intent **`quick-fix`**; optional scope remainder for §2.
 - **Next-step resolution:** Phrase matches → §2. No match → structured choice to confirm intent or abort.
 
 **Procedure**
 
-1. Match **`cosmetic change`** case-insensitively (longest phrase first per [`.sedea/centers/sedea/rules/4_mission.mdc`](.sedea/centers/sedea/rules/4_mission.mdc) § **Mission command phrases**).
+1. Match **`quick fix`** case-insensitively (longest phrase first per [`.sedea/centers/sedea/rules/4_mission.mdc`](.sedea/centers/sedea/rules/4_mission.mdc) § **Mission command phrases**).
 2. Strip the phrase; pass remainder as optional scope hint to §2.
 3. Continue to §2.
 
-### 2. Collect cosmetic change intake
+### 2. Collect quick fix intake
 
 - **Type:** Branching logic
-- **Intent:** Gather a confirmed cosmetic-only bullet list on the Squad Leader lane before §3 spawn.
+- **Intent:** Gather a confirmed quick-fix bullet list on the Squad Leader lane before §3 spawn.
 - **Inputs:** Opening remainder; `operationsUserId`.
-- **Expected output:** `changeList` (non-empty bullet list), `cosmeticOnlyConfirmed: true`, optional `title`.
-- **Next-step resolution:** List confirmed cosmetic-only → §3. Functional scope detected → structured choice: narrow to cosmetic, redirect to **`plan and deliver a single phase`** (detached), or abandon.
+- **Expected output:** `changeList` (non-empty bullet list), `complexityConfirmed: true` (each item ≤6), `scopeConfirmed: true`, optional `title`.
+- **Next-step resolution:** List confirmed in scope and complexity → §3. Out-of-scope or complexity **>6** → structured choice: narrow list, redirect to **`plan and deliver a single phase`** or **`plan and deliver`** (detached), or abandon.
 
 **Procedure**
 
 1. Collect **bullet list** of changes — required; may pre-fill from opening remainder.
-2. **Cosmetic-only gate:** Confirm each item is UI/styling/copy with **no functional behavior change**. If any item alters logic, APIs, or data semantics, stop and offer redirect (see **Mission constraints**).
-3. Collect optional **title** for the plan tree (default from first bullet or user phrase).
-4. Present summary (title, bullet list); structured choice to proceed to Cosmetic Plan agent, revise list, redirect scope, or pause.
-5. **Forbidden:** spawn before list is confirmed cosmetic-only.
+2. **Scope gate:** Confirm each item is a small fix — cosmetic UI/styling/copy **or** a **simple functional change** within this mission's line-count expectations. Reject items that need Master Plan decomposition, multiple PRs, or broad refactors.
+3. **Complexity gate:** Confirm developer attests each item is complexity **6 or under**. When any item likely exceeds **6**, stop and offer redirect (see **Mission constraints**).
+4. Collect optional **title** for the plan tree (default from first bullet or user phrase).
+5. Present summary (title, bullet list, complexity attestation); structured choice to proceed to Quick Fix Plan agent, revise list, redirect scope, or pause.
+6. **Forbidden:** spawn before list is confirmed in scope and complexity.
 
-### 3. Spawn Cosmetic Plan agent
+### 3. Spawn Quick Fix Plan agent
 
 - **Type:** Agent engagement and handover
 - **execution:** spawned
 - **Intent:** Delegate minimal parent scaffold and **`new-plan`** + **`pr-plan`** inline to a focused planning agent.
-- **Target agent role:** Cosmetic Plan agent
+- **Target agent role:** Quick Fix Plan agent
 - **Assigned skills:** [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md), [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md) — executed **inline on the child lane** per §4 (not separate spawns).
 - **Required rule context:** Sedea baseline, **this `plan.mdc`**, **`development-process.md`**, [`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`](.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc), plan-and-deliver **`skills/README.md`**.
-- **Inputs:** `changeList`, `title`, `operationsUserId`, `centerSlug: research-and-development`.
+- **Inputs:** `changeList`, `title`, `operationsUserId`, `centerSlug: research-and-development`, `complexityConfirmed: true`.
 - **Expected output:** Child terminal with `outputs.parentPlanPath`, `outputs.targetPlanPath`, `outputs.readyForImplementation`, `outputs.prPlanHandoffReady` (or equivalent per **`pr-plan`** **`## Completion (spawned)`** when spawn path used), ledger fields.
 - **Next-step resolution:** Terminal success with PR plan path → §6 ack on leader. Failure/partial → structured choice retry or abandon.
 
 **Spawn preflight**
 
 - **`name`** / **`description`** from intake **title** or first bullet — not generic placeholders.
-- **`initiatingPrompt`:** full bullet list and cosmetic-only confirmation.
-- **`warmUpRules`:** include **`cosmetic-change/plan.mdc`** instead of **`plan-and-deliver/plan.mdc`**.
+- **`initiatingPrompt`:** full bullet list and scope/complexity confirmation.
+- **`warmUpRules`:** include **`quick-fix/plan.mdc`** instead of **`plan-and-deliver/plan.mdc`**.
 
 **Agent session closure:** Child **`AGENT_RESULT_RESPONSE_V1`**; leader waits for host delivery before §6.
 
-### 4. Minimal parent and PR plan (Cosmetic Plan agent lane)
+### 4. Minimal parent and PR plan (Quick Fix Plan agent lane)
 
-- **Type:** Simple skill execution (Cosmetic Plan agent — not Squad Leader)
+- **Type:** Simple skill execution (Quick Fix Plan agent — not Squad Leader)
 - **execution:** inline on child lane
 - **Intent:** Create one PR plan without full Master Plan / **`planner`** / **`pr-breakdown`**.
 - **Inputs:** §3 spawn `inputs` and `initiatingPrompt`.
 - **Expected output:** One parent plan with single **`### PR list`** row; one PR plan stub populated through **`pr-plan`** §§1–4; handoff ready for **`coding-session`**.
 - **Next-step resolution:** Success → **`pr-plan`** §5d spawn **`coding-session`** on §5. Blocked → terminal partial/failure to leader.
 
-**Procedure (Cosmetic Plan agent)**
+**Procedure (Quick Fix Plan agent)**
 
 1. **Resolve `HOSTING_ROOT`**; operations writes on main hosting clone only.
 2. **Minimal parent plan** — scaffold under `.sedea/operations/<operationsUserId>/plans/` with:
    - Title from intake **`title`**
-   - **`### PR list`** with **exactly one** row summarizing the bullet list as a single cosmetic concern
+   - **`### PR list`** with **exactly one** row summarizing the bullet list as a single quick-fix concern
    - Sidecar **`parent: null`**, **`status: started`** per [`.sedea/centers/sedea/rules/8_plan-board-contract.mdc`](.sedea/centers/sedea/rules/8_plan-board-contract.mdc)
 3. **`new-plan`** inline — `mode: indexed-child`, `childKind: pr-plan`, `index: 1`, parent paths from step 2.
 4. **`pr-plan`** inline — populate §§1–4 from bullet list; §§5–8 remain **`_TBD_`** for **`coding-session`** (normative).
@@ -166,7 +169,7 @@ The Squad Leader **does not** spawn **`coding-session`** from §§1–3.
 ### 6. Planning closure acknowledgement
 
 - **Type:** Finish/stop logic
-- **Intent:** Acknowledge Cosmetic Plan agent terminal; register PR plan path on planning ledger.
+- **Intent:** Acknowledge Quick Fix Plan agent terminal; register PR plan path on planning ledger.
 - **Inputs:** §3 child **`AGENT_RESULT_RESPONSE_V1`**.
 - **Expected output:** One-line status ack; open ship row when `readyForImplementation` reported.
 - **Next-step resolution:** Continue §7; do not re-run planning on leader lane.
@@ -177,7 +180,7 @@ The Squad Leader **does not** spawn **`coding-session`** from §§1–3.
 - **Intent:** Track detached **`coding-session`** ship progress; gate dispatch resolution.
 - **Inputs:** Host-sync **`Mission Control: ship-ledger sync (section 8).`** messages; **`ship-ledger.v1.json`** when present.
 
-Same automation contract as plan-and-deliver §8 (*Mission Control host sync*) when the host registers mission slug **`cosmetic-change`**. **Forbidden:** manual Ship recap paste on the leader lane.
+Same automation contract as plan-and-deliver §8 (*Mission Control host sync*) when the host registers mission slug **`quick-fix`**. **Forbidden:** manual Ship recap paste on the leader lane.
 
 **Pre-resolution checklist:** Before **`MC_DISPATCH_RESOLVED_V1`**, re-scan ship rows — do not propose **`resolved`** while `open`/`blocked` rows lack host-sync this session unless developer chose planning-only close via structured choice.
 

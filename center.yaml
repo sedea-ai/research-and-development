@@ -61,11 +61,11 @@ missions:
     skills: missions/single-phase/skills/
     commands:
       - plan and deliver a single phase
-  - slug: cosmetic-change
-    plan: missions/cosmetic-change/plan.mdc
-    skills: missions/cosmetic-change/skills/
+  - slug: quick-fix
+    plan: missions/quick-fix/plan.mdc
+    skills: missions/quick-fix/skills/
     commands:
-      - cosmetic change
+      - quick fix
 
 centerSkills:
   readme: missions/plan-and-deliver/skills/README.md
