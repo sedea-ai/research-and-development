@@ -206,6 +206,12 @@ The procedure below is a hard contract — do **not** skip steps, infer state fr
 
 Classify each unchecked step **before** acting. When classification is ambiguous, use **AskQuestion** once (recap + modal) — do **not** guess credentials, environments, or subjective UI checks.
 
+### Per-step and per-assertion classification (binding)
+
+- Classify each numbered checklist line independently. If it contains multiple checks, split them into sub-assertions first.
+- **Mixed steps** (UI + filesystem / YAML / JSON / grep / diff): run agent-executable sub-assertions in the same turn, then present only the UI or subjective remainder as manual.
+- Neighboring manual UI steps do not make file, YAML, JSON, grep, or diff checks manual.
+
 ### Agent-executable (auto-run — no approval)
 
 Run **without** an **AskQuestion** approval gate **before each agent-executable step** (mid-turn tool work). Use **`worktreePath`** from inline context when present — recap **`cwd: <absolute-path>`** per [Worktree path visibility (binding)](#worktree-path-visibility-binding); otherwise resolve cwd from plan anchor or chat. When an auto-run pass **ends the assistant turn** without chaining further steps, still close with structured choice per [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc) § **Turn completion invariant** (include [Deploy developer-await modal options](#deploy-developer-await-modal-options-binding) when awaiting developer input).
@@ -250,6 +256,15 @@ Run **without** an **AskQuestion** approval gate **before each agent-executable 
 | **GitHub CLI** | `gh pr view`, `gh api`, `gh run list` / `view` when `gh` auth works in the shell |
 | **Mission Control MCP** | `sedea_get_current_user`; `sedea_add_worktree_folder` / `sedea_remove_worktree_folder` when worktree lifecycle applies; `mission_control_update_lane_display` on **own** slot only |
 | **Parse / verify** | Read JSON, YAML, Markdown plan sections; compare output to expected shape; count matches; exit codes — **agent parses**, not developer |
+
+**Agent-executable verification examples (binding)** — when a step names `dispatch.yaml`, dispatch bundle JSON, plan sidecars, YAML/JSON fields, before/after mutations, or plan-body checkboxes/status, the agent uses tools (`Read`, `Grep`, `Glob`, `Shell`) before flipping `[ ]` → `[x]`. Done notes cite the tool result: path, command, exit code, or quoted field values. Developer chat confirmation alone is **not** evidence for agent-executable work.
+
+**Challenged checkbox correction (binding):** When the developer challenges a checked step (marked without tool evidence, misclassified as manual, or contradicted by artifacts):
+
+1. Re-read the plan line and reclassify per assertion.
+2. Run agent-executable checks immediately.
+3. If evidence contradicts the checkbox, revert `[x]` → `[ ]`; re-flip only after new pass evidence.
+4. Recap what changed before closing the turn.
 
 **Manual only** (present per [Step 4 — Step presentation contract](#step-4--step-presentation-contract)):
 
