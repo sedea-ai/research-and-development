@@ -354,7 +354,7 @@ If you simplified the parent's diagram in § 2c (per § 4c) or noticed parent-Ch
 
 Leave the dual-title **numbered list** under § 5 as `_TBD_` until inline **`delivery-phases`** or **`pr-breakdown`** fills it on this lane. Keep **`### Decomposition assessment`** immediately above § 5 — that block **is** in scope here. § 6 Caveats usually waits until § 5 exists so constraints are concrete.
 
-### Inline handoff — **phase-planner** → **`delivery-phases`** / **`pr-breakdown`** (Step 5b / § 5a-hoist)
+### Inline handoff — **phase-planner** → **`delivery-phases`** / **`pr-breakdown`** (Step 5b)
 
 When the developer approves route in Step **5**, run the chosen skill **inline on this lane** — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`delivery-phases`** or **`pr-breakdown`**. Load the target **`SKILL.md`**, construct inline context from the tables below, follow that skill’s steps, and merge **`## Completion (inline)`** into this skill’s ledger (`spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Those skills run **`new-plan`** inline and may still spawn **`phase-planner`** or **`coding-session`** per their contracts.
 
@@ -371,32 +371,20 @@ When the developer approves route in Step **5**, run the chosen skill **inline o
 
 Path: `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md`
 
-**`pr-breakdown`** multi on **this phase plan**:
+**`pr-breakdown`** on **this phase plan** (single-PR **or** multi-PR):
 
 | Inline context field | Value |
 |----------------------|--------|
-| `targetPlanPath` / `targetPlanSlug` | This phase plan |
+| `targetPlanPath` / `targetPlanSlug` | **This phase plan** — **always**, including single-PR |
 | `parentAgentRole` | `"phase-planner-agent"` |
 | `ledgerParent` | When known |
 | `decompositionAssessment` | When present |
 | `routeLock` | `"pr-breakdown"` |
-| `prBreakdownShape` | `"multi"` |
+| `prBreakdownShape` | `"single"` or `"multi"` per route signal |
+| `upstreamRouteApproved` | `true` after Step **5b** **Approve phase plan and route** when `autoContinue` is not `false` |
+| `skipPrBreakdownApprovalModal` | `true` when `autoContinue` is not `false`, route is clear (**K = 1** or multi), and parent hint + assessment agree |
 
-Path: `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`
-
-**`pr-breakdown`** single-PR **hoist** on **ancestor** (§ 5a-hoist):
-
-| Inline context field | Value |
-|----------------------|--------|
-| `targetPlanPath` / `targetPlanSlug` | Ancestor plan (sidecar `parent:` of this phase) |
-| `hoistFromPhasePath` / `hoistFromPhaseSlug` | This phase plan |
-| `scopeParentIndex` | `parentIndex` from spawn inputs |
-| `prBreakdownShape` | `"single"` |
-| `routeLock` | `"pr-breakdown"` |
-| `parentAgentRole` | `"phase-planner-agent"` |
-| `ledgerParent`, `decompositionAssessment` | When known |
-| `upstreamRouteApproved` | `true` after Step **5b** **Approve phase plan and route** (or **Hoist single-PR to ancestor**) when `autoContinue` is not `false` |
-| `skipPrBreakdownApprovalModal` | `true` when `autoContinue` is not `false`, hoist path is clear (parent hint + **`### Decomposition assessment`** agree, **K = 1**) |
+**Forbidden:** `targetPlanPath` = ancestor Master Plan for single-PR **`pr-breakdown`** — PR list drafting stays on **this phase file** per **development-process.md** § *Single-PR on a phase plan (draft location — binding)*.
 
 ## Step 5 — Resolve next decomposition route
 
@@ -419,32 +407,20 @@ Normalize the signals to one of:
 Apply:
 
 - If both signals agree on `delivery-phases`, next route is `delivery-phases`.
-- If both signals agree on PR breakdown, next route is `pr-breakdown`; preserve single vs multi as `prBreakdownShape`.
-- If normalized route is `pr-breakdown-single`, set **`hoistRequired: true`** — default is **hoist** single-PR breakdown to the **decomposition ancestor** (the parent's `Delivery phases` row **N**), not a § 5 **`PR breakdown`** block on this phase plan (see **development-process.md** § *Single-PR hoist from a phase plan*).
+- If both signals agree on PR breakdown, next route is `pr-breakdown`; preserve single vs multi as `prBreakdownShape` (`"single"` or `"multi"`).
+- **Single-PR and multi-PR** both run **`pr-breakdown`** inline on **this phase plan** with the matching `prBreakdownShape` — **forbidden:** retargeting `targetPlanPath` to the decomposition ancestor (see **development-process.md** § *Single-PR on a phase plan (draft location — binding)*).
 - If parent hint is `Delivery phases` but assessment says PR breakdown, or the reverse, do not auto-spawn. Surface the conflict as an open decision.
 - If either signal is missing or low-confidence, do not auto-spawn. Surface the uncertainty as an open decision.
 
-### 5a-hoist — Single-PR on ancestor (default procedure)
-
-**Draft location ≠ phase lane.** Hoist moves **PR-list drafting** to the ancestor and leaves a **pointer note** on phase § 5 — it does **not** transfer phase delivery ownership (§ *Phase delivery ownership*). When **`hoistRequired`** is true (route `pr-breakdown-single`):
-
-1. Resolve **ancestor** = sidecar `parent:` of this phase plan (`parentPlanPath` / `parentPlanSlug` from spawn inputs when present). Verify the ancestor file exists and its dual-title section is **`Delivery phases`** (not already whole-plan **`PR breakdown`** only).
-2. **`StrReplace`** this phase plan's **`## 5. Delivery phases | PR breakdown`** body: replace `_TBD_` with a one-paragraph hoisted note — *PR breakdown for this phase is authored on ancestor `<ancestor-slug>` **`Delivery phases`** row **N**; do not draft § 5 **`PR breakdown`** here.*
-3. Run **`pr-breakdown`** **inline** on the **ancestor** per [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b--5a-hoist) — **not** on this phase file unless the developer chooses **decompose on this phase plan**.
-4. Do **not** run **`pr-breakdown`** on this phase file unless the developer chooses **decompose on this phase plan** (`decomposeOnPhasePlan: true`) via Step **5b**.
-
-When the developer asks about the phase § 5 pointer or challenges hoist: name **default procedure** (steps 1–4), **link the phase plan first** in recap, offer **PR breakdown on this phase plan** (`decomposeOnPhasePlan: true`) — **forbidden** "correct by design" or "the phase plan shouldn't own delivery."
-
-When route is `pr-breakdown-multi`, **`hoistRequired`** is false — run **`pr-breakdown`** **inline** on **this** phase plan with `prBreakdownShape: "multi"` per [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b--5a-hoist).
-
 ### 5b-decompose — lane ownership (binding)
 
-When route is **`pr-breakdown`** (multi on **this** phase plan **or** single-PR **hoist** on the **decomposition ancestor**), run **`pr-breakdown`** **inline on this phase-planner lane** with **`parentAgentRole: "phase-planner-agent"`** — even when **`targetPlanPath`** / write targets point at the ancestor Master Plan file.
+When route is **`pr-breakdown`** (single or multi on **this phase plan**), run **`pr-breakdown`** **inline on this phase-planner lane** with **`targetPlanPath`** = **this phase plan** and **`parentAgentRole: "phase-planner-agent"`**.
 
 **Forbidden:**
 
-- Telling the developer to run **`pr-breakdown`** on the **`planner`** lane, open the Master Plan agent, or return to **`planner`** Step **7** / **`route-6`** because the hoist or PR list writes target the ancestor plan file.
-- Prose redirect such as *"switch to the planner lane for **`pr-breakdown`"* — the **invoker lane** stays **phase-planner**; only the **file path** may be the ancestor.
+- Setting **`targetPlanPath`** to the decomposition **ancestor** Master Plan for single-PR breakdown.
+- Telling the developer to run **`pr-breakdown`** on the **`planner`** lane, open the Master Plan agent, or return to **`planner`** Step **7** / **`route-6`** because single-PR PR list drafting "belongs on the ancestor."
+- Prose redirect such as *"switch to the planner lane for **`pr-breakdown`"* — the **invoker lane** stays **phase-planner**; the **write target** stays **this phase file**.
 
 **Required:** Step **5b** structured choice and **`autoContinue`** cascade approval still run **on this lane** before inline **`pr-breakdown`**; merge completion per Step **5e**. After inline **`pr-plan`** with **`prPlanHandoffSkipped`**, Step **5f** owns implementation handoff on the **same** lane.
 
@@ -454,9 +430,9 @@ When route is **`pr-breakdown`** (multi on **this** phase plan **or** single-PR 
 
 When this skill is running as a spawned child and `autoContinue` is not `false`, run the next decomposition branch **inline on this lane** **only** when route signal is clear:
 
-- `delivery-phases` → load and follow **`delivery-phases/SKILL.md`** on **this** phase plan per [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b--5a-hoist). **`delivery-phases`** drafts the full phase list first; **`new-plan`** expand uses **depth-first** ship-complete gates — do not expect all phase children in one pass.
+- `delivery-phases` → load and follow **`delivery-phases/SKILL.md`** on **this** phase plan per [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b). **`delivery-phases`** drafts the full phase list first; **`new-plan`** expand uses **depth-first** ship-complete gates — do not expect all phase children in one pass.
 - `pr-breakdown-multi` → load and follow **`pr-breakdown/SKILL.md`** on **this** phase plan with `prBreakdownShape: "multi"`. **`pr-breakdown`** honors **`### Sequencing`** for parallel vs sequential PR expand.
-- `pr-breakdown-single` → follow **§ 5a-hoist** (ancestor target + inline hoist); do **not** run **`pr-breakdown`** on this phase file.
+- `pr-breakdown-single` → load and follow **`pr-breakdown/SKILL.md`** on **this** phase plan with `prBreakdownShape: "single"` — **same target file as multi-PR**; **forbidden:** ancestor retarget.
 
 Before handoff, present the drafted phase plan body and the route signal via **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** in **one turn** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act* (`display.markdown` + `askQuestion`). Required options:
 
@@ -466,18 +442,13 @@ Before handoff, present the drafted phase plan body and the route signal via **A
 - **Defer downstream decomposition**
 - **More details for option _**
 
-When **`hoistRequired`**, add:
-
-- **Hoist single-PR to ancestor** (default when approving single-PR route)
-- **PR breakdown on this phase plan** — sets `decomposeOnPhasePlan: true` on the inline **`pr-breakdown`** handoff (override; not recommended after **`delivery-phases`** → **`phase-planner`**)
-
-Only **Approve phase plan and route** (with hoist when single-PR) authorizes inline decomposition handoff. Do not treat agreement between parent hint and assessment as developer approval.
+Only **Approve phase plan and route** authorizes inline decomposition handoff. Do not treat agreement between parent hint and assessment as developer approval.
 
 ### Cascade approval when `autoContinue: true` (binding)
 
-When **`autoContinue`** is not `false` and the developer selects **Approve phase plan and route** or **Hoist single-PR to ancestor** (Step **5b**), that approval **propagates** as upstream consent for inline decomposition on **this same turn** — do **not** stop after entering inline **`pr-breakdown`** when the hoist path is clear (**K = 1**, depth-first eligible for PR index **1**).
+When **`autoContinue`** is not `false` and the developer selects **Approve phase plan and route** (Step **5b**), that approval **propagates** as upstream consent for inline decomposition on **this same turn** — do **not** stop after entering inline **`pr-breakdown`** when the route is clear (**K = 1** or multi, depth-first eligible for PR index **1** when applicable).
 
-Pass **`upstreamRouteApproved: true`** and **`skipPrBreakdownApprovalModal: true`** on the inline **`pr-breakdown`** handoff per [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b--5a-hoist) when route signals agree on single-PR hoist.
+Pass **`upstreamRouteApproved: true`** and **`skipPrBreakdownApprovalModal: true`** on the inline **`pr-breakdown`** handoff per [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b) when route signals agree on **`pr-breakdown`** (single or multi).
 
 **Forbidden:** Opening **`pr-breakdown`** Step **6** structured choice when **`skipPrBreakdownApprovalModal: true`** and PR index **1** is depth-first eligible per **30_planning-target-resolution**.
 
@@ -504,7 +475,7 @@ Recap content:
 **Structured route options** — one `option` per protocol branch (brief `label`; detail in `prompt`). Example `options`:
 
 - **`delivery-phases`** — draft the § 5 **list** as child phases (`Delivery phases` heading).
-- **`pr-breakdown`** — multi-PR: draft § 5 on **this** phase plan. Single-PR: default **hoist** to ancestor (**§ 5a-hoist**); override only via **PR breakdown on this phase plan**.
+- **`pr-breakdown`** — draft full § 5 **`PR breakdown`** on **this phase plan** (single-PR and multi-PR use the same draft location).
 - **Revise a section** — the developer names § N and feedback; you apply one focused `StrReplace` and echo. For assessment-only edits, anchor on `## 4. Changes` … `### Decomposition assessment`.
 - **More details for option _**
 
@@ -514,7 +485,7 @@ Recap content:
 
 When the developer asks to revise § N, re-read that section and apply edits via `StrReplace`; echo the result; re-offer structured choice (prefer phased or AskQuestion in one message) when a pick is required.
 
-When they choose **`delivery-phases`** or **`pr-breakdown`** via **AskQuestion**, run the chosen skill **inline** on this lane per **§ 5b** / **§ 5a-hoist** and [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b--5a-hoist). Do **not** emit **`AGENT_RUN_REQUEST_V1`** for those skills. When the handoff ends the assistant turn while waiting for **`phase-planner`** or **`coding-session`** child results per step **5e**, close with structured choice per [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc) § **Turn completion invariant** — do not prose-only stop after handoff.
+When they choose **`delivery-phases`** or **`pr-breakdown`** via **AskQuestion**, run the chosen skill **inline** on this lane per **§ 5b** and [Inline handoff](#inline-handoff--phase-planner--delivery-phases--pr-breakdown-step-5b). Do **not** emit **`AGENT_RUN_REQUEST_V1`** for those skills. When the handoff ends the assistant turn while waiting for **`phase-planner`** or **`coding-session`** child results per step **5e**, close with structured choice per [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc) § **Turn completion invariant** — do not prose-only stop after handoff.
 
 ## Step 5e — Aggregate downstream result
 
@@ -572,12 +543,12 @@ When the developer picks **`start-coding-session`** (or explicit implement autho
 
 After §§ 1–4 are drafted on this lane, **this phase-planner child lane owns phase delivery** until one of the terminal conditions below. The **Master Plan agent** (`planner` lane) must **not** re-offer §6 route menus, **`pr-breakdown`** approval, or phase-scoped expand options for the same phase while this lane is active.
 
-In recaps and hoist explanations, **link the target phase `.plan.md` first** — see **§ 5a-hoist** (*draft location ≠ phase lane*).
+In recaps, **link the target phase `.plan.md` first** — § 5 **`PR breakdown`** lives on that file for single-PR and multi-PR routes.
 
 **Owns on this lane (through ship-complete or explicit defer/abandon):**
 
 - Route approval after §§ 1–4 (**Step 5b** / **5c** structured choice)
-- Inline **`delivery-phases`** / **`pr-breakdown`** on this phase plan **or** on the decomposition **ancestor** when **§ 5a-hoist** applies (**§ 5b-decompose** — invoker lane stays **phase-planner**)
+- Inline **`delivery-phases`** / **`pr-breakdown`** on **this phase plan** (**§ 5b-decompose** — invoker lane stays **phase-planner**)
 - Inline **`new-plan`** / **`pr-plan`** and nested **`phase-planner`** / **`coding-session`** spawns from that subtree
 - Per-PR and phase ship aggregation (**Step 5e**)
 
@@ -591,7 +562,7 @@ In recaps and hoist explanations, **link the target phase `.plan.md` first** —
 
 - Returning **`continuationStatus: terminal`** immediately after §§ 1–4 draft or route approval when inline decomposition or child lanes remain — use **`active`** and keep **`continuationOwner: "phase-planner-agent"`**
 - Emitting a terminal line that causes **`planner`** Step **7b** to offer **`route-6`**, **`pr-breakdown`**, or phase-scoped **`expand-eligible`** / **`expand-next-eligible`** for work this lane still owns
-- Telling the developer to continue phase decomposition on the **Master Plan** lane when this **phase-planner** child lane is open — including *"run **`pr-breakdown`** on the **`planner`** lane"* or *"return to Master Plan agent / Step 7"* when **§ 5b-decompose** applies (ancestor **`targetPlanPath`** does **not** transfer ownership to **`planner`**)
+- Telling the developer to continue phase decomposition on the **Master Plan** lane when this **phase-planner** child lane is open — including *"run **`pr-breakdown`** on the **`planner`** lane"* or *"return to Master Plan agent / Step 7"* when **§ 5b-decompose** applies
 
 When **`AGENT_RESULT_RESPONSE_V1`** bubbles to inline **`new-plan`** / **`delivery-phases`** / **`planner`**, parents **acknowledge only** until **`phaseShipComplete`** or explicit defer/abandon — see **`new-plan`** step **5**, **`delivery-phases`** step **6b**, and **`planner`** Step **7b** *Phase-planner child active*.
 
@@ -605,7 +576,7 @@ This skill writes the **body** of the target phase plan — replacing the **`new
 
 **Owns:** in-file §§ 1–4 + assessment; echo to chat for review.
 
-**Out of scope here:** target plan frontmatter (left as **`new-plan`** set it); editing the ancestor parent body except the **hoisted § 5 note** on this phase file (**§ 5a-hoist** step 2); parent `Plan:` / row updates on the ancestor (**hoisted inline `pr-breakdown`** + **`new-plan`**); drafting the dual-title § 5 **numbered list** on this phase when **`hoistRequired`**; § 6 Caveats (**inline `delivery-phases`** / non-hoisted **`pr-breakdown`** own those); spawning **`delivery-phases`** or **`pr-breakdown`** child lanes — those skills run inline; **`new-plan`** after § 5 exists is owned by inline decomposition; git / commit automation.
+**Out of scope here:** target plan frontmatter (left as **`new-plan`** set it); **link-only** updates on the ancestor **`Delivery phases`** row **N** (`Phase plan:` phase link; **`Plan:`** PR link after **`new-plan`** — **not** row-scoped PR breakdown blocks on the ancestor); § 6 Caveats (**inline `delivery-phases`** / **`pr-breakdown`** own those); spawning **`delivery-phases`** or **`pr-breakdown`** child lanes — those skills run inline; **`new-plan`** after § 5 exists is owned by inline decomposition; git / commit automation.
 
 Wrong template stops live in step 1a — use **`planner`** or **`pr-plan`** protocol branches when the file is a Master Plan or PR plan.
 
@@ -624,8 +595,6 @@ Required `outputs` fields:
 - `outputs.decompositionAssessment`
 - `outputs.routeDecision` — `delivery-phases` | `pr-breakdown` | `needs-user-decision`
 - `outputs.routeApprovalStatus`, `outputs.prBreakdownShape` — `single` | `multi` | `unknown`
-- `outputs.hoistRequired` — boolean when single-PR default applies
-- `outputs.hoistAncestorPlanSlug` — when hoist inline handoff ran
 - `outputs.spawnedPlans` — **required whenever** inline **`delivery-phases`** / **`pr-breakdown`** / **`new-plan`** / inline **`pr-plan`** created child `.plan.md` files under this phase subtree. Array of `{ "planPath": "<absolute path>", "planSlug": "<slug>" }` (string paths allowed). Include **every** accumulated child PR/phase plan on **each** terminal re-emit — Mission Control lane documents ingest `spawnedPlans` from terminal `outputs`.
 - `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.remainingTasks`
 - `outputs.continuationOwner`: `"phase-planner-agent"`

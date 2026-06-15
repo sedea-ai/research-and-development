@@ -54,21 +54,6 @@ inputs:
     type: string
     description: When delivery-phases-agent or pr-breakdown-agent, report Completion (inline) to the invoker instead of AGENT_RESULT_RESPONSE_V1.
     required: false
-  hoistFromPhase:
-    type: boolean
-    description: >-
-      When true with childKind pr-plan, allow indexed PR child under a Delivery phases
-      parent row (single-PR hoist from phase-planner); requires hoistFromPhasePath.
-    required: false
-    default: false
-  hoistFromPhasePath:
-    type: string
-    description: Phase plan path whose §§ 2–4 scope the hoisted PR plan.
-    required: false
-  hoistFromPhaseSlug:
-    type: string
-    description: Slug of the hoisted phase plan.
-    required: false
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
   - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
@@ -164,8 +149,7 @@ The regular parent-confirmation gate below is **skipped** when that pre-resoluti
 2. **Validate the requested child kind against the parent heading.**
  - `Delivery phases` parent heading requires `childKind: "phase-planner"` and `requestedPopulatorSkill: "phase-planner"` when a populator is requested.
  - `PR breakdown` parent heading requires `childKind: "pr-plan"` and `requestedPopulatorSkill: "pr-plan"` when a populator is requested.
- - **Hoist exception:** when `hoistFromPhase: true` and `hoistFromPhasePath` are set, allow `childKind: "pr-plan"` under a **`Delivery phases`** parent for the indexed row **N** that owns the hoisted phase (single-PR hoist from **`phase-planner`**). Require `requestedPopulatorSkill: "pr-plan"` when a populator is requested. Read scope from the phase plan at **`hoistFromPhasePath`** for titling; the parent's **`Plan:`** sub-bullet (not **`Phase plan:`**) receives the new PR link after write.
- - If the requested kind conflicts with the parent heading and the hoist exception does not apply, stop with `failure`; do not create a child file.
+ - If the requested kind conflicts with the parent heading, stop with `failure`; do not create a child file.
 3. **Capture the exact `Plan:` placeholder for item N.** The selected row must contain exactly one `Plan:` line that is still pending. Accept `_TBD`, `_TBD_`, or a clear spawn-hint placeholder after `Plan:`. If the row has no `Plan:` line, has multiple `Plan:` lines, or already links a `.plan.md`, stop with `partial` and report the row problem; do not create a duplicate child.
 4. **Capture parent row prose for the child stub.** When item **N** includes sub-bullets per the dev-process **§ 6 / § 5 contents rule** (decomposition decision, scope sentence, `Plan:`), treat that text as **already reviewed on the parent** — copy the scope sentence (and optional decomposition line) into the child `overview:` and `## Overview` when writing the stub. Do **not** ask the developer to re-approve that prose.
 

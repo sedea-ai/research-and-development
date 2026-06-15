@@ -151,7 +151,7 @@ Normative contract: **development-process.md** § *Depth-first plan-tree travers
 ### Phase rows (`Delivery phases` parent)
 
 1. List every numbered phase row in the snapshot (all indices visible).
-2. **Eligible for `new-plan` expand:** the lowest index **N** with `_TBD_` **`Plan:`** where **N = 1** or phase **N−1** is ship-complete (all PR plans under phase **N−1** closed on §8).
+2. **Eligible for `new-plan` expand:** the lowest index **N** with `_TBD_` **`Plan:`** where **N = 1** or phase **N−1** is ship-complete — meaning every PR plan under phase **N−1** meets the bar in § *Ship-complete definition* below (including explicit `deferred` / `abandoned` closures).
 3. **AskQuestion** `options` for expand: at most one phase index per turn (`expand-next-eligible`).
 
 ### PR rows (`### PR list` parent)
@@ -162,7 +162,7 @@ Normative contract: **development-process.md** § *Depth-first plan-tree travers
 
 ### Ship-complete definition
 
-Per PR plan path: §8 row `shipPhase: done` and `rowStatus: closed`, or explicit `deferred` / `abandoned` on the leader dispatch. Per phase row: every descendant PR plan (including hoisted PRs on an ancestor list) meets that bar.
+Per PR plan path: §8 row `shipPhase: done` and `rowStatus: closed`, or explicit `deferred` / `abandoned` on the leader dispatch. Per phase row: every descendant PR plan under that phase's § 5 **`PR list`** meets that bar.
 
 **Spawn-chain alternative:** When **`coding-session`** is a spawned child, the parent planning lane may treat **`outputs.prShipComplete: true`** on a delivered **`AGENT_RESULT_RESPONSE_V1`** as ship-complete for depth-first eligibility — without requiring a separate Squad Leader **Ship recap** on the same turn. See **`missions/plan-and-deliver/skills/README.md`** § *Upstream ship-complete notification*.
 
