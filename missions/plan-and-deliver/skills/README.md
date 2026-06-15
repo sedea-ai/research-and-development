@@ -8,7 +8,7 @@ This mission uses **three execution shapes** (see **`.sedea/centers/sedea/skills
 
 | Skill | Normative mode on this mission | Invoker | Terminal / result |
 |-------|----------------------------------|---------|-------------------|
-| **`planner`** | **Spawned only** — new child lane | Squad Leader §5 (`AGENT_RUN_REQUEST_V1`) | **`AGENT_RESULT_RESPONSE_V1`** on child lane |
+| **`planner`** | **Spawned only** — new child lane; may emit **`coding-session`** spawn via inline **`pr-plan`** §5d on **this** lane (distinct from Squad Leader §§1–7 non-spawn) | Squad Leader §5 (`AGENT_RUN_REQUEST_V1`) | **`AGENT_RESULT_RESPONSE_V1`** on child lane |
 | **`pr-plan`** | **Inline only** — same lane as invoker | **`new-plan`** step 4 (`parentAgentRole: new-plan-agent`) | **`## Completion (inline)`** — no `AGENT_RESULT_RESPONSE_V1` for **`pr-plan`** |
 | **`pr-plan`** → **`coding-session`** | Spawn after §5c **Start coding session** (or **`phase-planner`** Step **5f** when inline **`pr-plan`** skipped §5c) | **`pr-plan`** lane, or **`phase-planner`** after **`prPlanHandoffSkipped`** | Child **`coding-session`** uses **`AGENT_RESULT_RESPONSE_V1`** |
 | **`author-prd`** | **Spawned only** | Squad Leader §3 | Child terminal |
@@ -21,6 +21,8 @@ This mission uses **three execution shapes** (see **`.sedea/centers/sedea/skills
 | **`pr-review`**, **`create-pr`**, **`deploy-walk`**, **`plan-reconcile`** | **Inline only** on active **`coding-session`** | **`coding-session`** | Prose to coding-session — no child lane |
 
 **Common mistake:** Spawning **`planner`** from **`new-plan`** or running **`pr-plan`** on a standalone child lane without **`new-plan-agent`** — wrong unless the mission protocol explicitly says otherwise.
+
+**Common mistake — Squad Leader redirect:** Concluding that because the **Squad Leader** does **not** spawn **`coding-session`** from §§1–7, **no lane** may spawn it. **Correct:** the **`planner`** Master Plan child lane (and **`phase-planner`**, Quick Fix Plan agent, etc.) spawns **`coding-session`** via inline **`pr-plan`** §5d on **that planning lane** after §5c **Start coding session**. The Squad Leader only **tracks** §8 host sync after child terminals — it does **not** emit the §5d spawn.
 
 Glossary for colliding step labels: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Agent glossary — step and section labels*.
 

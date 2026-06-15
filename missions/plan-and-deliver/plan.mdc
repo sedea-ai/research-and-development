@@ -597,7 +597,7 @@ flowchart TB
 
 **Known contract gaps (documented, not invented):** No skill-owned **Merge PR** action; merge is developer/GitHub. Loop-back after reconciliation is via post-create-pr gate + **`start-pr-review`**, not auto-spawn.
 
-**Start `coding-session`:** Detached lane only — not a Squad Leader spawn from §§1–7. Entry paths, required inputs, and anti-patterns: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Start implementation (`coding-session` entry)*.
+**Start `coding-session`:** Runs on a **ship lane** (spawned child or detached session) — **not** a Squad Leader spawn from §§1–7. **Detached** means off the **leader** protocol §§1–7, **not** “only the Squad Leader may start it.” Planning child lanes (**`planner`**, **`phase-planner`**, Quick Fix Plan agent) emit §5d **`AGENT_RUN_REQUEST_V1`** from inline **`pr-plan`** on **their own lane** after §5c. Entry paths, required inputs, and anti-patterns: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Start implementation (`coding-session` entry)*.
 
 **Pre-review verification:** Before developer review on **`coding-session`**, run hosting-repo **pre-review verification** per applicable **`.cursor/rules/`** (curated **Project rules** / plan **§5** — commands stay in hosting rules only). See [Ship cut-point gate](skills/coding-session/SKILL.md#ship-cut-point-gate-approve-commit-before-deploy) and rule **20** § *Review before commit*.
 

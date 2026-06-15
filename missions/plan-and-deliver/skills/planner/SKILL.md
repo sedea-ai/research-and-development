@@ -610,6 +610,15 @@ Execute **only** what the user selected in **AskQuestion** (or the matching **`o
 
 **Spawn-chain ship notifications:** When Mission Control delivers **`agent-result-response delivered`** with **`outputs.prShipComplete`** or **`outputs.phaseShipComplete`** (bubbled from **`coding-session`** → **`pr-plan`** / **`new-plan`** → **`pr-breakdown`** / **`phase-planner`** → **`delivery-phases`**), merge into the ledger per **`../README.md`** § *Upstream ship-complete notification*, **re-emit updated** **`AGENT_RESULT_RESPONSE_V1`** (same **`correlationId`**) when this lane is standalone spawned, then return to Step **7b** with expand options when indices unlock.
 
+### Resume / PR-expand handoff (binding)
+
+When this skill resumes on a spawned **Master Plan** child lane (Mission Control reload, Squad Leader re-spawn for one PR index, or **`single-phase`** / **`plan and deliver`** resume after inline **`new-plan` + `pr-plan`** completes §§1–4):
+
+1. **Do not** emit **`continuationStatus: terminal`** with only **`readyForImplementation: true`** while inline merge reports **`implementationHandoffStatus`** in **`not-offered`** or **`offered`** — apply Step **7c** *Pending inline `pr-plan` handoff* first.
+2. **Do not** redirect **`coding-session`** spawn to the **Squad Leader**. Squad Leader §§1–7 never spawn ship skills; **this lane** re-enters inline **`pr-plan`** §5c–§5d on **`targetPlanPath`** and emits §5d **`AGENT_RUN_REQUEST_V1`** when the developer picks **Start coding session**.
+3. When the developer acknowledges **ready for coding-session** (or equivalent), treat that as **`start-coding-session`** authorization — run inline **`pr-plan`** §5c then §5d on **this lane**, not prose deferral to the leader dispatch.
+4. **Forbidden:** prose such as *Squad Leader owns **`coding-session`** spawn* or *hand off to Squad Leader for implementation* after a PR plan was created on **this** lane.
+
 **Spawn-chain parent follow-up notifications:** When a bubbled child terminal carries **`outputs.parentPlanningFollowUpNotification: "sent"`** and non-empty **`parentPlanningFollowUps`**, append each item to the **master plan** (or resolved **`parentPlanPath`**) **`## Follow-ups`** section via **`StrReplace`**; record **`pendingParentFollowUps[]`** on the working ledger. **Do not** offer **`expand-eligible`** / **`expand-next-eligible`** solely because follow-ups arrived — depth-first expand still requires **`prShipComplete`** / **`phaseShipComplete`**. **Re-emit updated** terminal when standalone spawned so upstream receives merged follow-up fields.
 
 Do **not** draft §6 in **`planner`** prose without running the inline skill.
@@ -713,6 +722,14 @@ Required `outputs` fields:
 - `outputs.expandEligibleIndices`, `outputs.expandNextEligibleIndex` — echo from inline decomposition after spawn-chain ship-complete merges
 - `outputs.prShipComplete`, `outputs.phaseShipComplete` — when this lane merged bubbled ship terminals from nested **`coding-session`** / **`phase-planner`** chains
 - `outputs.parentPlanningFollowUpNotification`, `outputs.parentPlanningFollowUps`, `outputs.pendingParentFollowUps` — when bubbled from nested **`coding-session`** with parent follow-up notification (**`../README.md`** § *Upstream parent follow-up notification*)
+- `outputs.implementationHandoffStatus` — `not-offered` | `offered` | `deferred` | `spawned-coding-session` merged from inline **`pr-plan`** (required when a PR plan handoff is pending or completed on this lane)
+- `outputs.spawnCorrelationId` — UUID from inline **`pr-plan`** §5d when **`implementationHandoffStatus`** is **`spawned-coding-session`**
+
+**Forbidden terminal patterns (binding):**
+
+- **`outputs.nextRecommendedSkill: coding-session`** paired with prose or **`remainingTasks`** that assign spawn to the **Squad Leader** — §5d runs on **this Master Plan lane** via inline **`pr-plan`**, not on the leader dispatch.
+- **`continuationStatus: terminal`** when Step **7c** / *Resume / PR-expand handoff* requires open §5c on **`targetPlanPath`** (unless developer explicitly **`defer`** implementation on this lane).
+- **`implementationHandoffStatus: acknowledged-ready-for-coding-session`** (or similar) without **`spawnCorrelationId`** when the developer authorized **Start coding session** and §5a passed — emit §5d or keep **`continuationStatus: active`**.
 
 Stop after the terminal line. Do not emit another `AGENT_RUN_REQUEST_V1` for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`** or run the next protocol step in the same turn (see **`../README.md`** § *Terminal stop (normative)*). While `continuationStatus` is `active`, the **Squad Leader** acknowledges only (**`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §6); this lane owns **AskQuestion** + inline decomposition (Step 7) on follow-up user messages. On turns that emit **`AGENT_RESULT_RESPONSE_V1`**, also emit **`MC_PHASED_RESPONSE_V1`** in the **same** message (phased line 1, terminal last line) per rule **2** § *Same message as spawn terminal* — Step **7b** options may be in that phased block on the initial draft turn.
 

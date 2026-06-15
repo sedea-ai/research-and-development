@@ -673,7 +673,19 @@ Two independent gates apply before a worktree opens: layer 1 **`readyForImplemen
 
 #### Start implementation (`coding-session` entry)
 
-After **`pr-plan`** handoff (or an approved per-PR plan), implementation runs on a **detached** lane — **not** on the **`plan and deliver`** Squad Leader lane (§§1–7). There is **no** `mission.yaml` command phrase for ship; use one of the starts below.
+After **`pr-plan`** handoff (or an approved per-PR plan), implementation runs on a **ship lane** — **not** on the **`plan and deliver`** Squad Leader lane (§§1–7). There is **no** `mission.yaml` command phrase for ship; use one of the starts below.
+
+**Lane ownership (binding):**
+
+| Actor | Spawns **`coding-session`**? | Role |
+|-------|------------------------------|------|
+| **Squad Leader** (`plan and deliver`, **`single-phase`**, **`quick-fix`**) | **No** from §§1–7 (or §§1–3) | Tracks §8 host sync only |
+| **`planner`** Master Plan child | **Yes** — inline **`pr-plan`** §5d on **this lane** after §5c | Owns planning + §5d spawn |
+| **`phase-planner`** child | **Yes** — Step **5f** or inline **`pr-plan`** §5d | Owns phase subtree + spawn |
+| **Quick Fix Plan agent** | **Yes** — inline **`pr-plan`** §5d on child lane | Same §5c–§5d contract |
+| **Developer** (phrase / snapshot) | Detached session | Worktree-open gate on coding lane |
+
+**Anti-pattern:** *Squad Leader does not spawn **`coding-session`*** therefore *redirect implementation to Squad Leader* — **wrong**. Redirect means **this planning child lane** runs §5c–§5d, not the leader dispatch.
 
 | How to start | Typical lane | Minimum inputs |
 |--------------|--------------|----------------|

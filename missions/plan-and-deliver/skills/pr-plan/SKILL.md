@@ -390,7 +390,7 @@ However:
 
 | Invoker (`parentAgentRole`) | Who owns §5d-equivalent spawn or §5c re-entry |
 |-----------------------------|-----------------------------------------------|
-| **`new-plan-agent`** on **`planner`** lane | **`planner`** Step **7b** may re-enter inline **`pr-plan`** §5c on the same **`targetPlanPath`**, or defer |
+| **`new-plan-agent`** on **`planner`** lane | **This Master Plan child lane** owns §5c and §5d — inline **`pr-plan`** §5d **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** emits from **the planner lane**, not the Squad Leader. **`planner`** Step **7b** may re-enter inline **`pr-plan`** §5c on the same **`targetPlanPath`**, or defer |
 | **`new-plan-agent`** on **`phase-planner`** lane (`phase-planner-agent` subtree) | **`phase-planner/SKILL.md`** Step **5f** — offer spawn or **`reenter-pr-plan-5c`** on **that** child lane; **forbidden** to default to detached **`coding-session`** or **`planner`** prose redirect. **Decomposition** (inline **`pr-breakdown`** on **this phase plan**): Step **5b-decompose** on **`phase-planner`**, not **`planner`** Step **7**. |
 
 When inline under **`phase-planner`**, include **`invokerRole: phase-planner-agent`** (or equivalent) in inline completion so the parent runs Step **5f** (implementation) or Step **5b-decompose** / **5e** (decomposition merge) without inferring from README shorthand alone.
@@ -451,7 +451,7 @@ Required options (brief `label`; put detail in `prompt` when needed):
 
 ### 5d — Spawn `coding-session` (after `start-coding-session`)
 
-Run only when the developer chose **`start-coding-session`** and §5a readiness passes (or they explicitly accept starting with known blockers — still run §5d but pass `readyForImplementation: false` and list blockers in `initiatingPrompt`).
+Run only when the developer chose **`start-coding-session`** and §5a readiness passes. When §5a fails, stay on §5c — explain blockers in `remainingTasks` and do **not** spawn (§5c bullet above).
 
 1. **Resolve paths** (all absolute; never documentation placeholders):
  - `targetPlanPath` — absolute path to the target `.plan.md` on this lane.
