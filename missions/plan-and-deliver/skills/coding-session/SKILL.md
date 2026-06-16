@@ -1491,7 +1491,7 @@ Run only after the developer chooses **`start-pr-review`** or **`start-pr-review
 1. **Read** [pr-review/SKILL.md](../pr-review/SKILL.md) (or confirm it is already loaded this pass).
 2. Run **`pr-review`** **Step 1** — the **`pr-review.py`** collection array from **`HOSTING_ROOT`** — as the **first GitHub-touching shell** in that turn.
 
-**Forbidden:** generic `gh pr view --json reviews,comments`, `gh api`, or GraphQL substitutes before Step 1; prose *review the PR on GitHub* without opening the post-create-pr or disposition gate; parked external-wait that skips Step 1 when triage was requested.
+**Forbidden:** generic `gh pr view --json reviews,comments`, `gh api`, or GraphQL substitutes before Step 1; prose *review the PR on GitHub* without opening the post-create-pr or disposition gate; external-wait / next-step modal that skips Step 1 when triage was requested.
 
 Inline `pr-review` inputs come from coding-session state:
 

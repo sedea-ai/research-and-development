@@ -143,7 +143,7 @@ After inline **`create-pr`** opens a PR, **`coding-session`** runs this skill **
 3. **Triage** — Steps **1–4** below.
 4. **Developer gate** — structured choice for dispositions and commit/push depth per rule **6**.
 5. **Reconcile on GitHub** — Step **5** when required (same turn as push when fixes landed).
-6. **Wait for reviewers** — external; park with structured choice per rule **2** § *External-wait / parked continuation*.
+6. **Wait for reviewers** — external; open structured choice naming resume paths per rule **2** § *External-wait / next-step modal*.
 7. **Loop** — when new comments land, return to step **2** on the **same lane** until every comment is fixed, skipped with rationale, captured as deferred work, or explicitly deferred by the developer.
 
 ## When coding-session executes `pr-review`
