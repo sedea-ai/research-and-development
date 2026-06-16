@@ -34,7 +34,7 @@ warmUpRules:
 
 # Debug and fix
 
-**Intent:** **Debug and Fix agent** runs a log-first diagnosis and fix loop in a dedicated hosting-repo worktree. Prioritize log access and debug instrumentation before substantive analysis. When the fix is verified, recommend a post-fix exit: **`code-promotion`** (parent runs **ad-hoc-prd → coding-session**) or **`findings-report-only`** (parent produces a debug session findings report with no downstream spawn).
+**Intent:** **Debug and Fix agent** runs a log-first diagnosis and fix loop in a dedicated hosting-repo worktree. Prioritize log access and debug instrumentation before substantive analysis. When the fix is verified, recommend a post-fix exit: **`code-promotion`** (parent creates a PR plan anchor through **new-plan/pr-plan**, then runs **coding-session** with `targetPlanPath`), **`ad-hoc-prd`** (parent captures fix context without immediate code promotion), or **`findings-report-only`** (parent produces a debug session findings report with no downstream spawn).
 
 **Normative mode:** **Spawned only** on this mission — child lane owns worktree lifecycle for the debug session unless protocol explicitly re-spawns **`coding-session`** for promotion.
 
@@ -120,7 +120,8 @@ When fix is verified:
 
 | Worktree / fix state | `exitRecommendation` | Rationale for parent |
 |----------------------|---------------------|----------------------|
-| Clean fix, ready to ship | `code-promotion` | Parent runs **ad-hoc-prd → coding-session** (mission steps 5–5b) |
+| Clean fix, ready to ship | `code-promotion` | Parent creates a PR plan anchor with **new-plan/pr-plan**, then runs **coding-session** with `targetPlanPath` (mission steps 5–5b) |
+| Fix verified; product-context capture is useful before promotion decisions | `ad-hoc-prd` | Parent spawns **ad-hoc-prd** only (mission step 5c) — no **coding-session** until the developer later selects code promotion |
 | Fix verified; shipping deferred, noisy unrelated changes, or scope needs triage | `findings-report-only` | Parent produces **Debug session findings report** (mission step 6) — no downstream spawn |
 | Blocked before verification | `blocked` | Terminal with evidence; parent routes to findings report |
 
@@ -140,7 +141,7 @@ Every assistant turn closes with **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** 
 | `worktreePath` | Absolute **`WORKTREE_ROOT`** |
 | `worktreeName` | Branch / worktree name |
 | `hostingRoot` | Absolute **`HOSTING_ROOT`** |
-| `exitRecommendation` | `code-promotion` \| `findings-report-only` \| `blocked` |
+| `exitRecommendation` | `code-promotion` \| `ad-hoc-prd` \| `findings-report-only` \| `blocked` |
 | `remainingTasks` | Open items for parent or developer |
 
 ### Host protocol line (required)
