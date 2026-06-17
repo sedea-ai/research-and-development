@@ -355,9 +355,9 @@ Every **spawned** plan-and-deliver skill lists the paths below in frontmatter **
 **Ship skills** also include:
 
 - `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`
-- `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` — **`pre-pr-review`** spawn only; **`coding-session`** omits rule **30** from frontmatter (256 KiB warm-up cap); use `inputs.targetPlanPath` and explicit `Read` of rule **30** when resolving ambiguous `.sedea` paths
+- `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` — **`pre-pr-review`** spawn only; **`coding-session`** omits rule **30** from frontmatter (384 KiB warm-up cap); use `inputs.targetPlanPath` and explicit `Read` of rule **30** when resolving ambiguous `.sedea` paths
 
-**Warm-up cap exceptions (256 KiB host budget):**
+**Warm-up cap exceptions (384 KiB host budget):**
 
 Each spawned ship skill documents its manifest in **`SKILL.md`** § *Warm-up manifest (spawned)* or § *Warm-up manifest (inline)*. Frontmatter must match the documented table — **`verify-skill-manifest.mjs`** enforces table ↔ frontmatter parity and spawn preflight row **11** for definitive **`laneRules`** roles (see § *Universal spawn preflight* row 11).
 

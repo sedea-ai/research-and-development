@@ -110,7 +110,7 @@ Exit **0** when every **plan and deliver** lane role's manifest **`effectiveWarm
 
 **§5.6 operational sunset (L1–L5).** Before the legacy H8 directory-scan fallback is turned off in production, all gates in **`.sedea/centers/sedea/docs/lane-manifest-contract.md`** § *Legacy fallback operational sunset (PRD §5.6 L1–L5)* must pass. L2 is partially machine-enforced today via parity **`--bootstrap full`** in CI; L1/L3–L5 remain operator/host milestones documented in that section.
 
-**Spawn warm-up byte budget.** `verify-skill-manifest.mjs` sums on-disk bytes for each spawned skill's frontmatter **`warmUpRules` ∪ `laneRules`**, emits **`WARN:`** lines when over **256 KiB**, and reports **`spawn byte budget smoke`** in the OK line. Pass **`--enforce-spawn-byte-budget`** to exit **1** on over-cap skills (strict gate for post-flip manifest trimming).
+**Spawn warm-up byte budget.** `verify-skill-manifest.mjs` sums on-disk bytes for each spawned skill's frontmatter **`warmUpRules` ∪ `laneRules`**, emits **`WARN:`** lines when over **384 KiB**, and reports **`spawn byte budget smoke`** in the OK line. Pass **`--enforce-spawn-byte-budget`** to exit **1** on over-cap skills (strict gate for post-flip manifest trimming).
 
 **Warm-up/parity integration tests.** **`./scripts/verify-center-governance.sh`** runs these as its third step (after **`npm ci`** in **`missions/plan-and-deliver/scripts/`**). To run only the integration suite locally:
 
