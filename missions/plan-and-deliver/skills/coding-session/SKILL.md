@@ -214,6 +214,7 @@ Give developers a **consistent state snapshot** at ship gates so they can re-ori
 
 | Gate | Section |
 |------|---------|
+| Repo rules reconciliation | [Repo rules reconciliation gate](#repo-rules-reconciliation-gate) |
 | Ship cut-point | [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) |
 | Before deploy walk | [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) |
 | Pre-PR handback | [Pre-PR review handoff](#pre-pr-review-handoff) |
@@ -237,7 +238,7 @@ See [`.sedea/centers/research-and-development/rules/50_mission-control-display-m
 
 ### Spawned lane — sentinel-first (binding)
 
-On spawned **`coding-session`** lanes, **in order to use the AskQuestion modal**, use **`MC_PHASED_RESPONSE_V1`** for gates (sentinel-first). Before the [Worktree-open gate](#worktree-open-gate), [Worktree-open gate (pr-plan spawn handoff)](#worktree-open-gate-pr-plan-spawn-handoff), [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy), [Review feedback approval gate](#review-feedback-approval-gate), [Create-PR handoff after go](#create-pr-handoff-after-go) (exceptional — when **`hasProposedFollowUps`**, **`actionablePrePrFindings`** with developer **`proceed-create-pr`**, or explicit defer/revise before PR), [Post-create-pr handoff gate](#post-create-pr-handoff-gate), and any turn that **awaits a developer pick** before the next **Act** — **unless** [Auto-authorize implementation (pr-plan spawn)](#auto-authorize-implementation-pr-plan-spawn) or [Auto-spawn pre-pr-review](#auto-spawn-pre-pr-review) / [Inline create-pr (auto on clean go)](#inline-create-pr-auto-on-clean-go) / [Post-merge workspace cleanup](#post-merge-workspace-cleanup) auto-advance applies (no modal; proceed):
+On spawned **`coding-session`** lanes, **in order to use the AskQuestion modal**, use **`MC_PHASED_RESPONSE_V1`** for gates (sentinel-first). Before the [Worktree-open gate](#worktree-open-gate), [Worktree-open gate (pr-plan spawn handoff)](#worktree-open-gate-pr-plan-spawn-handoff), [Repo rules reconciliation gate](#repo-rules-reconciliation-gate), [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy), [Review feedback approval gate](#review-feedback-approval-gate), [Create-PR handoff after go](#create-pr-handoff-after-go) (exceptional — when **`hasProposedFollowUps`**, **`actionablePrePrFindings`** with developer **`proceed-create-pr`**, or explicit defer/revise before PR), [Post-create-pr handoff gate](#post-create-pr-handoff-gate), and any turn that **awaits a developer pick** before the next **Act** — **unless** [Auto-authorize implementation (pr-plan spawn)](#auto-authorize-implementation-pr-plan-spawn) or [Auto-spawn pre-pr-review](#auto-spawn-pre-pr-review) / [Inline create-pr (auto on clean go)](#inline-create-pr-auto-on-clean-go) / [Post-merge workspace cleanup](#post-merge-workspace-cleanup) auto-advance applies (no modal; proceed):
 
 1. **Self-check:** the assistant message **starts** with **`MC_PHASED_RESPONSE_V1`** — **no** recap prose before the sentinel.
 2. Put required recap lines in **`display.markdown`** only (see pr-plan spawn handoff recap below).
@@ -274,6 +275,7 @@ On spawned **`coding-session`** lanes, **any** assistant turn where the develope
 |-------------|----------------|
 | Worktree / implementation | [Worktree-open gate](#worktree-open-gate) |
 | Implementation batch (no ship gate open) | [Implementation continuation gate](#implementation-continuation-gate) |
+| Plan §5 → `.mdc` reconcile (plan-anchored) | [Repo rules reconciliation gate](#repo-rules-reconciliation-gate) |
 | Review-ready / commit / Before deploy | [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) |
 | Before deploy manual step | § [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) step 4 |
 | Pre-PR findings | [Review feedback approval gate](#review-feedback-approval-gate) |
@@ -490,8 +492,56 @@ Normative path when **`pr-plan`** (or another spawner) opens a **coding-session*
 4. **Read the anchored PR plan** — Load `targetPlanPath` (from spawn `inputs` / `initiatingPrompt`). Use §§ **1–4** for scope context; **first implementation work** is substantive fill of §§ **5–8** (replace `_TBD_` as code paths become known), then code/tests/docs per those sections.
 5. **Implement** — Make hosting-repo edits (code, tests, docs) in the worktree until **implementation ready for developer review** or a blocking stop. **Do not** `git commit` or `git push` during implementation — see **20_efficient-pr-shipping.mdc** § *Review before commit* and [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) (ship cut-point also requires `outputs.bootstrapStatus: success`). Maintain **`## Follow-ups`** on the PR plan per **development-process** § *Coding Session*.
 6. **Continuation** — Keep `outputs.continuationStatus: "active"` and `outputs.shipPhase: "implementing"` while work remains. Emit **`AGENT_RESULT_RESPONSE_V1`** with `status: partial` when blocked; do **not** use `continuationStatus: terminal` to mean “prompt emitted — hand off elsewhere.”
-7. **Pre-review verification** — Before [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy), complete pre-review verification prescribed by applicable **Project rules** paths (hosting-repo **`.cursor/rules/*.mdc`** listed in the session prompt or plan **§5**). **`Read`** each cited rule and run its before-review steps; re-run after each implementation batch. Block the review modal until every prescribed step passes (**exit 0**). Commands and repo-specific paths live in those hosting rules only — do not duplicate them in this skill.
-8. **Ship chain** — When implementation is ready for developer review and step **7** passes (or no Project rule prescribes verification), follow [Ship chain after implementation](#ship-chain-after-implementation-coding-session-lane) on **this same lane** ([Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) — one modal for approve + commit + Before deploy spawn when applicable → **`pre-pr-review`** → **`create-pr`** when authorized). **Do not** skip Before deploy or open a PR before that order completes.
+7. **Repo rules reconciliation** — When plan-anchored, run [Repo rules reconciliation (binding)](#repo-rules-reconciliation-binding) and pass [Repo rules reconciliation gate](#repo-rules-reconciliation-gate) before step **8** or [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy). Skip when `anchorType` is free-form or plan **§5** is `_None — no repo rule updates required for this PR._` only.
+8. **Pre-review verification** — Before [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy), complete pre-review verification prescribed by applicable **Project rules** paths (hosting-repo **`.cursor/rules/*.mdc`** listed in the session prompt or plan **§5**). **`Read`** each cited rule and run its before-review steps; re-run after each implementation batch. Block the review modal until every prescribed step passes (**exit 0**). Commands and repo-specific paths live in those hosting rules only — do not duplicate them in this skill.
+9. **Ship chain** — When implementation is ready for developer review, step **7** reconciliation passes (or is skipped), and step **8** passes (or no Project rule prescribes verification), follow [Ship chain after implementation](#ship-chain-after-implementation-coding-session-lane) on **this same lane** ([Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) — one modal for approve + commit + Before deploy spawn when applicable → **`pre-pr-review`** → **`create-pr`** when authorized). **Do not** skip Before deploy or open a PR before that order completes.
+
+## Repo rules reconciliation (binding)
+
+Plan-anchored runs must reconcile plan **§5 Repo rules impact** with the **hosting-repo** worktree diff **before** [Pre-review verification](#spawned-implementation-lane) step **8** and **before** [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy). Normative contract: **`40_maintain-rules.mdc`** § *Plan-anchored PRs* and **development-process.md** § *Align hosting-repo rules before commit and push*.
+
+**Out of scope:** Sedea center rules under **`.sedea/centers/`** — those use **`improve center rules`**, not §5 hosting-repo bullets.
+
+### Procedure
+
+1. **Read plan §5** — Load **`## 5. Repo rules impact`** (or legacy **`## N. Repo rules impact`**) from `targetPlanPath`.
+2. **Classify each bullet** per **`40_maintain-rules.mdc`** § *Plan-anchored PRs*:
+
+| Class | §5 signal | Agent action |
+|-------|-----------|--------------|
+| **Action** | Names **`.cursor/rules/*.mdc`** with **update** / **extend** / **add** | Apply the **`.mdc` edit in `WORKTREE_ROOT`** in this PR |
+| **Verify-only** | **no file edit**, **verify only**, **skip unless …** | Confirm code obeys the existing rule; no `.mdc` diff required |
+| **`_None_`** | Single bullet `_None — no repo rule updates required for this PR._` | Skip reconciliation; record `outputs.repoRulesReconciliationStatus: skipped-none` |
+
+3. **Apply action bullets** — Edit only under **`WORKTREE_ROOT/.cursor/rules/`**. Update plan **§5** when implementation reveals new rule paths or honest deferral (revise bullets so plan ↔ repo cannot drift).
+4. **Record outputs** — Set `outputs.reconciledRepoRulesPaths` (array of absolute paths touched or verified) and `outputs.repoRulesReconciliationStatus`: `complete` | `skipped-none` | `pending`.
+5. **Re-run after code batches** that might change §5 intent or rule applicability.
+
+**Forbidden:** reaching [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) or spawning **`pre-pr-review`** while action bullets lack matching **`.mdc` diffs** and §5 was not revised to document deferral.
+
+### Repo rules reconciliation gate
+
+**When required:** Plan-anchored run with at least one **action** or **verify-only** §5 bullet (not `_None_` only). Open **immediately before** [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) — **standalone** modal, not combined with cut-point options.
+
+**Precondition:** Implementation ready for developer review; step **7** procedure complete or honestly skipped.
+
+Emit **`MC_PHASED_RESPONSE_V1`** (`modalTitle`: *Coding session — repo rules reconciliation*). Recap must include [Session orientation table (binding)](#session-orientation-table-binding) as first block, then:
+
+- Each §5 bullet with classification (action / verify-only)
+- Matching **`.mdc` diff** path or verify-only attestation
+- `outputs.reconciledRepoRulesPaths` when populated
+
+| Option id | Label (brief) | Agent action |
+|-----------|---------------|--------------|
+| `reconcile-approved` | Reconcile approved — open ship cut-point | Set `outputs.repoRulesReconciliationStatus: complete`; open [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) on **next** turn |
+| `revise-rules` | Revise `.mdc` or §5 first | Return to step **7** procedure |
+| `more-changes` | More implementation changes first | Return to [Spawned implementation lane](#spawned-implementation-lane) step **5** |
+| `defer` | Defer ship chain | Keep `continuationStatus: active` |
+| `more-details` | More details for option _ | Elaborate; re-ask |
+
+**Block opening ship cut-point** when any **action** bullet lacks a worktree **`.mdc` diff** and §5 was not revised — offer **`revise-rules`** / **`more-changes`** only.
+
+**Spawned lane — sentinel-first (binding):** Same turn ends with **`MC_PHASED_RESPONSE_V1`**; recap in **`display.markdown`** only.
 
 ## Deploy test plan confirmations
 
@@ -702,6 +752,7 @@ flowchart TB
 
   subgraph CS["coding-session lane"]
     direction LR
+    RRC["Repo rules reconcile<br/>§5 → .mdc"]:::gate
     CUT["Ship cut-point<br/>review · approve · commit"]:::gate
     BDW["Before deploy<br/>deploy-walk inline"]:::inline
     CPR["create-pr"]:::inline
@@ -710,7 +761,7 @@ flowchart TB
     PMC["Cleanup<br/>pull · detach worktree"]:::proc
     ADW["After deploy<br/>deploy-walk inline"]:::inline
     REC["plan-reconcile<br/>explicit start"]:::inline
-    CUT --> BDW --> CPR
+    RRC --> CUT --> BDW --> CPR
     CPR --> PRV --> WAIT --> PMC --> ADW --> REC
   end
 
@@ -722,10 +773,11 @@ flowchart TB
   PPR -->|result go| CPR
 ```
 
-Pre-ship setup on this lane (not shown): implement → [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy). Center **`worktree-setup.sh`** runs before implement (bootstrap inside setup).
+Pre-ship setup on this lane (not shown): implement → [Repo rules reconciliation](#repo-rules-reconciliation-binding) → pre-review verification (step **8**) → [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy). Center **`worktree-setup.sh`** runs before implement (bootstrap inside setup).
 
 | Step | Section | Mode | Commit required? | Modal? |
 |------|---------|------|------------------|--------|
+| 0 | [Repo rules reconciliation](#repo-rules-reconciliation-binding) | gate + procedure | **No** | **Yes** (plan-anchored; skip when §5 `_None_` only) |
 | 1 | [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) | gate | **No** for review — combined modal covers approve + commit + Before deploy inline | **Yes** |
 | 2 | [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) | inline | **Yes** — after cut-point **Act** (commit when needed, then inline walk) | **No** (manual §7 step only) |
 | 3 | [Auto-spawn pre-pr-review](#auto-spawn-pre-pr-review) + [Pre-PR review handoff](#pre-pr-review-handoff) | spawn | **Yes** — Before deploy resolved or skipped | **No** — auto-spawn on next turn |
@@ -784,7 +836,7 @@ When **`outputs.shipPhase`** is **`implementing`** (or **`worktree`** after boot
 | Pick | Actions |
 |------|---------|
 | **`continue-implement`** | Resume [Spawned implementation lane](#spawned-implementation-lane) step 5 |
-| **`ready-for-review`** | Open [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) on the **next** turn when step 7 pre-review verification passes |
+| **`ready-for-review`** | Run [Repo rules reconciliation (binding)](#repo-rules-reconciliation-binding) when plan-anchored; then open [Repo rules reconciliation gate](#repo-rules-reconciliation-gate) or [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) on the **next** turn when step **8** pre-review verification passes |
 | **`defer`** | Keep `continuationStatus: active`; no edits until developer continues |
 
 ## Ship cut-point gate (approve, commit, Before deploy)
@@ -801,11 +853,12 @@ Before opening this gate, assert:
 
 ### Summarize and direct diff review
 
-0. **Pre-review verification** — Complete step **7** of [Spawned implementation lane](#spawned-implementation-lane) (or the equivalent for this entry path). Re-run after each code-change batch before opening this gate. **Do not** open the review modal until prescribed hosting-repo verification passes.
-1. Present a short summary: `git status --short` (call out **uncommitted** vs committed), files touched, and scope vs the anchored plan when present. If there are **no commits yet** in the worktree, say so — review is against the **working tree** and/or `git diff` / IDE SCM view.
-2. When plan-anchored, **read** §7 **`### Before deploy`** and note in the recap: empty / all `[x]` / *N* unchecked Before-deploy steps (list step numbers when ≤5).
-3. Tell the developer to review in the **IDE diff** (SCM: working tree, staged, and unstaged) and/or `git diff` / `git diff --cached` as appropriate. Do **not** treat “implementation done” chat as diff review.
-4. **Do not** run `git commit`, `git push`, inline **`deploy-walk`**, spawn **`pre-pr-review`**, or inline **`create-pr`** in the same assistant turn as this gate's modal.
+0. **Repo rules reconciliation** — When plan-anchored, complete step **7** of [Spawned implementation lane](#spawned-implementation-lane) and pass [Repo rules reconciliation gate](#repo-rules-reconciliation-gate) (`outputs.repoRulesReconciliationStatus: complete` or `skipped-none`) before this gate.
+1. **Pre-review verification** — Complete step **8** of [Spawned implementation lane](#spawned-implementation-lane) (or the equivalent for this entry path). Re-run after each code-change batch before opening this gate. **Do not** open the review modal until prescribed hosting-repo verification passes.
+2. Present a short summary: `git status --short` (call out **uncommitted** vs committed), files touched, and scope vs the anchored plan when present. If there are **no commits yet** in the worktree, say so — review is against the **working tree** and/or `git diff` / IDE SCM view. When plan-anchored, include **`outputs.reconciledRepoRulesPaths`** (or *none — §5 `_None_`*) in the recap.
+3. When plan-anchored, **read** §7 **`### Before deploy`** and note in the recap: empty / all `[x]` / *N* unchecked Before-deploy steps (list step numbers when ≤5).
+4. Tell the developer to review in the **IDE diff** (SCM: working tree, staged, and unstaged) and/or `git diff` / `git diff --cached` as appropriate. Do **not** treat “implementation done” chat as diff review.
+5. **Do not** run `git commit`, `git push`, inline **`deploy-walk`**, spawn **`pre-pr-review`**, or inline **`create-pr`** in the same assistant turn as this gate's modal.
 
 ### Orientation vs ship cut-point (binding)
 
@@ -973,7 +1026,7 @@ Compile the **`pre-pr-review`** child inputs:
 - `worktreePath`
 - `worktreeName`
 - `baseRef`
-- `projectRules`: absolute worktree `.cursor/rules/*.mdc` paths curated the same way as the implementation prompt.
+- `projectRules`: absolute worktree `.cursor/rules/*.mdc` paths curated the same way as the implementation prompt — include **`outputs.reconciledRepoRulesPaths`** from [Repo rules reconciliation (binding)](#repo-rules-reconciliation-binding) when populated.
 - `diffSummary`: commits/files/line counts from the committed diff.
 - `ledgerParent`
 - `upstreamSkill: "coding-session"`
