@@ -7,7 +7,7 @@ description: >-
  parent per planning-target-resolution; confirms parent before write except on
  indexed child spawn when parent + index N are already locked by session context.
  After an indexed handoff, may run **pr-plan** inline or spawn **phase-planner**. When run inline from
- **delivery-phases** or **pr-breakdown** under **planner**, reports Completion (inline) to the invoker.
+ **delivery-phases** or **pr-breakdown** under **master-planner**, reports Completion (inline) to the invoker.
  When spawned from an upstream decomposition agent that already approved the parent list, skips the child-stub populator approval
  modal and runs the populator immediately. Use under mission dispatch or
  when the developer asks to scaffold a plan via **new-plan** (standalone) or expand
@@ -132,7 +132,7 @@ When `requestedPopulatorSkill` is **`pr-plan`**, run that skill **inline on this
 
 When `requestedPopulatorSkill` is **`phase-planner`**, emit **`AGENT_RUN_REQUEST_V1`** per step **4** (spawned populator lane — unchanged).
 
-When **`parentAgentRole`** is **`delivery-phases-agent`** or **`pr-breakdown-agent`** (this skill run **inline** from decomposition under **`planner`**), report **`## Completion (inline)`** to the invoker — do **not** emit **`AGENT_RESULT_RESPONSE_V1`**.
+When **`parentAgentRole`** is **`delivery-phases-agent`** or **`pr-breakdown-agent`** (this skill run **inline** from decomposition under **`master-planner`**), report **`## Completion (inline)`** to the invoker — do **not** emit **`AGENT_RESULT_RESPONSE_V1`**.
 
 ## Indexed child spawn (parent list item **N**)
 
@@ -344,7 +344,7 @@ Set `outputs.populatorApprovalStatus: "waived-upstream"` and one line: *Parent l
 
  1. Run **`pr-plan`** **inline** on this lane per [Inline handoff](#inline-handoff--new-plan--pr-plan-step-4).
  2. Merge inline completion fields; set `outputs.populatorSkill: "pr-plan"`, `outputs.populatorStatus` from inline handoff.
- 3. **Stop on this lane after inline `pr-plan` drafts §§1–4** — run **`pr-plan`** §5c (and §5d when the developer picks **Start coding session**) **before** reporting terminal **`## Completion (inline)`** upstream — **except** when `skipPrPlanHandoffModal: true` (**`pr-breakdown`** **`approve-list`** auto-chain): inline **`pr-plan`** reports completion without §5c; merge `prPlanHandoffSkipped: true`, `implementationHandoffStatus: not-offered`, and **`invokerRole: phase-planner-agent`** when inline under a **`phase-planner`** subtree (echo from **`pr-plan`** **`## Completion (inline)`** when present). **Upstream handoff owner:** when the merge includes **`invokerRole: phase-planner-agent`**, bubble to **`pr-breakdown`** / **`phase-planner`** for Step **5f** — **forbidden** naming **`planner`** Step **7b** as owner on that path. When inline under **`planner`** only (no **`invokerRole: phase-planner-agent`** on the merge), **`planner`** Step **7b** may re-enter inline **`pr-plan`** §5c on **`targetPlanPath`**. **Forbidden:** finishing auto-authorized populator handoff in one turn and bubbling “PR plan complete” without §5c **unless** `skipPrPlanHandoffModal` applies.
+ 3. **Stop on this lane after inline `pr-plan` drafts §§1–4** — run **`pr-plan`** §5c (and §5d when the developer picks **Start coding session**) **before** reporting terminal **`## Completion (inline)`** upstream — **except** when `skipPrPlanHandoffModal: true` (**`pr-breakdown`** **`approve-list`** auto-chain): inline **`pr-plan`** reports completion without §5c; merge `prPlanHandoffSkipped: true`, `implementationHandoffStatus: not-offered`, and **`invokerRole: phase-planner-agent`** when inline under a **`phase-planner`** subtree (echo from **`pr-plan`** **`## Completion (inline)`** when present). **Upstream handoff owner:** when the merge includes **`invokerRole: phase-planner-agent`**, bubble to **`pr-breakdown`** / **`phase-planner`** for Step **5f** — **forbidden** naming **`master-planner`** Step **7b** as owner on that path. When inline under **`master-planner`** only (no **`invokerRole: phase-planner-agent`** on the merge), **`master-planner`** Step **7b** may re-enter inline **`pr-plan`** §5c on **`targetPlanPath`**. **Forbidden:** finishing auto-authorized populator handoff in one turn and bubbling “PR plan complete” without §5c **unless** `skipPrPlanHandoffModal` applies.
  4. If inline **`pr-plan`** offered the §5c handoff menu or spawned **`coding-session`**, keep `continuationStatus: "active"` on this lane — follow-up turns continue inline **`pr-plan`** (§5c–§5e) before terminal **`AGENT_RESULT_RESPONSE_V1`**.
  5. Do **not** emit **`AGENT_RUN_REQUEST_V1`** for **`pr-plan`**.
 
@@ -358,7 +358,7 @@ Set `outputs.populatorApprovalStatus: "waived-upstream"` and one line: *Parent l
 
 5. **Aggregate spawned `phase-planner` result.** When Mission Control delivers a **`phase-planner`** child result (spawned path only), match by correlation id first, then by `outputs.targetPlanPath` / `outputs.targetPlanSlug`.
 
- - **`continuationOwner: "phase-planner-agent"`** and **`continuationStatus: "active"`** → keep this `new-plan` result **`active`**; merge `remainingTasks`, `activeLanes`, and `openLedgerEntries`; report **`## Completion (inline)`** to the invoker as **wait-state only** (acknowledge — developer continues on the **phase-planner** child lane). Do **not** set invoker `terminal` or re-open **`planner`** §6 menus for this phase.
+ - **`continuationOwner: "phase-planner-agent"`** and **`continuationStatus: "active"`** → keep this `new-plan` result **`active`**; merge `remainingTasks`, `activeLanes`, and `openLedgerEntries`; report **`## Completion (inline)`** to the invoker as **wait-state only** (acknowledge — developer continues on the **phase-planner** child lane). Do **not** set invoker `terminal` or re-open **`master-planner`** §6 menus for this phase.
  - **`outputs.phaseShipComplete: true`** → merge ship fields; invoker may mark the parent row **`ship-complete`** and offer expand upstream per **`delivery-phases`** step **6b**.
  - `success` with **`continuationStatus: "terminal"`** and **`phaseShipComplete`** or explicit defer/abandon only → set this `new-plan` result to `terminal`; include the child plan in `spawnedPlans`.
  - `partial` → keep this `new-plan` result `active`; copy the populator `remainingTasks`, `activeLanes`, and `openLedgerEntries`.
@@ -373,7 +373,7 @@ Set `outputs.populatorApprovalStatus: "waived-upstream"` and one line: *Parent l
  2. Merge child `activeLanes`, `openLedgerEntries`, and `remainingTasks` into this skill’s ledger.
  3. Continue inline **`pr-plan`** §5e semantics on this lane (summarize for the developer; re-offer handoff when appropriate).
  4. When child **`outputs.prShipComplete`** is **`true`**: set **`outputs.prShipComplete: true`**, echo **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from this skill’s indexed spawn **`inputs`** (and child when present); merge **`shipPhase`**, **`rowStatus`**, **`mainPullStatus`**, **`archivedSlugs`**. Report these in **`## Completion (inline)`** to the invoker (**`pr-breakdown`** / **`phase-planner`** / standalone **`new-plan`** parent).
- 4a. When child **`outputs.parentPlanningFollowUpNotification`** is **`"sent"`**: merge **`parentPlanningFollowUps`** into **`outputs`**; propagate in **`## Completion (inline)`** or re-emit so **`pr-breakdown`** / **`phase-planner`** / **`planner`** can append to parent plan **`## Follow-ups`** per **`../README.md`** § *Upstream parent follow-up notification*.
+ 4a. When child **`outputs.parentPlanningFollowUpNotification`** is **`"sent"`**: merge **`parentPlanningFollowUps`** into **`outputs`**; propagate in **`## Completion (inline)`** or re-emit so **`pr-breakdown`** / **`phase-planner`** / **`master-planner`** can append to parent plan **`## Follow-ups`** per **`../README.md`** § *Upstream parent follow-up notification*.
  5. **Re-emit / propagate:** **Inline** under **`pr-breakdown`** or **`phase-planner`**: return **`## Completion (inline)`** with ship fields so the decomposition skill marks **`childRows[N].status: ship-complete`** and may offer **`expand-eligible`** on the next turn. **Standalone spawned `new-plan`:** re-emit **`AGENT_RESULT_RESPONSE_V1`** (same **`correlationId`**) with merged **`outputs`** before stopping.
  6. Return `partial` or `active` while the child lane is open; `terminal` only when inline **`pr-plan`** handoff is complete and no **`coding-session`** child remains open — **`prShipComplete`** may still leave the invoker **`active`** until upstream expand runs.
 
@@ -411,4 +411,4 @@ Complete write + parent confirmation (when required) + parent `Plan:` update (in
 
 Report the fields below in prose to the invoker on the **same lane**. Do **not** emit `AGENT_RUN_REQUEST_V1` for **`new-plan`**, `AGENT_RESULT_RESPONSE_V1`, or `MC_DISPATCH_RESOLVED_V1`. Do **not** add a **Host protocol line** under this section (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*). **Exception:** step **4** may still emit **`AGENT_RUN_REQUEST_V1`** for **`phase-planner`**; inline **`pr-plan`** may emit **`AGENT_RUN_REQUEST_V1`** for **`coding-session`**.
 
-**Primary path:** **`delivery-phases`** or **`pr-breakdown`** runs this skill **inline** under **`planner`** (`parentAgentRole: "delivery-phases-agent"` or `"pr-breakdown-agent"`). Use the same `outputs` semantics as **`## Completion (spawned)`** in prose only — the decomposition skill (then **planner**) merges ledger fields. **Standalone** mission dispatch may still spawn this skill on a child lane; then use **`## Completion (spawned)`** instead.
+**Primary path:** **`delivery-phases`** or **`pr-breakdown`** runs this skill **inline** under **`master-planner`** (`parentAgentRole: "delivery-phases-agent"` or `"pr-breakdown-agent"`). Use the same `outputs` semantics as **`## Completion (spawned)`** in prose only — the decomposition skill (then **master-planner**) merges ledger fields. **Standalone** mission dispatch may still spawn this skill on a child lane; then use **`## Completion (spawned)`** instead.

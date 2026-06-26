@@ -63,7 +63,7 @@ warmUpRules:
 
 **Spawnable detached lane** for hosting-repo **`.cursor/rules/*.mdc`** updates when a **`coding-session`** terminal indicates §5 repo-rule work was **not fully landed** on the product lane. Distinct skill identity and lane slug from **`coding-session`** — same sedea ship primitives, different designation and scope.
 
-**Normative execution:** **`spawned`** (detached child lane). Parent **`planner`** / **`phase-planner`** emit **fire-and-forget** **`AGENT_RUN_REQUEST_V1`** — do **not** add the rules lane to **`pendingByParent`** or block next-row expand.
+**Normative execution:** **`spawned`** (detached child lane). Parent **`master-planner`** / **`phase-planner`** emit **fire-and-forget** **`AGENT_RUN_REQUEST_V1`** — do **not** add the rules lane to **`pendingByParent`** or block next-row expand.
 
 ## Warm-up manifest (spawned)
 
@@ -168,7 +168,7 @@ When implementation discovers center/mission changes are required, stop and rout
 
 ## Spawn trigger (parent spawners — PR 2 wiring)
 
-Parent **`planner`** Step **7c** / **`phase-planner`** Step **5e** evaluate **after** **`coding-session`** terminal. Emit fire-and-forget **`AGENT_RUN_REQUEST_V1`** when **all** apply:
+Parent **`master-planner`** Step **7c** / **`phase-planner`** Step **5e** evaluate **after** **`coding-session`** terminal. Emit fire-and-forget **`AGENT_RUN_REQUEST_V1`** when **all** apply:
 
 1. Plan-anchored run (`targetPlanPath` on coding-session terminal).
 2. `outputs.repoRulesReconciliationStatus` is **`pending`** **or** §5 lists `.mdc` action bullets not covered by `reconciledRepoRulesPaths`.

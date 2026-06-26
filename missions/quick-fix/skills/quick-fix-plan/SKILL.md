@@ -49,7 +49,7 @@ warmUpRules:
 
 # Quick Fix Plan
 
-**Normative mode:** **Spawned only** on **`quick-fix`** — child lane owns minimal parent scaffold, inline **`new-plan`**, inline **`pr-plan`**, and **`coding-session`** spawn via **`pr-plan`** §5d. Does **not** run **`planner`**, **`pr-breakdown`**, **`delivery-phases`**, or **`phase-planner`**.
+**Normative mode:** **Spawned only** on **`quick-fix`** — child lane owns minimal parent scaffold, inline **`new-plan`**, inline **`pr-plan`**, and **`coding-session`** spawn via **`pr-plan`** §5d. Does **not** run **`master-planner`**, **`pr-breakdown`**, **`delivery-phases`**, or **`phase-planner`**.
 
 **Procedure authority:** [`.sedea/centers/research-and-development/missions/quick-fix/plan.mdc`](.sedea/centers/research-and-development/missions/quick-fix/plan.mdc) §4 — execute that section on **this** lane.
 
@@ -99,7 +99,7 @@ Run **`../plan-and-deliver/skills/README.md`** § *Universal spawn preflight* be
 2. Execute **`quick-fix/plan.mdc`** §4 procedure (minimal parent → inline **`new-plan`** → inline **`pr-plan`** → **`coding-session`** §5d spawn).
 3. Emit child terminal **`AGENT_RESULT_RESPONSE_V1`** per **`## Completion (spawned)`** below.
 
-**Forbidden:** second PR row; **`planner`** / **`pr-breakdown`** / **`delivery-phases`** / **`phase-planner`**; Squad Leader **`MC_DISPATCH_RESOLVED_V1`** on this lane.
+**Forbidden:** second PR row; **`master-planner`** / **`pr-breakdown`** / **`delivery-phases`** / **`phase-planner`**; Squad Leader **`MC_DISPATCH_RESOLVED_V1`** on this lane.
 
 ## Completion (spawned)
 

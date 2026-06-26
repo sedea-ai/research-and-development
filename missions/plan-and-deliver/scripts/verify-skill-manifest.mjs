@@ -2,10 +2,10 @@
 /**
  * Compare center.yaml skillEntries to on-disk mission skill SKILL.md files and lint
  * warmUpRules / laneRules frontmatter against per-skill manifest tables (spawn
- * preflight row 11 — README § Definitive laneRules for author-prd, planner,
+ * preflight row 11 — README § Definitive laneRules for author-prd, master-planner,
  * coding-session).
  *
- * Also lints AGENT_RUN_REQUEST_V1 spawn examples on planner skills (R&D and Sedea
+ * Also lints AGENT_RUN_REQUEST_V1 spawn examples on master-planner skills (R&D and Sedea
  * maintenance copies): when frontmatter declares inputs.parent.type: string, JSON
  * null for parent is forbidden — wire encoding must use "parent":"null".
  *
@@ -39,10 +39,10 @@ const DEFINITIVE_LANE_RULES_BY_SKILL = {
     '.sedea/centers/research-and-development/missions/plan-and-deliver/skills/author-prd/SKILL.md',
     '.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc',
   ],
-  planner: [
+  'master-planner': [
     '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
     '.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc',
-    '.sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md',
+    '.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md',
     '.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md',
   ],
   'coding-session': [
@@ -484,7 +484,7 @@ async function validateNullableParentSpawnWire(hostingRoot, repoRelativePaths) {
       if (JSON_NULL_PARENT_IN_SPAWN_RE.test(line)) {
         errors.push(
           `${rel}: AGENT_RUN_REQUEST_V1 spawn example uses JSON null for \`parent\` — ` +
-            `inputs.parent is type string; wire encoding must be \`"parent":"null"\` (see planner spawn contract)`,
+            `inputs.parent is type string; wire encoding must be \`"parent":"null"\` (see master-planner spawn contract)`,
         );
       }
     }
@@ -522,7 +522,7 @@ async function main() {
 
   const sedeaPlannerSkills = await listSedeaPlannerSkillFiles(hostingRoot);
   const rdPlannerSkills = [...disk].filter((rel) =>
-    /\/skills\/planner\/SKILL\.md$/.test(rel),
+    /\/skills\/master-planner\/SKILL\.md$/.test(rel),
   );
   const spawnWirePaths = [...rdPlannerSkills, ...sedeaPlannerSkills];
   const spawnWireErrors = await validateNullableParentSpawnWire(
@@ -543,7 +543,7 @@ async function main() {
     process.stdout.write(
       `OK: center.yaml skillEntries (${listed.size}) matches disk (${disk.size}); ` +
         `frontmatter valid; warmUp/laneRules manifest parity passed on plan-and-deliver spawned skills; ` +
-        `nullable-parent spawn wire lint passed on ${spawnWirePaths.length} planner skill path(s); ` +
+        `nullable-parent spawn wire lint passed on ${spawnWirePaths.length} master-planner skill path(s); ` +
         `spawn byte budget smoke: ${overCap.length} skill(s) over ${WARM_UP_BYTE_CAP} bytes` +
         (enforceSpawnByteBudget ? ' (--enforce-spawn-byte-budget)' : '') +
         `\n`,

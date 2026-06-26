@@ -46,14 +46,14 @@ const ROLE_MANIFESTS = {
     ],
     skillRelPath: 'missions/plan-and-deliver/skills/author-prd/SKILL.md',
   },
-  planner: {
+  'master-planner': {
     laneRules: [
       '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
       '.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc',
-      '.sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md',
+      '.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md',
       '.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md',
     ],
-    skillRelPath: 'missions/plan-and-deliver/skills/planner/SKILL.md',
+    skillRelPath: 'missions/plan-and-deliver/skills/master-planner/SKILL.md',
   },
   'coding-session': {
     laneRules: [

@@ -21,7 +21,7 @@ alwaysApply: false
 | **Developer responsibility** | Developer confirms each dispatch item is complexity **6 or under** before opening; agent validates at intake |
 | **Intake** | Short bullet list **or** free-form fix description (prose path synthesizes bullets for confirmation); items may be unrelated but each must qualify under scope and complexity |
 | **PR count** | **Exactly one** PR plan per dispatch (single indexed child) |
-| **Skipped** | Full **`author-prd`**, **`planner`** Master Plan, **`pr-breakdown`**, **`delivery-phases`**, **`phase-planner`** |
+| **Skipped** | Full **`author-prd`**, **`master-planner`** Master Plan, **`pr-breakdown`**, **`delivery-phases`**, **`phase-planner`** |
 | **Out of scope redirect** | Complexity **>6**, multi-PR decomposition, or work needing Master Plan → **`plan and deliver a single phase`** (**1–6** PRs, complexity **≤ 20**) or **`plan and deliver`** (detached dispatch) |
 | **Ship chain** | Same detached **`coding-session`** order as plan-and-deliver §8 |
 
@@ -41,7 +41,7 @@ Detached **`coding-session`** ship chains reuse plan-and-deliver mechanics — t
 
 Detached **`coding-session`** lanes execute canonical plan-and-deliver repo-rules behavior — this wrapper does **not** duplicate reconcile or post-review rule-update steps. **Pre-PR:** [plan-and-deliver `coding-session/SKILL.md` § *Repo rules reconciliation (binding)*](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md#repo-rules-reconciliation-binding) and [Repo rules reconciliation gate](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md#repo-rules-reconciliation-gate) — plan §5 → **`.cursor/rules/*.mdc`** before ship cut-point. **Post-review:** when inline **`pr-review`** classifies **Rule-update required**, follow [Post-review repo rules handoff](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md#post-review-repo-rules-handoff) after the disposition gate — see [plan-and-deliver `pr-review/SKILL.md`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md).
 
-**Parallel `hosting-repo-rules` fork (cross-ref only):** When product **`coding-session`** terminals carry **`repoRulesReconciliationStatus: pending`**, parent **`planner`** / **`phase-planner`** may fire-and-forget spawn **`hosting-repo-rules`** per canonical [plan-and-deliver `coding-session/SKILL.md` § *Spawner spawn-detection outputs*](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md#spawner-spawn-detection-outputs) and [plan-and-deliver/plan.mdc §8 detached branches](.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc). This wrapper inherits that contract — **no duplicate spawn prose here**.
+**Parallel `hosting-repo-rules` fork (cross-ref only):** When product **`coding-session`** terminals carry **`repoRulesReconciliationStatus: pending`**, parent **`master-planner`** / **`phase-planner`** may fire-and-forget spawn **`hosting-repo-rules`** per canonical [plan-and-deliver `coding-session/SKILL.md` § *Spawner spawn-detection outputs*](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md#spawner-spawn-detection-outputs) and [plan-and-deliver/plan.mdc §8 detached branches](.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc). This wrapper inherits that contract — **no duplicate spawn prose here**.
 
 ## Objectives
 
@@ -164,7 +164,7 @@ USER_CHECKPOINT — pick next step when Quick Fix Plan child reports failure or 
 
 - **Type:** Simple skill execution (Quick Fix Plan agent — not Squad Leader)
 - **execution:** inline on child lane
-- **Intent:** Create one PR plan without full Master Plan / **`planner`** / **`pr-breakdown`**.
+- **Intent:** Create one PR plan without full Master Plan / **`master-planner`** / **`pr-breakdown`**.
 - **Inputs:** §3 spawn `inputs` and `initiatingPrompt`.
 - **Expected output:** One parent plan with single **`### PR list`** row; one PR plan stub populated through **`pr-plan`** §§1–4; handoff ready for **`coding-session`**.
 - **Next-step resolution:** Success → **`pr-plan`** §5d spawn **`coding-session`** on §5. Blocked → terminal partial/failure to leader.
@@ -181,7 +181,7 @@ USER_CHECKPOINT — pick next step when Quick Fix Plan child reports failure or 
 5. At **`pr-plan`** §5c/§5d — spawn **`coding-session`** with planning handoff `inputs` (`readyForImplementation`, `targetPlanPath`, `upstreamSkill: pr-plan`, etc.) per **`pr-plan/SKILL.md`**.
 6. Emit child terminal **`AGENT_RESULT_RESPONSE_V1`** with plan paths and handoff status.
 
-**Forbidden on this lane:** **`planner`**, **`pr-breakdown`**, **`delivery-phases`**, **`phase-planner`**, second PR row, Squad Leader **`MC_DISPATCH_RESOLVED_V1`**.
+**Forbidden on this lane:** **`master-planner`**, **`pr-breakdown`**, **`delivery-phases`**, **`phase-planner`**, second PR row, Squad Leader **`MC_DISPATCH_RESOLVED_V1`**.
 
 ### 5. Coding session (detached)
 
@@ -193,7 +193,7 @@ USER_CHECKPOINT — pick next step when Quick Fix Plan child reports failure or 
 
 **Detached branches** — identical order to [`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`](.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc) §8 detached table: **`coding-session`** → before deploy **`deploy-walk`** → **`pre-pr-review`** spawn → **`create-pr`** → **`pr-review`** → post-merge cleanup → after deploy **`deploy-walk`** → explicit **`plan-reconcile`**.
 
-The Squad Leader **does not** spawn **`coding-session`** from §§1–3. The **Quick Fix Plan agent** child lane spawns **`coding-session`** via inline **`pr-plan`** §5d — same ownership contract as **`planner`** on plan-and-deliver (see **`../plan-and-deliver/skills/README.md`** § *Common mistake — Squad Leader redirect*).
+The Squad Leader **does not** spawn **`coding-session`** from §§1–3. The **Quick Fix Plan agent** child lane spawns **`coding-session`** via inline **`pr-plan`** §5d — same ownership contract as **`master-planner`** on plan-and-deliver (see **`../plan-and-deliver/skills/README.md`** § *Common mistake — Squad Leader redirect*).
 
 ### 6. Planning closure acknowledgement
 

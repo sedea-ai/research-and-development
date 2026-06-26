@@ -4,7 +4,7 @@ description: >-
  (new-plan, phase-planner, pr-plan, delivery-phases, pr-breakdown, plan-reconcile). Resolution
  is from session and chat context — not from IDE focused-file list. Covers resolution order,
  snapshot emission, and "Where we are now in the plan tree" table format for planning moves
- (§ *Sedea input channel*; § *Planning vs ship cadence*). **`planner`** handoff uses the same contract (Step 7 — AskQuestion + AGENT_RUN_REQUEST_V1).
+ (§ *Sedea input channel*; § *Planning vs ship cadence*). **`master-planner`** handoff uses the same contract (Step 7 — AskQuestion + AGENT_RUN_REQUEST_V1).
 alwaysApply: false
 ---
 
@@ -26,14 +26,14 @@ When a turn **requires a user reply** before you continue (pick a planning branc
 
 | You are on… | Signal that fired | Safe next step | Do **not** |
 |-------------|-------------------|----------------|------------|
-| **`pr-plan`** on **planning child lane** (`planner`, **`phase-planner`**, Quick Fix Plan agent) | `readyForImplementation: true` | Offer **AskQuestion** **Start coding session** on **that lane** → inline **`pr-plan`** §5d spawns **`coding-session`** | Open worktree on **`pr-plan`** lane, redirect spawn to Squad Leader, or set §8 `phase` past `not-started` from planning outputs alone |
+| **`pr-plan`** on **planning child lane** (`master-planner`, **`phase-planner`**, Quick Fix Plan agent) | `readyForImplementation: true` | Offer **AskQuestion** **Start coding session** on **that lane** → inline **`pr-plan`** §5d spawns **`coding-session`** | Open worktree on **`pr-plan`** lane, redirect spawn to Squad Leader, or set §8 `phase` past `not-started` from planning outputs alone |
 | **`coding-session`** after **`pr-plan`** §5d spawn | `planningHandoffApproved: true` + exit 1 + `EXPECTED_SECTIONS_5_8_TBD` or exit 0 (`OK`) | **Auto-authorize** — open worktree and implement; fill §§5–8 on this lane (no second modal) | Treat `INCOMPLETE` as planning failure; re-ask planning approval |
 | **`coding-session`** (detached) | `plan-ws-completeness.mjs` exit 0 or override in worktree-open gate | Proceed with worktree + implementation | Assume planning handoff alone was enough |
 | **`coding-session`** (detached) | `developerApprovedImplementation: true` | Continue ship chain; re-emit terminal with §8 `outputs` for host sync | Assume §8 updated without terminal `outputs` |
 | **`coding-session`** after inline **`pr-review`** | PR comment triage finished on the coding lane | Re-emit **`coding-session`** terminal with `shipPhase: pr-review` | Assume host sync ran without re-emit |
 | Squad Leader **`plan and deliver`** dispatch | Host-sync message parsed | Refresh §8 rows; then resolution gates | Close dispatch **`resolved`** while rows `open`/`blocked` without host sync — **`plan.mdc`** §8 *§8 troubleshooting* |
 
-**Lane rule:** Planning skills (**`pr-plan`**, **`planner`**, decomposition tree) ≠ ship skills (**`coding-session`** → **`pre-pr-review`** → **`create-pr`** → …). **`pr-plan`** may spawn **`coding-session`** on a child lane (§5d); worktrees and implementation stay on the child.
+**Lane rule:** Planning skills (**`pr-plan`**, **`master-planner`**, decomposition tree) ≠ ship skills (**`coding-session`** → **`pre-pr-review`** → **`create-pr`** → …). **`pr-plan`** may spawn **`coding-session`** on a child lane (§5d); worktrees and implementation stay on the child.
 
 ## §8 ship ledger and inline `pr-review`
 
@@ -80,7 +80,7 @@ Three different signals appear in plan-and-deliver; advancing one does **not** a
 | Open a worktree because **`pr-plan`** finished §§1–4 only | Run **`plan-ws-completeness.mjs`** on the **`coding-session`** lane — layer 1 + spawn handoff auto-authorizes when §§1–4 are drafted; detached entry still needs the worktree-open gate |
 | Set Squad Leader §8 `phase` to `worktree` / `implementing` from **`pr-plan`** outputs alone | Advance §8 only after host sync from **`coding-session`** terminal with `developerApprovedImplementation: true` |
 | Run **`git commit`** / **`git push`** while still on a planning skill lane | Ship cadence is **`coding-session`** (or rule **20** on an implementation lane) — see rule **20** § *AskQuestion vs git commit/push* |
-| Return to **`planner`** Step **7b** master-plan menus after inline **`pr-plan`** §§1–4 without §5c on the planner / **`new-plan`** lane | **Stop** — run **`pr-plan`** §5c (Start coding session / defer) on the active lane; §5d spawns **`coding-session`** when selected. Applies after Squad Leader §3 **`author-prd`** → §5 **`planner`** path the same as any other approved PRD |
+| Return to **`master-planner`** Step **7b** master-plan menus after inline **`pr-plan`** §§1–4 without §5c on the planner / **`new-plan`** lane | **Stop** — run **`pr-plan`** §5c (Start coding session / defer) on the active lane; §5d spawns **`coding-session`** when selected. Applies after Squad Leader §3 **`author-prd`** → §5 **`master-planner`** path the same as any other approved PRD |
 | Treat planning **AskQuestion** (*next phase*, *continue planning*) as ship or git consent | Planning picks use § *Standard flow*; commit/push need rule **20** + **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`** same-message words |
 | Treat rule **20** cadence **step 3** as “run full **`pr-review`** from Step 1” after every push | Cadence step **3** = **`pr-review` Step 5 — GitHub only** when Steps 1–4 already ran; otherwise **skip** cadence step 3 — § *Disambiguation — rule 20 cadence step 3 vs `pr-review` steps* and rule **20** § *Commit and push cadence* |
 

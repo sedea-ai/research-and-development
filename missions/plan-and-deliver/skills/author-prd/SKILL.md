@@ -74,7 +74,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 ## Purpose
 
-Gather evidence, calibrate section policy, and draft or update a Product or Feature Requirements Document that is complete and correct enough to feed the **research-and-development** center **`plan and deliver`** mission (`.sedea/centers/research-and-development/missions/plan-and-deliver/` — Master Plan via **`planner`**). The document structure is flexible: mandatory sections define planning readiness, important sections raise visible gaps, and optional sections appear only when the feature needs them.
+Gather evidence, calibrate section policy, and draft or update a Product or Feature Requirements Document that is complete and correct enough to feed the **research-and-development** center **`plan and deliver`** mission (`.sedea/centers/research-and-development/missions/plan-and-deliver/` — Master Plan via **`master-planner`**). The document structure is flexible: mandatory sections define planning readiness, important sections raise visible gaps, and optional sections appear only when the feature needs them.
 
 ## Inputs
 
@@ -141,7 +141,7 @@ Gather evidence, calibrate section policy, and draft or update a Product or Feat
  - **Many open items:** batch across turns when one modal would be impractical; **each batch still ends with** the **Approve PRD** / **Revise PRD** question as the **last** `questions` entry (developer may approve mid-stream with remaining gaps documented in §12).
 
  **When no open items remain** (or only surfaced §12 notes the developer may accept as-is) — single `questions` entry with minimum options:
- - **Approve PRD** — accept for **`planner`** on this dispatch (allowed when `planningReadiness: ready` even if §12 lists planner-owned follow-ups)
+ - **Approve PRD** — accept for **`master-planner`** on this dispatch (allowed when `planningReadiness: ready` even if §12 lists planner-owned follow-ups)
  - **Revise PRD** — edit on this lane, return to step 10
  - **More details for option _**
 
@@ -291,7 +291,7 @@ Top-level `status`: `success`, `partial`, `failure`, `aborted`, or `abandoned`.
 Required `outputs` fields:
 
 - `outputs.prdPath` — workspace-relative or absolute path to the written or updated PRD (omit or empty when no usable file)
-- `outputs.prdRef` — same as `prdPath` or `@path` form for **`planner`** seed
+- `outputs.prdRef` — same as `prdPath` or `@path` form for **`master-planner`** seed
 - `outputs.prdTitle`
 - `outputs.developerApprovedPrd` — `true` only after **Approve PRD** on this lane
 - `outputs.sectionPolicy` — map of section → `mandatory` | `important` | `optional` | `not applicable`
@@ -303,7 +303,7 @@ Required `outputs` fields:
 - `outputs.planningReadiness` — `ready`, `partial`, or `blocked`
 - `outputs.continuationOwner` — `author-prd-agent` while approval pending; `squad-leader` when terminal approved
 - `outputs.continuationStatus` — `active` until approval; `terminal` when approved or abandoned
-- `outputs.recommendedNextAction` — when approved, Squad Leader auto-chains **`plan.mdc`** §4 seed + §5 **`planner`** on **this dispatch**
+- `outputs.recommendedNextAction` — when approved, Squad Leader auto-chains **`plan.mdc`** §4 seed + §5 **`master-planner`** on **this dispatch**
 
 After initial write (step 8), before approval: emit **`AGENT_RESULT_RESPONSE_V1`** with `developerApprovedPrd: false`, `continuationOwner: author-prd-agent`, `continuationStatus: active` so the Squad Leader **acknowledges only**.
 

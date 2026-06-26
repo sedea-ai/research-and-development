@@ -1,5 +1,5 @@
 ---
-name: planner
+name: master-planner
 description: >-
  Take a PRD and scaffold a Master Plan file under the dispatch-scoped plans union
  (explicit `targetPlanPath` / handover paths — do not construct `.sedea/operations/<user-id>/...`),
@@ -10,14 +10,14 @@ description: >-
  complexity score from §4–§5; when **high**, recommends Delivery phases via Route §6 to split into lower-complexity phase plans via `delivery-phases`/`phase-planner`. Section 6 (Delivery phases | PR breakdown)
  and section 7 (Caveats) stay as TBD stubs for follow-up turns. Use when the user
  opens a fresh planning chat from the "feature plan: design + changes"
- plan-board prompt, or says "planner" / "draft a master plan".
+ plan-board prompt, or says "master-planner" / "draft a master plan".
 designation:
   allowed: Master Plan authoring; inline pr-breakdown, new-plan, pr-plan on planning lane
   forbidden: Application implementation; worktree ship; MC_DISPATCH_RESOLVED_V1 on child
 inputs:
   seedBlock:
     type: string
-    description: Complete planner seed block (Master Plan handoff) containing Feature planning, PRD, Parent, and optional Related entries.
+    description: Complete master-planner seed block (Master Plan handoff) containing Feature planning, PRD, Parent, and optional Related entries.
     required: true
   featurePlanningTitle:
     type: string
@@ -42,7 +42,7 @@ inputs:
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
   - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md"
   - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
 warmUpRules:
   - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
@@ -88,7 +88,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 |------|---------|
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice, AskQuestion |
 | `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md` | This skill procedure |
+| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md` | This skill procedure |
 | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
 
 ## Refresh lane display (when stale)
@@ -106,7 +106,7 @@ See [`.sedea/centers/research-and-development/rules/50_mission-control-display-m
 
 Cross-check every emit against **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md`** § *Universal spawn preflight* before the host parses the line.
 
-### Inbound — Squad Leader → **planner** (`plan and deliver` §5)
+### Inbound — Squad Leader → **master-planner** (`plan and deliver` §5)
 
 The **Squad Leader** must pass **`inputs`** keys that match this skill’s frontmatter **exactly** (see **`plan.mdc`** §5 *Spawn preflight* for the §4 seed → **`inputs`** map).
 
@@ -131,10 +131,10 @@ The **Squad Leader** must pass **`inputs`** keys that match this skill’s front
 **Valid example (normative wire shape — replace UUID, paths, and seed text):**
 
 ```text
-AGENT_RUN_REQUEST_V1 {"version":1,"correlationId":"00000000-0000-4000-8000-000000000001","skillPath":".sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md","name":"Planner","slug":"planner-harden-spawn-example","description":"Draft Master Plan from PRD seed","inputs":{"seedBlock":"Feature planning: \"Example feature\"\nPRD: @/path/to/example.prd.md\nParent: null","featurePlanningTitle":"Example feature","prdRef":"/path/to/example.prd.md","parent":"null","related":[]}}
+AGENT_RUN_REQUEST_V1 {"version":1,"correlationId":"00000000-0000-4000-8000-000000000001","skillPath":".sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md","name":"Master planner","slug":"master-planner-harden-spawn-example","description":"Draft Master Plan from PRD seed","inputs":{"seedBlock":"Feature planning: \"Example feature\"\nPRD: @/path/to/example.prd.md\nParent: null","featurePlanningTitle":"Example feature","prdRef":"/path/to/example.prd.md","parent":"null","related":[]}}
 ```
 
-### Inline handoff — **planner** → **`delivery-phases`** / **`pr-breakdown`** (Step 7c)
+### Inline handoff — **master-planner** → **`delivery-phases`** / **`pr-breakdown`** (Step 7c)
 
 When the user selects **Route §6 decomposition**, run the chosen skill **inline on this lane** — **do not** emit **`AGENT_RUN_REQUEST_V1`** for **`delivery-phases`** or **`pr-breakdown`**. Load the target **`SKILL.md`**, construct inline context from the table below, follow that skill’s steps, and merge its **`## Completion (inline)`** fields into this skill’s ledger (`spawnedPlans`, `activeLanes`, `openLedgerEntries`, `remainingTasks`). Those decomposition skills run **`new-plan`** **inline** on this lane (no child lanes for **`new-plan`**); they may still spawn **`phase-planner`** or inline **`pr-plan`** (which may spawn **`coding-session`**) per their contracts.
 
@@ -250,7 +250,7 @@ Related (optional, `<role>: <link or @path>` per bullet):
 - <role>: <link or @path>
 - ...
 
-Load and follow .sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md ...
+Load and follow .sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md ...
 ```
 
 `Feature planning:`, `PRD:`, and `Parent:` are required slots. The Related block is the only optional one — empty when the feature stands alone. `Parent:` is read in step 5a; when empty, missing, or `null`, default to `parent: null` (root delivery plan). Use `AskQuestion` only when a **non-null** parent slug or path fails to resolve.
@@ -548,7 +548,7 @@ After writing §§ 1–5 **and** `### Complexity score` into the plan file, **ec
 
 Do **not** draft section 6 (`Delivery phases | PR breakdown`) or section 7 (Caveats). Those are follow-up turns. Specifically:
 
-- **§ 6 Delivery phases | PR breakdown** is owned by **`delivery-phases`** and **`pr-breakdown`** (modes #2 and #3), invoked **inline on this lane** after the user picks **Route §6 decomposition** (Step 7c–7d). Either skill drafts the dual-title list; child stubs use **`new-plan`** (indexed spawn via **AskQuestion** on list index **N**, per **30_planning-target-resolution**). Do **not** draft §6 inline in **`planner`** prose alone.
+- **§ 6 Delivery phases | PR breakdown** is owned by **`delivery-phases`** and **`pr-breakdown`** (modes #2 and #3), invoked **inline on this lane** after the user picks **Route §6 decomposition** (Step 7c–7d). Either skill drafts the dual-title list; child stubs use **`new-plan`** (indexed spawn via **AskQuestion** on list index **N**, per **30_planning-target-resolution**). Do **not** draft §6 inline in **`master-planner`** prose alone.
 - **§ 7 Caveats** often only emerges once § 6 reveals concrete constraints. Drafting it from the PRD alone risks listing PRD-level worries that aren't real planning caveats.
 
 ## Step 7 — Next moves (AskQuestion + inline decomposition)
@@ -567,7 +567,7 @@ When the full section echo is too long for one message, use rule **2** priority 
 
 ### Step 7a.1 — Open-item modal contract
 
-Apply the shared planning open-item contract from `../README.md` to every **planner** review gate that surfaces multiple unresolved items: initial draft observations, section revision needs, high-complexity route caveats, route-choice caveats, inline decomposition blockers, and follow-up flags.
+Apply the shared planning open-item contract from `../README.md` to every **master-planner** review gate that surfaces multiple unresolved items: initial draft observations, section revision needs, high-complexity route caveats, route-choice caveats, inline decomposition blockers, and follow-up flags.
 
 **When open items exist** — use **one modal with multiple `questions[]` entries**:
 
@@ -595,7 +595,7 @@ Invoke **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** in the **same turn** as st
 | `revise` | Revise a drafted section (§1–§5 or §7) | Step 7e |
 | `more` | More details for option _ | Elaborate, then re-ask |
 
-**When complexity is high (C > 20)** — **include `route-6`** (same as low/medium — do not withhold §6 at high band). In recap / **`display.markdown`**, recommend **Delivery phases** over **PR breakdown** and name the downstream chain (**`delivery-phases`** → **`new-plan`** → **`phase-planner`**). At Step **7c** route **AskQuestion**, list **Delivery phases** first with a brief label such as *Delivery phases — recommended (split into phase plans)* and **PR breakdown** second with caution such as *PR breakdown — skips phase layer; usually not for high band*. Also offer **revise §4**, **revise §5** when the user wants to narrow before decomposing. The **Squad Leader** must **never** run **`delivery-phases`** or **`pr-breakdown`** — only this **planner** lane runs them inline after **`route-6`**.
+**When complexity is high (C > 20)** — **include `route-6`** (same as low/medium — do not withhold §6 at high band). In recap / **`display.markdown`**, recommend **Delivery phases** over **PR breakdown** and name the downstream chain (**`delivery-phases`** → **`new-plan`** → **`phase-planner`**). At Step **7c** route **AskQuestion**, list **Delivery phases** first with a brief label such as *Delivery phases — recommended (split into phase plans)* and **PR breakdown** second with caution such as *PR breakdown — skips phase layer; usually not for high band*. Also offer **revise §4**, **revise §5** when the user wants to narrow before decomposing. The **Squad Leader** must **never** run **`delivery-phases`** or **`pr-breakdown`** — only this **master-planner** lane runs them inline after **`route-6`**.
 
 When band is high, optional separate-Master-Plan journey-split bullets from Step 6c may appear in recap / **`display.markdown`** as context — not as a prose choice menu; options live in the modal.
 
@@ -634,9 +634,9 @@ Execute **only** what the user selected in **AskQuestion** (or the matching **`o
  - `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` — `routeLock: "delivery-phases"`
  - `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` — `routeLock: "pr-breakdown"`
 3. Pass inline context: `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "master-plan-agent"`, `ledgerParent: <masterPlanSlug>`, `complexityBand`, `complexityScore`, `decompositionAssessment`, `routeLock`.
-4. When the inline skill returns **`## Completion (inline)`** fields, merge `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`, **`expandEligibleIndices`**, and **`expandNextEligibleIndex`** into this skill’s ledger. Append each new child **`planPath`** / **`planSlug`** from inline **`new-plan`** (including inline **`pr-plan`**) into **`outputs.spawnedPlans`** on the next **`AGENT_RESULT_RESPONSE_V1`** re-emit so Mission Control lane documents list PR plans — not only **`masterPlanPath`**. If the inline skill opened **`phase-planner`** child lanes or **`coding-session`** from inline **`pr-plan`**, wait on this lane for their **`AGENT_RESULT_RESPONSE_V1`** deliveries per that skill’s aggregation step, then continue **`planner`** Step **7b** — **do not** emit child lanes for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`**.
+4. When the inline skill returns **`## Completion (inline)`** fields, merge `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`, **`expandEligibleIndices`**, and **`expandNextEligibleIndex`** into this skill’s ledger. Append each new child **`planPath`** / **`planSlug`** from inline **`new-plan`** (including inline **`pr-plan`**) into **`outputs.spawnedPlans`** on the next **`AGENT_RESULT_RESPONSE_V1`** re-emit so Mission Control lane documents list PR plans — not only **`masterPlanPath`**. If the inline skill opened **`phase-planner`** child lanes or **`coding-session`** from inline **`pr-plan`**, wait on this lane for their **`AGENT_RESULT_RESPONSE_V1`** deliveries per that skill’s aggregation step, then continue **`master-planner`** Step **7b** — **do not** emit child lanes for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`**.
 
-**Pending inline `pr-plan` handoff (binding):** When inline **`pr-breakdown`** / **`new-plan`** merged fields show a fresh PR plan with **`implementationHandoffStatus: not-offered`** or **`offered`** (§5c open, **`coding-session`** not yet spawned), **do not** offer Step **7b** **`route-6`** / master-plan menus on this turn — **unless** **`prPlanHandoffSkipped: true`** (auto-chain after **`approve-list`**). In that case continue Step **7b**; offer **Start coding session** via re-entering inline **`pr-plan`** §5c on **`targetPlanPath`**. When **`prPlanHandoffSkipped`** is absent, **re-enter** inline **`pr-plan`** §5c–§5e on **this Master Plan lane** (same **`targetPlanPath`**) until the developer picks **Start coding session**, **`defer`**, or a **`coding-session`** child terminal arrives. **PRD source is irrelevant** — every **`plan and deliver`** dispatch reaches **`planner`** only after Squad Leader §3 **`author-prd`** approval; only **`pr-plan`** §5c–§5d opens **`coding-session`**.
+**Pending inline `pr-plan` handoff (binding):** When inline **`pr-breakdown`** / **`new-plan`** merged fields show a fresh PR plan with **`implementationHandoffStatus: not-offered`** or **`offered`** (§5c open, **`coding-session`** not yet spawned), **do not** offer Step **7b** **`route-6`** / master-plan menus on this turn — **unless** **`prPlanHandoffSkipped: true`** (auto-chain after **`approve-list`**). In that case continue Step **7b**; offer **Start coding session** via re-entering inline **`pr-plan`** §5c on **`targetPlanPath`**. When **`prPlanHandoffSkipped`** is absent, **re-enter** inline **`pr-plan`** §5c–§5e on **this Master Plan lane** (same **`targetPlanPath`**) until the developer picks **Start coding session**, **`defer`**, or a **`coding-session`** child terminal arrives. **PRD source is irrelevant** — every **`plan and deliver`** dispatch reaches **`master-planner`** only after Squad Leader §3 **`author-prd`** approval; only **`pr-plan`** §5c–§5d opens **`coding-session`**.
 
 **Spawn-chain ship notifications:** When Mission Control delivers **`agent-result-response delivered`** with **`outputs.prShipComplete`** or **`outputs.phaseShipComplete`** (bubbled from **`coding-session`** → **`pr-plan`** / **`new-plan`** → **`pr-breakdown`** / **`phase-planner`** → **`delivery-phases`**), merge into the ledger per **`../README.md`** § *Upstream ship-complete notification*, **re-emit updated** **`AGENT_RESULT_RESPONSE_V1`** (same **`correlationId`**) when this lane is standalone spawned, then return to Step **7b** with expand options when indices unlock.
 
@@ -688,7 +688,7 @@ When this skill resumes on a spawned **Master Plan** child lane (Mission Control
 
 **Spawn-chain parent follow-up notifications:** When a bubbled child terminal carries **`outputs.parentPlanningFollowUpNotification: "sent"`** and non-empty **`parentPlanningFollowUps`**, append each item to the **master plan** (or resolved **`parentPlanPath`**) **`## Follow-ups`** section via **`StrReplace`**; record **`pendingParentFollowUps[]`** on the working ledger. **Do not** offer **`expand-eligible`** / **`expand-next-eligible`** solely because follow-ups arrived — depth-first expand still requires **`prShipComplete`** / **`phaseShipComplete`**. **Re-emit updated** terminal when standalone spawned so upstream receives merged follow-up fields.
 
-Do **not** draft §6 in **`planner`** prose without running the inline skill.
+Do **not** draft §6 in **`master-planner`** prose without running the inline skill.
 
 #### Draft §7 Caveats (`draft-7`)
 
@@ -711,7 +711,7 @@ Draft **`## 7. Caveats (optional)`** inline from PRD + §§1–5 (+ §6 when alr
 
 ##### §7 approval gate (after developer selects)
 
-**Forbidden on the planner lane (binding):**
+**Forbidden on the master-master-planner lane (binding):**
 
 - **Same turn:** §7 approval modal **and** **`AGENT_RESULT_RESPONSE_V1`** with **`continuationStatus: terminal`**.
 - **Same turn:** §7 approval modal **and** **`MC_DISPATCH_RESOLVED_V1`** — only the **Squad Leader** closes the dispatch.
@@ -760,7 +760,7 @@ This skill writes the Master Plan file (`<slug>.plan.md` + `<slug>.state.yaml`) 
 - Create worktrees or start implementation.
 - Modify code or content in the selected repos. Step 3b is the only repo touch this skill makes — it runs `git status --porcelain`, `git checkout <default-branch>`, and `git pull --ff-only` to sync each selected hosting repo to its default branch before loading architectural rules. It refuses to run on a dirty tree or a linked worktree, never stashes / commits / discards, and never falls back to a non-fast-forward pull.
 - Offer or run commit / push / PR for **`.sedea/operations/`** plan files — operations git is user-managed per **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`** § **Operations repository** (see Step **7c** § **Operations git requests**).
-- Draft section 6 (`Delivery phases | PR breakdown`) in **`planner`** prose alone — that section is owned by inline **`delivery-phases`** / **`pr-breakdown`**.
+- Draft section 6 (`Delivery phases | PR breakdown`) in **`master-planner`** prose alone — that section is owned by inline **`delivery-phases`** / **`pr-breakdown`**.
 - Spawn **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`** child lanes — those skills run inline on this lane; they may still spawn **`phase-planner`** or **`coding-session`** per their contracts.
 
 ## Completion (spawned)

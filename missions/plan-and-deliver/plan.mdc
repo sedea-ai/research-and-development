@@ -63,7 +63,7 @@ flowchart TB
 
 Approval gates and developer choices happen inside each skill.
 
-1. **Feature planning contracts** — From PRD or scope, produce reviewable Master / Phase / PR plan bodies per Sedea development-process templates (`planner`, `phase-planner`, `pr-plan`).
+1. **Feature planning contracts** — From PRD or scope, produce reviewable Master / Phase / PR plan bodies per Sedea development-process templates (`master-planner`, `phase-planner`, `pr-plan`).
 
 2. **Integrated PRD and delivery** — Every **`plan and deliver`** dispatch runs **`author-prd`** first (Squad Leader §§1–3), then Master Plan → PR plans under `.sedea/operations/`. Smaller scope still uses the same PRD skill; expedited paths skip phase decomposition when complexity allows. All checks and verifications remain mandatory.
 
@@ -103,7 +103,7 @@ This diagram is the **dispatch ownership map**. It answers: which agent on this 
 
 | Role | Lane | Spawns | Does not |
 |------|------|--------|----------|
-| **Squad Leader** | Mission dispatch leader | `author-prd` (§3), `planner` (§5) | PRD approval on **Author PRD** child lane; route menu for §6 decomposition on **planner** child only; `delivery-phases`, `coding-session`, etc. |
+| **Squad Leader** | Mission dispatch leader | `author-prd` (§3), `master-planner` (§5) | PRD approval on **Author PRD** child lane; route menu for §6 decomposition on **master-planner** child only; `delivery-phases`, `coding-session`, etc. |
 | **Master Plan agent** | Child lane after §5 | **`delivery-phases`**, **`pr-breakdown`** inline via **AskQuestion** + skill load on the **master plan**; drafts §7 inline; ack-only while a **phase-planner** child owns a phase row | Replace Squad Leader ledger; resolve dispatch; phase-scoped decomposition on this lane while **phase-planner** is active |
 | **Phase plan agent** | Child lane after inline **`new-plan`** | Owns **phase delivery** on its lane: route approval, inline **`delivery-phases`** / **`pr-breakdown`**, **`pr-plan`**, nested **`phase-planner`**, **`coding-session`** until **`phaseShipComplete`** or explicit defer/abandon | **`MC_DISPATCH_RESOLVED_V1`**; Master Plan §6 menus for the same phase while this lane is active |
 | **Downstream skill agents** | Further child lanes | **`phase-planner`** spawn from inline **`new-plan`** on planner; nested **`phase-planner`** from phase inline tree; **`coding-session`** → `pre-pr-review` | `MC_DISPATCH_RESOLVED_V1` |
@@ -128,7 +128,7 @@ flowchart TB
     S3A --> S3W
     S3W --> S4["§4 Planning seed"]:::leader
     S2 --> S4
-    S4 --> S5["§5 spawn planner"]:::leader
+    S4 --> S5["§5 spawn master-planner"]:::leader
     S5 --> S5W["wait AGENT_RESULT"]:::wait
     S5W --> S6["§6 Acknowledge — no route menu"]:::leader
     S6 --> S7["§7 Closure ledger"]:::leader
@@ -229,7 +229,7 @@ flowchart TD
   AHW --> APR["child: PRD approve / revise"]:::child
   APR --> AHW
   AHW --> SEED["§4 Collect planning seed"]:::leader
-  SEED --> MP["§5 spawn planner"]:::spawn
+  SEED --> MP["§5 spawn master-planner"]:::spawn
   MP --> MPW["wait child result"]:::wait
   MPW --> ACK["§6 Acknowledge status only"]:::leader
   ACK --> LED["§7 Planning ledger"]:::leader
@@ -240,7 +240,7 @@ flowchart TD
 - **§§1–7** — Squad Leader **planning** steps on the leader lane (see prose subsections below).
 - **§8** — Squad Leader **ship oversight** on the leader lane; detached skills run elsewhere.
 - **Spawn nodes** — emit `AGENT_RUN_REQUEST_V1`; stop until `AGENT_RESULT_RESPONSE_V1`.
-- **§6** — **not** decomposition routing (that lives on the **planner** child lane — **AskQuestion** + inline **`delivery-phases`** / **`pr-breakdown`** in `planner/SKILL.md` Step 7). See §6 *Forbidden on the Squad Leader lane*.
+- **§6** — **not** decomposition routing (that lives on the **master-planner** child lane — **AskQuestion** + inline **`delivery-phases`** / **`pr-breakdown`** in `planner/SKILL.md` Step 7). See §6 *Forbidden on the Squad Leader lane*.
 - **§7** — register **planning** downstream lanes/plans from child `outputs`; do not infer completion from silence.
 - **§8** — register **ship** progress per PR plan; **do not** propose **`resolved`** dispatch while ship rows are open unless the developer explicitly closes planning-only (see §8).
 
@@ -255,11 +255,11 @@ This subsection is the **Squad Leader** contract for §§3, 5, 6, and 7. Sedea h
 | Check | Action |
 |-------|--------|
 | `outputs.continuationOwner: author-prd-agent` and `outputs.continuationStatus: active` | **Acknowledge only** on the leader lane — PRD approval / revision runs on the **Author PRD** child lane (see **`author-prd`** steps 10–11). Do **not** duplicate approval **AskQuestion** here. |
-| `outputs.continuationStatus: terminal` and `outputs.developerApprovedPrd: true` with `prdRef` | **Auto-chain §4 → §5 on the same leader turn:** compile seed from approved outputs (`prdRef`, `prdTitle`, …), run §5 spawn preflight, emit **`AGENT_RUN_REQUEST_V1`** for **`planner`**. **Forbidden:** leader-lane **AskQuestion** to re-approve PRD, seed review gate, or “confirm spawn planner” before emit. |
+| `outputs.continuationStatus: terminal` and `outputs.developerApprovedPrd: true` with `prdRef` | **Auto-chain §4 → §5 on the same leader turn:** compile seed from approved outputs (`prdRef`, `prdTitle`, …), run §5 spawn preflight, emit **`AGENT_RUN_REQUEST_V1`** for **`master-planner`**. **Forbidden:** leader-lane **AskQuestion** to re-approve PRD, seed review gate, or “confirm spawn master-planner” before emit. |
 | `outputs.continuationStatus: terminal` without `developerApprovedPrd: true` | USER_CHECKPOINT — pick next step when Author PRD child terminates without approved PRD |
 | `status: partial` / missing `prdRef` / missing required inputs | USER_CHECKPOINT — collect missing fields or retry per **`author-prd`** **`## Completion (spawned)`** |
 
-**§5 resume (Master Plan agent).** Before §6, validate the child result against **`planner`** **`## Completion (spawned)`**:
+**§5 resume (Master Plan agent).** Before §6, validate the child result against **`master-planner`** **`## Completion (spawned)`**:
 
 | Required `outputs` | §6 / §7 use |
 |--------------------|-------------|
@@ -307,7 +307,7 @@ Child spawns must satisfy the same README table for the target skill role (skill
 - **Intent:** Match the dispatch phrase and prepare for PRD intake on every **`plan and deliver`** run (see **development-process.md** § *PRD routing (canonical)*).
 - **Inputs:** Opening message matching `plan and deliver` (case-insensitive); optional remainder may seed title, `@path`, or description for §2.
 - **Expected output:** Dispatch acknowledged; optional opening seeds captured for §2.
-- **Next-step resolution:** Always continue to §2 **Collect PRD intake** — do not skip to **`planner`** without §3 **`author-prd`** approval.
+- **Next-step resolution:** Always continue to §2 **Collect PRD intake** — do not skip to **`master-planner`** without §3 **`author-prd`** approval.
 
 **Procedure**
 
@@ -318,7 +318,7 @@ Child spawns must satisfy the same README table for the target skill role (skill
 
 **Out of scope for this step:** **`new-plan`** indexed-child expansion — uses **AskQuestion** per **30_planning-target-resolution** § *Sedea input channel* on planning lanes, not §1–2.
 
-**Referenced assets:** `development-process.md`; `skills/author-prd/SKILL.md`; `skills/planner/SKILL.md`.
+**Referenced assets:** `development-process.md`; `skills/author-prd/SKILL.md`; `skills/master-planner/SKILL.md`.
 
 ### 2. Collect PRD intake
 
@@ -388,16 +388,16 @@ Do **not** invent PRD content from a URL alone.
 5. Announce that the **Squad Leader** is waiting for the child lane; open a **next-step resume** structured choice (**#external-wait**) before ending the turn.
 6. Stop until Mission Control delivers **`AGENT_RESULT_RESPONSE_V1`** for the same `correlationId`.
 7. Apply **§3 resume**. The **Author PRD agent** owns recap, approval, and revision (skill steps 10–11) — **do not** duplicate approval on the leader lane.
-8. Continue to §4 only when `continuationStatus: terminal`, `developerApprovedPrd: true`, and `prdRef` is readable. When those hold, **do not end the leader turn** until §5 **`planner`** spawn is emitted or a §4 data-gap **AskQuestion** blocks spawn preflight.
+8. Continue to §4 only when `continuationStatus: terminal`, `developerApprovedPrd: true`, and `prdRef` is readable. When those hold, **do not end the leader turn** until §5 **`master-planner`** spawn is emitted or a §4 data-gap **AskQuestion** blocks spawn preflight.
 
 ### 4. Collect planning seed
 
 - **Type:** Simple skill execution
-- **Intent:** Compile the required seed block for **`planner`** after a readable PRD artifact exists.
+- **Intent:** Compile the required seed block for **`master-planner`** after a readable PRD artifact exists.
 - **Inputs:** Approved PRD from §3 terminal result; optional title and **`Related`** hints from the opening message or prior developer answers.
-- **Expected output:** A complete **`planner`** seed containing `Feature planning`, `PRD`, **`Parent: null`** (default), and optional **`Related`** entries for external PM / doc traceability.
+- **Expected output:** A complete **`master-planner`** seed containing `Feature planning`, `PRD`, **`Parent: null`** (default), and optional **`Related`** entries for external PM / doc traceability.
 - **Next-step resolution:**
-  - Required seed fields complete → continue to §5 to engage **`planner`**.
+  - Required seed fields complete → continue to §5 to engage **`master-planner`**.
   - Title missing → ask the developer for the feature title, then resume this step.
   - **Default:** set **`Parent: null`** — **do not** run a parent **AskQuestion** for net-new delivery plans.
   - Developer explicitly names a non-null **`Parent`** slug or `@path` in the same message → use that value (exception only).
@@ -423,7 +423,7 @@ Product and feature **scope** lives in external PM tools (JIRA, Trello, ClickUp,
 5. **Seed echo vs auto-chain:**
    - **§3 Author PRD** with terminal approved result: optional one-line seed summary; **do not** wait for developer confirmation before §5.
    - When title is set and **`Parent`** resolved per step 3, proceed to §5 without a separate approval gate; use **AskQuestion** only for missing title per **Next-step resolution**.
-6. Preserve the seed for §5 **`planner`** handoff.
+6. Preserve the seed for §5 **`master-planner`** handoff.
 
 **Seed shape**
 
@@ -441,13 +441,13 @@ When an explicit developer override applies, replace the **`Parent:`** line with
 
 - **Type:** Agent engagement and handover
 - **Intent:** Delegate Master Plan creation and §§1–5 drafting to a focused **Master Plan agent** while the **Squad Leader** keeps ownership of the overall `plan and deliver` protocol.
-- **Inputs:** Complete seed from §4 (`Feature planning`, `PRD`, `Parent`, optional `Related`); Sedea always-apply rules; this mission plan; `development-process.md`; assigned skill `skills/planner/SKILL.md`.
+- **Inputs:** Complete seed from §4 (`Feature planning`, `PRD`, `Parent`, optional `Related`); Sedea always-apply rules; this mission plan; `development-process.md`; assigned skill `skills/master-planner/SKILL.md`.
 - **Target agent role:** Master Plan agent
-- **Assigned skill:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md`
-- **Required rule context:** Sedea center always-apply rules, this mission plan, `development-process.md`, planning target resolution rule, and the `planner` skill.
+- **Assigned skill:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md`
+- **Required rule context:** Sedea center always-apply rules, this mission plan, `development-process.md`, planning target resolution rule, and the `master-planner` skill.
 - **Expected output:** Child agent result with `status: success` or `partial`, `outputs.masterPlanPath`, `outputs.masterPlanSlug`, `outputs.complexityBand`, `outputs.complexityScore`, `outputs.continuationOwner`, `outputs.continuationStatus`, `outputs.activeLanes`, `outputs.openLedgerEntries`, `outputs.spawnedPlans`, `outputs.remainingTasks`, and any recommended next action.
 - **Next-step resolution:**
-  - Child result `success` with Master Plan path and low/medium complexity plus active continuation ownership → continue to status acknowledgement and ledger tracking; the **planner** lane owns downstream route prompts and inline decomposition.
+  - Child result `success` with Master Plan path and low/medium complexity plus active continuation ownership → continue to status acknowledgement and ledger tracking; the **master-planner** lane owns downstream route prompts and inline decomposition.
   - Child result `success` with high complexity → acknowledge **Route §6 → Delivery phases** recommendation on the **Master Plan agent** lane (high band triggers phase decomposition via **`delivery-phases`** / **`phase-planner`**, not a §6 withhold); keep the **Master Plan agent** lane open; do not foreground decomposition from the **Squad Leader** lane.
   - Child result `partial` with usable Master Plan path → surface gaps and continue only if they do not block routing.
   - Child result `failure`, `aborted`, `abandoned`, or no plan path → USER_CHECKPOINT — retry, revise seed, or abandon.
@@ -455,14 +455,14 @@ When an explicit developer override applies, replace the **`Parent:`** line with
 **Procedure**
 
 1. Compile the **Master Plan agent** input from the §4 seed.
-2. **Spawn preflight (mandatory before emit).** Read **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/planner/SKILL.md`** frontmatter **`inputs`** and **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md`** § *Universal spawn preflight*. Build the spawn **`inputs`** object with **exact** keys:
+2. **Spawn preflight (mandatory before emit).** Read **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md`** frontmatter **`inputs`** and **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md`** § *Universal spawn preflight*. Build the spawn **`inputs`** object with **exact** keys:
 
    | `inputs` key | Source |
    |--------------|--------|
    | `seedBlock` | Full §4 seed block text (`Feature planning`, `PRD`, `Parent`, optional `Related`) |
    | `featurePlanningTitle` | Title from §4 / PRD heading — **not** `featurePlanning` |
    | `prdRef` | Approved PRD link or `@path` from §3 **`author-prd`** outputs |
-   | `parent` | When §4 seed has **`Parent: null`**, set spawn **`"parent": "null"`** (JSON string sentinel). Otherwise resolved slug, `@path`, or absolute plan path. **Forbidden:** JSON `null` in spawn `inputs.parent` — **`planner`** frontmatter declares **`type: string`**. Sidecar **`parent: null`** is unrelated to spawn wire encoding. |
+   | `parent` | When §4 seed has **`Parent: null`**, set spawn **`"parent": "null"`** (JSON string sentinel). Otherwise resolved slug, `@path`, or absolute plan path. **Forbidden:** JSON `null` in spawn `inputs.parent` — **`master-planner`** frontmatter declares **`type: string`**. Sidecar **`parent: null`** is unrelated to spawn wire encoding. |
    | `related` | Array from §4 `Related` entries, or `[]` when none |
 
    **Seed vs spawn (binding):** **`Parent: null`** in the §4 seed block is semantic (root delivery plan). The spawn line must still include **`"parent": "null"`** as a **string** in **`inputs`** — not JSON null and not omission of the key. See **`planner/SKILL.md`** § *Wire encoding — nullable `parent`* and **`skills/README.md`** § *Universal spawn preflight* row **1b**.
@@ -471,7 +471,7 @@ When an explicit developer override applies, replace the **`Parent:`** line with
 
    Set **`name`** from **`featurePlanningTitle`** (or PRD title) and **`description`** to a one-line Master Plan drafting summary — not generic "Planner" / "Child agent" placeholders alone (README § *Universal spawn preflight* display-metadata rows).
 
-3. Emit exactly one `AGENT_RUN_REQUEST_V1` request for the **Master Plan agent** using the `planner` skill path, a **new** `correlationId`, dispatch-unique `slug`, topic-specific **`name`** / **`description`**, and the preflight **`inputs`** from step 2. See **`planner/SKILL.md`** § *Spawn contract* for a valid example line and failure modes.
+3. Emit exactly one `AGENT_RUN_REQUEST_V1` request for the **Master Plan agent** using the `master-planner` skill path, a **new** `correlationId`, dispatch-unique `slug`, topic-specific **`name`** / **`description`**, and the preflight **`inputs`** from step 2. See **`planner/SKILL.md`** § *Spawn contract* for a valid example line and failure modes.
 4. Emit **`AGENT_RUN_REQUEST_V1`**, announce that the **Squad Leader** is waiting because later protocol steps need the produced plan path and complexity result, and open a **next-step resume** structured choice (**#external-wait**) before ending the turn.
 5. Stop protocol execution until Mission Control delivers `AGENT_RESULT_RESPONSE_V1` for the same `correlationId`.
 6. Validate that returned outputs include a readable Master Plan path, complexity band, continuation owner/status, and ledger-shaped arrays (`activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`) before continuing.
@@ -492,7 +492,7 @@ When an explicit developer override applies, replace the **`Parent:`** line with
 
 1. Read the Master Plan agent result.
 2. If the result includes a usable plan path and indicates the **Master Plan agent** owns continuation, acknowledge status only.
-3. **Forbidden on the Squad Leader lane:** Do **not** present **Delivery phases**, **PR breakdown**, **Caveats**, or §6 decomposition **AskQuestion** menus here. Those routes live on the **planner** child lane only (**`planner/SKILL.md`** Step 7 — recap + structured choice per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`skills/README.md`** § *Recap, structured choice, act*). The leader does **not** run **`delivery-phases`** or **`pr-breakdown`** inline or via spawn from §6.
+3. **Forbidden on the Squad Leader lane:** Do **not** present **Delivery phases**, **PR breakdown**, **Caveats**, or §6 decomposition **AskQuestion** menus here. Those routes live on the **master-planner** child lane only (**`planner/SKILL.md`** Step 7 — recap + structured choice per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`skills/README.md`** § *Recap, structured choice, act*). The leader does **not** run **`delivery-phases`** or **`pr-breakdown`** inline or via spawn from §6.
 4. Pause the **Squad Leader** in a resumable wait state for downstream notifications.
 
 ### 7. Maintain planning closure ledger
@@ -553,9 +553,9 @@ USER_CHECKPOINT — approve dispatch resolution when planning and ship gates all
 | 6 | Agent-delegated approve + merge | **coding-session** (inline) after clean **`pr-review`** when `mergeDelegationAuthorized` | `skills/coding-session/SKILL.md` § *Agent-delegated PR approve and merge* |
 | 7 | `deploy-walk` (After deploy) | **coding-session** (inline) after merge and post-merge cleanup | `skills/deploy-walk/SKILL.md` — **development-process.md** § *deploy-walk entry points* |
 | 8 | `plan-reconcile` | **`coding-session`** (inline) after deploy done or developer choice (not auto from deploy-walk) | `skills/plan-reconcile/SKILL.md` |
-| 9 | `hosting-repo-rules` (parallel fork) | **`planner`** Step **7c** or **`phase-planner`** Step **5e** — fire-and-forget after **`coding-session`** terminal when spawn trigger matches | `skills/hosting-repo-rules/SKILL.md` — **not** a Squad Leader spawn; runs detached; parent does **not** wait on rules PR merge |
+| 9 | `hosting-repo-rules` (parallel fork) | **`master-planner`** Step **7c** or **`phase-planner`** Step **5e** — fire-and-forget after **`coding-session`** terminal when spawn trigger matches | `skills/hosting-repo-rules/SKILL.md` — **not** a Squad Leader spawn; runs detached; parent does **not** wait on rules PR merge |
 
-**`hosting-repo-rules` parallel fork (binding):** Emitted from planning child lanes when **`coding-session`** terminal outputs satisfy the three-condition trigger documented in **`coding-session/SKILL.md`** § *Spawner spawn-detection outputs* and **`planner`** / **`phase-planner`** spawn tables. Tracks **`rulesUpdatesStatus`** on the product PR row — **forbidden:** separate **`shipRows`** entry or **`pendingByParent`** wait on the rules lane.
+**`hosting-repo-rules` parallel fork (binding):** Emitted from planning child lanes when **`coding-session`** terminal outputs satisfy the three-condition trigger documented in **`coding-session/SKILL.md`** § *Spawner spawn-detection outputs* and **`master-planner`** / **`phase-planner`** spawn tables. Tracks **`rulesUpdatesStatus`** on the product PR row — **forbidden:** separate **`shipRows`** entry or **`pendingByParent`** wait on the rules lane.
 
 **`deploy-walk` entry points (binding timing):**
 
@@ -608,7 +608,7 @@ flowchart TB
 
 **Known contract gaps (documented, not invented):** No skill-owned **Merge PR** action; merge is developer/GitHub. Loop-back after reconciliation is via post-create-pr gate + **`start-pr-review`**, not auto-spawn.
 
-**Start `coding-session`:** Runs on a **ship lane** (spawned child or detached session) — **not** a Squad Leader spawn from §§1–7. **Detached** means off the **leader** protocol §§1–7, **not** “only the Squad Leader may start it.” Planning child lanes (**`planner`**, **`phase-planner`**, Quick Fix Plan agent) emit §5d **`AGENT_RUN_REQUEST_V1`** from inline **`pr-plan`** on **their own lane** after §5c. Entry paths, required inputs, and anti-patterns: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Start implementation (`coding-session` entry)*.
+**Start `coding-session`:** Runs on a **ship lane** (spawned child or detached session) — **not** a Squad Leader spawn from §§1–7. **Detached** means off the **leader** protocol §§1–7, **not** “only the Squad Leader may start it.” Planning child lanes (**`master-planner`**, **`phase-planner`**, Quick Fix Plan agent) emit §5d **`AGENT_RUN_REQUEST_V1`** from inline **`pr-plan`** on **their own lane** after §5c. Entry paths, required inputs, and anti-patterns: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Start implementation (`coding-session` entry)*.
 
 **Pre-review verification:** Before developer review on **`coding-session`**, run hosting-repo **pre-review verification** per applicable **`.cursor/rules/`** (curated **Project rules** / plan **§5** — commands stay in hosting rules only). See [Ship cut-point gate](skills/coding-session/SKILL.md#ship-cut-point-gate-approve-commit-before-deploy) and rule **20** § *Review before commit*.
 

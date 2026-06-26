@@ -157,7 +157,7 @@ Read the target plan in full and apply:
 | Has `## Overview` + `## Phasing` + `## Out of scope` (**new-plan** stub) | Fresh stub, drafting needed | Step 1b → Step 2 → Step 3 → Step 4 (full body rewrite) |
 | Has `## 1. Single concern` … `## 4. Reasoning` with `_TBD_` under one or more of §§ 1–4 | Partially drafted | Step 1b → Step 2 → Step 3 → Step 4 (fill only still-`_TBD_` sections) |
 | Has §§ 1–4 all populated | Already drafted | Step 5 (handoff menu) |
-| Master Plan body (`## 4. Architectural design` + `## 6. Delivery phases \| PR breakdown`) | Wrong skill | **Stop:** use **`planner`**. |
+| Master Plan body (`## 4. Architectural design` + `## 6. Delivery phases \| PR breakdown`) | Wrong skill | **Stop:** use **`master-planner`**. |
 | Phase plan body (`## 1. Background` … `## 4. Changes` for mode #2) | Wrong skill | **Stop:** use **`phase-planner`**. |
 
 Acknowledge the body state in one line.
@@ -168,9 +168,9 @@ If the **new-plan** stub sections carry **non-stub user content**, merge it into
 
 Read the target plan's sidecar `<slug>.state.yaml` for `parent:`.
 
-- `parent: null` (or sidecar missing) → **stop:** PR plans require a parent under **`PR breakdown`**. Fix via **`plan-reconcile`** or by hand, or use **`planner`** if this file should be a Master Plan.
+- `parent: null` (or sidecar missing) → **stop:** PR plans require a parent under **`PR breakdown`**. Fix via **`plan-reconcile`** or by hand, or use **`master-planner`** if this file should be a Master Plan.
 - `parent:` does not resolve to an existing `.plan.md` under the same `.sedea/operations/.../plans/` tree → **stop:** fix sidecar before drafting.
-- Parent is a **roadmap topic** grouping plan → **stop:** children should be Master Plans, not PR plans; fix sidecar or use **`planner`**.
+- Parent is a **roadmap topic** grouping plan → **stop:** children should be Master Plans, not PR plans; fix sidecar or use **`master-planner`**.
 - Parent resolves; read parent's dual-title block (`## 6. …` Master, `## 5. …` Phase):
  - Heading **`PR breakdown`** → proceed.
  - Heading **`Delivery phases`** → **stop:** use **`phase-planner`** on this file (phase child), not **`pr-plan`**.
@@ -393,15 +393,15 @@ However:
 
 | Invoker (`parentAgentRole`) | Who owns §5d-equivalent spawn or §5c re-entry |
 |-----------------------------|-----------------------------------------------|
-| **`new-plan-agent`** on **`planner`** lane | **This Master Plan child lane** owns §5c and §5d — inline **`pr-plan`** §5d **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** emits from **the planner lane**, not the Squad Leader. **`planner`** Step **7b** may re-enter inline **`pr-plan`** §5c on the same **`targetPlanPath`**, or defer |
-| **`new-plan-agent`** on **`phase-planner`** lane (`phase-planner-agent` subtree) | **`phase-planner/SKILL.md`** Step **5f** — offer spawn or **`reenter-pr-plan-5c`** on **that** child lane; **forbidden** to default to detached **`coding-session`** or **`planner`** prose redirect. **Decomposition** (inline **`pr-breakdown`** on **this phase plan**): Step **5b-decompose** on **`phase-planner`**, not **`planner`** Step **7**. |
+| **`new-plan-agent`** on **`master-planner`** lane | **This Master Plan child lane** owns §5c and §5d — inline **`pr-plan`** §5d **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** emits from **the master-master-planner lane**, not the Squad Leader. **`master-planner`** Step **7b** may re-enter inline **`pr-plan`** §5c on the same **`targetPlanPath`**, or defer |
+| **`new-plan-agent`** on **`phase-planner`** lane (`phase-planner-agent` subtree) | **`phase-planner/SKILL.md`** Step **5f** — offer spawn or **`reenter-pr-plan-5c`** on **that** child lane; **forbidden** to default to detached **`coding-session`** or **`master-planner`** prose redirect. **Decomposition** (inline **`pr-breakdown`** on **this phase plan**): Step **5b-decompose** on **`phase-planner`**, not **`master-planner`** Step **7**. |
 
 When inline under **`phase-planner`**, include **`invokerRole: phase-planner-agent`** (or equivalent) in inline completion so the parent runs Step **5f** (implementation) or Step **5b-decompose** / **5e** (decomposition merge) without inferring from README shorthand alone.
 
 **Forbidden after §§1–4 (binding — inline under `new-plan` or upstream on planner):**
 
 - Report **`## Completion (inline)`** to the invoker while **`implementationHandoffStatus`** is still **`not-offered`** (§5c not yet shown) **unless** **`skipPrPlanHandoffModal: true`**.
-- Bubble **`readyForImplementation: true`** upstream and return to **`planner`** Step **7b** master-plan menus without offering §5c on **this** lane first **unless** **`skipPrPlanHandoffModal: true`** (then include **`prPlanHandoffSkipped: true`** in inline completion).
+- Bubble **`readyForImplementation: true`** upstream and return to **`master-planner`** Step **7b** master-plan menus without offering §5c on **this** lane first **unless** **`skipPrPlanHandoffModal: true`** (then include **`prPlanHandoffSkipped: true`** in inline completion).
 - Skip §5c based on PRD **`operation: manage`** or a linked `@path` alone — PRD source does **not** change the **`pr-plan`** → **`coding-session`** handoff chain.
 
 Set **`implementationHandoffStatus: "offered"`** when §5c modal is emitted; **`deferred`** when the developer picks **`defer`**; **`spawned-coding-session`** after §5d.
@@ -507,7 +507,7 @@ When Mission Control delivers **`AGENT_RESULT_RESPONSE_V1`** for the spawn `corr
 3. Copy `outputs.activeLanes`, `outputs.openLedgerEntries`, and child `remainingTasks` into this lane's result when reporting upstream.
 4. When child **`outputs.prShipComplete`** is **`true`**: merge **`shipPhase`**, **`rowStatus`**, **`mainPullStatus`**, **`archivedSlugs`**, and echo **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** into this lane's **`outputs`**; set **`outputs.implementationHandoffStatus: "coding-session-terminal"`**; set **`outputs.codingSessionStatus`** from child **`status`**.
 4a. When child **`outputs.parentPlanningFollowUpNotification`** is **`"sent"`** with non-empty **`parentPlanningFollowUps`**: copy into this lane's **`outputs`**; bubble upward on **re-emit updated** terminal (standalone) or **`## Completion (inline)`** (under **`new-plan`**) — **`coding-session`** does not schedule parent work; this lane does not expand PR lists.
-5. **Re-emit updated terminal:** On a **standalone** spawned lane, emit a fresh **`AGENT_RESULT_RESPONSE_V1`** (same **`correlationId`**) with merged **`outputs`** including **`prShipComplete`**, **`parentPlanningFollowUps`** when present, and parent index fields — so **`new-plan`** / **`pr-breakdown`** / **`planner`** receive updates without manual **Ship recap**. **Inline under `new-plan`:** report merged fields in **`## Completion (inline)`** prose instead; the **`new-plan`** lane propagates per **`new-plan/SKILL.md`** step **5b**.
+5. **Re-emit updated terminal:** On a **standalone** spawned lane, emit a fresh **`AGENT_RESULT_RESPONSE_V1`** (same **`correlationId`**) with merged **`outputs`** including **`prShipComplete`**, **`parentPlanningFollowUps`** when present, and parent index fields — so **`new-plan`** / **`pr-breakdown`** / **`master-planner`** receive updates without manual **Ship recap**. **Inline under `new-plan`:** report merged fields in **`## Completion (inline)`** prose instead; the **`new-plan`** lane propagates per **`new-plan/SKILL.md`** step **5b**.
 6. Do **not** treat child `developerApprovedImplementation: true` as permission to edit code on the **`pr-plan`** lane.
 7. Re-offer §5c **AskQuestion** when the developer may revise the plan or spawn again after a failed/partial child run — unless **`prShipComplete: true`** and the developer defers follow-up on this lane (upstream owns **`expand-eligible`**).
 
@@ -525,7 +525,7 @@ Perform exactly what was chosen. List short **numbered observations** for gaps (
 
 **Owns:** target PR plan **body** §§ 1–4; **4a-bis** append-only capstone todo; implementation readiness assessment; optional **fill** sketches for § 5–8 when explicitly chosen.
 
-**Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); running **`coding-session`** procedures on this lane (worktrees, `git worktree`, MCP attach, implementation edits); Master / Phase templates (**`planner`**, **`phase-planner`**).
+**Out of scope:** parent **`### PR list`** edits; parent **`Plan:`** wiring (**`plan-reconcile`**); frontmatter `name` / `overview` / `isProject` (except **4a-bis** append); running **`coding-session`** procedures on this lane (worktrees, `git worktree`, MCP attach, implementation edits); Master / Phase templates (**`master-planner`**, **`phase-planner`**).
 
 **In scope for spawn:** one **`AGENT_RUN_REQUEST_V1`** for **`coding-session`** per §5d after **AskQuestion** **`start-coding-session`** with real absolute paths (standalone spawned lane **or** inline under **`new-plan`**).
 
