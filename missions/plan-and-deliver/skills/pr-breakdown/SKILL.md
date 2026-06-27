@@ -105,6 +105,25 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 The **developer** picks the next move per **30_planning-target-resolution** § *Sedea input channel*.
 
+## Checkpoint turn UX (skill-local)
+
+Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`pr-breakdown`**; other planning skills document their own markers.
+
+**Real-dispatch test loop (binding):** After merge, run one full **`pr-breakdown`** spawn on a Checkpoint dispatch through Step **6** and collect a developer verdict before the parent phase advances the next **`pr-breakdown`** step PR — per **Planning protocol skills UX** § *Single-concern strategy*.
+
+Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md).
+
+| Step | Checkpoint behavior | Gate |
+|------|---------------------|------|
+| **1** — Identify target | Auto-advance on spawned handoff with locked `inputs` | exception: wrong template / missing target |
+| **2** — Load development-process | Auto-advance | — |
+| **3** — Read target / dual-title section | Auto-advance on happy path | — |
+| **3.5** — Decomposition assessment | Auto-advance when assessment exists or insert completes | — |
+| **4** — Decision gate | Auto-advance when `routeLock: pr-breakdown` or upstream route already chosen | **Gate** when dual-title body is `_TBD_` and no route lock |
+| **5** — Draft list (**5a–5d** / **5s**) | Auto-advance through write and step **5d** notify recap | — |
+| **6** — Approve PR list | **Gate** when **K > 0** — **first developer-pick gate in this calibration PR** | Approve PR list (below) |
+| **6a–6b** | Act-after-select; external-wait on spawned child lanes | — |
+
 ### Inline invoker lane (binding)
 
 When **`parentAgentRole`** is **`phase-planner-agent`**, this skill runs **inline on the active phase-planner child lane** with **`targetPlanPath`** = **the phase plan** — including single-PR (`prBreakdownShape: "single"`). The **write target** and **execution lane** align on the phase file.
@@ -332,6 +351,8 @@ Do **not** mirror the full **`PR breakdown`** body in chat (no duplicated headin
 
 Count **K** from numbered rows under **`### PR list`** before the approval modal (`K = 1` is valid on the single-PR path). If **K = 0**, treat as drafting failure — do not open structured-choice spawn paths; return failure or partial per **Completion (spawned)** / standalone handoff.
 
+- **Next-step resolution:** Auto-advance to Step **6** structured choice after step **5d** recap — no `USER_CHECKPOINT` on substeps **5a–5d**.
+
 **Obsolete:** separate recap-only pass without **`askQuestion`** — step **6** options belong on the **same** turn as the link + one-line summary.
 
 ## Step 6 — Hand back with next-move options
@@ -349,6 +370,8 @@ Collect the developer’s choice via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`*
 - When using (no phased envelope), the structured-choice message must contain **only** the sentinel line and JSON object — **no** prose, plan recap, or markdown fences before or between the sentinel and JSON.
 - Put every choosable path in **`options`** (`id` / `label`). Do **not** duplicate those choices as a numbered prose menu in the same turn.
 
+USER_CHECKPOINT — approve drafted PR breakdown list before child expansion.
+
 Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** when helpful):
 
 | Option id (illustrative) | Label (brief) |
@@ -359,6 +382,10 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 | `defer` | Defer child PR plan creation |
 | `abandon` | Abandon this branch |
 | `more-details` | More details for option _ |
+
+- When **K > 0** and step **5d** recap is complete → open this gate via **`MC_PHASED_RESPONSE_V1`** (spawned lanes) or **AskQuestion** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**. Apply **Step 4-open-items** when open items exist — this approval question stays last in `questions[]`.
+- When **K = 0** → drafting failure; do **not** open this gate.
+- **`defaultOptionId: approve-list`** when **K > 0** and no blocking open items remain.
 
 When approval or expansion has open items (sequencing caveats, row-specific blockers, K/shape concerns, parent-row mismatches, or eligibility blockers), apply **Step 4-open-items**: put one scoped `questions[]` entry per item before this approval/expansion question, and keep this approval/expansion question last in the array.
 
