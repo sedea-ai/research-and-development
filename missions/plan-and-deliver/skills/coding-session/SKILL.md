@@ -277,9 +277,9 @@ On spawned **`coding-session`** lanes, **any** assistant turn where the develope
 | Await point | Modal section |
 |-------------|----------------|
 | Worktree / implementation | [Worktree-open gate](#worktree-open-gate) |
-| Implementation batch (no ship gate open) | [Implementation continuation gate](#implementation-continuation-gate) |
+| Implementation batch (no ship gate open) | [Implementation continuation gate](#implementation-continuation-gate) — **Checkpoint:** auto-advance **`ready-for-review`** when clean; modal only on exception |
 | Plan §5 → `.mdc` reconcile (plan-anchored) | [Repo rules reconciliation gate](#repo-rules-reconciliation-gate) |
-| Review-ready / commit / Before deploy | [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) |
+| Review-ready / commit / Before deploy | [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) — **Checkpoint:** auto-advance **`commit-only`** when clean; modal only on exception |
 | Before deploy manual step | § [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) step 4 |
 | Pre-PR findings | [Review feedback approval gate](#review-feedback-approval-gate) |
 | Open PR (exceptional) | [Create-PR handoff after go](#create-pr-handoff-after-go) — only when **`hasProposedFollowUps`** or (**`actionablePrePrFindings`** and developer chose **`proceed-create-pr`**) |
@@ -367,7 +367,11 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 | **Auto-authorize** — pr-plan / phase-planner spawn handoff | Auto-advance when [eligibility](#auto-authorize-implementation-pr-plan-spawn) passes — skip worktree-open modal | exception: eligibility fails → worktree-open gate |
 | **Worktree-open gate** | **Gate** when layer 2 modal required — **first developer-pick gate on spawned lane** | Authorize worktree (below) |
 | **Generic flow** steps **1–4** — setup, sidecar, attach, bootstrap | Auto-advance on happy path | exception: bootstrap / attach failure |
-| **Spawned implementation** steps **5–8** | Auto-advance through implementation batches until review-ready | deferred: repo rules reconciliation, ship cut-point, pre-PR, create-PR (JIT step PRs) |
+| **Spawned implementation** steps **5–6** | Auto-advance through implementation batches | exception: blocking stop → `partial` result |
+| **Implementation continuation gate** | **Auto-advance** — resolve **`ready-for-review`** when [clean implementation](#implementation-continuation-gate) criteria pass | **Gate** when any clean criterion fails — [Implementation continuation gate](#implementation-continuation-gate) |
+| **Repo rules reconciliation** + **pre-review verification** (steps **7–8**) | Auto-advance on happy path before ship cut-point | exception: action bullets without `.mdc` diff; verification failures |
+| **Ship cut-point gate** | **Auto-advance** — resolve **`commit-only`** (full path: commit + inline Before deploy **`deploy-walk`** when plan-anchored) when [clean cut-point](#ship-cut-point-gate-approve-commit-before-deploy) criteria pass | **Gate** when any clean criterion fails — [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) |
+| **Ship chain** (Before deploy walk → merge) | Deferred — existing gate markers and external-wait surfaces | pre-PR findings, create-PR, post-create-PR, deploy-walk manual steps |
 
 **Skip worktree-open modal (binding):** When [Auto-authorize implementation (pr-plan spawn)](#auto-authorize-implementation-pr-plan-spawn) applies, layer 2 is satisfied without opening [Worktree-open gate](#worktree-open-gate) — not a regression for this calibration.
 
@@ -852,7 +856,26 @@ Include **`executive-override-push`** in a cut-point modal **only** when the dev
 
 ## Implementation continuation gate
 
-When **`outputs.shipPhase`** is **`implementing`** (or **`worktree`** after bootstrap) and **no** ship gate in § *Every developer-await turn* is open, close the turn with **`MC_PHASED_RESPONSE_V1`** using **`modalTitle`**: *Coding session — continue implementation*.
+When **`outputs.shipPhase`** is **`implementing`** (or **`worktree`** after bootstrap) and **no** ship gate in § *Every developer-await turn* is open, close an implementation batch here — either auto-advance (Checkpoint clean path) or emit **`MC_PHASED_RESPONSE_V1`** (non-Checkpoint or exception path) using **`modalTitle`**: *Coding session — continue implementation*.
+
+### Checkpoint — auto-advance `ready-for-review` (binding)
+
+Under Checkpoint trust, **auto-advance** as if the developer picked **`ready-for-review`** — **no** **`MC_PHASED_RESPONSE_V1`** — when **all** of the following hold after an implementation batch:
+
+1. Step **5** scope for the current batch is complete (no in-progress edits or blocking tool failures).
+2. **No open gotchas** — no unresolved caveats, blocking open items, or honest deferrals in plan **§8** that require developer pick before review.
+3. **No unfixable failing tests** — prescribed pre-review verification (step **8** / Project rules) passes, or is honestly N/A for this PR.
+4. **No material plan divergence** — work matches PR plan **§1 Single concern** and **§3 Change scope** (including substantive §§5–8 fill).
+
+When clean: one-line recap (what landed, verification attestation), then proceed on the **same** or **next** turn as **`ready-for-review`** — run [Repo rules reconciliation (binding)](#repo-rules-reconciliation-binding) when plan-anchored; open [Repo rules reconciliation gate](#repo-rules-reconciliation-gate) or [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) when steps **7–8** preconditions pass.
+
+**Exception — gate required:** When **any** clean criterion fails, the agent cannot honestly attest, or the developer explicitly requests review deferral in the **same** message, emit **`MC_PHASED_RESPONSE_V1`** per below — not prose-only recap.
+
+USER_CHECKPOINT — pick continue implementation or ready for review on this lane.
+
+### Non-Checkpoint and exception modal (binding)
+
+When Checkpoint auto-advance does **not** apply (non-Checkpoint dispatch, or any failed clean criterion above), close the turn with **`MC_PHASED_RESPONSE_V1`**.
 
 **Option order (binding):** When this gate is shown, **`ready-for-review`** MUST be the **first** actionable option — the recommended default path to [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy). List **`continue-implement`** second.
 
@@ -873,11 +896,44 @@ When **`outputs.shipPhase`** is **`implementing`** (or **`worktree`** after boot
 | **`ready-for-review`** | Run [Repo rules reconciliation (binding)](#repo-rules-reconciliation-binding) when plan-anchored; then open [Repo rules reconciliation gate](#repo-rules-reconciliation-gate) or [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy) on the **next** turn when step **8** pre-review verification passes |
 | **`defer`** | Keep `continuationStatus: active`; no edits until developer continues |
 
+- **`defaultOptionId: ready-for-review`** when implementation is substantially complete and only documented minor deferrals remain in §8 (developer may still pick **`continue-implement`**).
+
 ## Ship cut-point gate (approve, commit, Before deploy)
 
 **Precondition:** `outputs.bootstrapStatus: success` (or bootstrap not required on this run). If bootstrap is `pending` or `failed`, finish or retry [Worktree bootstrap (mandatory)](#worktree-bootstrap-mandatory) before opening this gate.
 
-When implementation is **ready for developer review** (or the developer signals *ready for review* / *review my changes*), **stop** implementation edits and open this gate. This implements **20_efficient-pr-shipping.mdc** § *Review before commit* — **developer code review comes before any commit** — and combines what were separate approve, commit, and Before deploy inline modals into **one** structured choice when plan-anchored and §7 has work to walk.
+When implementation is **ready for developer review** (or the developer signals *ready for review* / *review my changes*), **stop** implementation edits and reach this gate — either auto-advance (Checkpoint clean path) or emit **`MC_PHASED_RESPONSE_V1`** (non-Checkpoint or exception path). This implements **20_efficient-pr-shipping.mdc** § *Review before commit* — **developer code review comes before any commit** — and combines what were separate approve, commit, and Before deploy inline modals into **one** structured choice when plan-anchored and §7 has work to walk.
+
+### Checkpoint — auto-advance `commit-only` (binding)
+
+Under Checkpoint trust, **auto-advance** as if the developer picked **`commit-only`** — **no** **`MC_PHASED_RESPONSE_V1`** — when **all** of the following hold:
+
+1. [Implementation continuation gate](#implementation-continuation-gate) **clean** criteria pass (batch complete, no open gotchas, no unfixable failing tests, no material plan divergence).
+2. Steps **7–8** preconditions pass — repo rules reconciliation complete or skipped; pre-review verification passes or is N/A.
+3. `outputs.bootstrapStatus === 'success'` (or documented attested `--skip-*`).
+4. Developer did **not** pick **`more-changes`**, **`defer`**, or name executive override in the **same** message.
+
+**Full `commit-only` path (binding):** Checkpoint auto-advance **`commit-only`** always authorizes the **combined** cut-point pick — *Approve, commit, run Before deploy walk* — not the shortened approve-and-commit-only variant. On [Act after ship cut-point pick](#act-after-ship-cut-point-pick), run in order:
+
+1. **`git commit`** when `git status --short` is non-empty.
+2. Verify clean tree.
+3. When plan-anchored, [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) inline (`deployWalkScope: before-deploy-only`) — **even when** §7 **`### Before deploy`** items are already `[x]` (re-attest on the walk; do **not** skip because boxes were checked on a prior pass).
+4. [Auto-spawn pre-pr-review](#auto-spawn-pre-pr-review) when Before deploy is satisfied (same or next turn).
+
+**Forbidden on Checkpoint auto-advance:** resolving to **`commit-only-skip-before-deploy`**, the modal-only “approve and commit” shortcut that omits inline **`deploy-walk`**, or jumping to pre-PR spawn without inline Before deploy when plan-anchored.
+
+**Resolved pick id (exception paths only):**
+
+| Tree state | Before deploy §7 | Auto-advance pick |
+|------------|------------------|-------------------|
+| Clean | Unchecked **`[ ]`** items remain | **`spawn-before-deploy-walk`** (tree already committed) |
+| Clean | Free-form (no plan anchor) | **`commit-only`** — commit N/A · proceed to pre-PR when preconditions pass |
+
+When clean criteria pass otherwise: recap (diff summary, verification attestation, Before-deploy §7 state when plan-anchored), record implicit **`commit-only`**, then run [Act after ship cut-point pick](#act-after-ship-cut-point-pick) on the **next** turn — **not** in the same turn as the auto-advance recap (same rule as modal **`commit-only`**).
+
+**Exception — gate required:** When **any** clean criterion fails, the agent cannot honestly attest, or the developer requests **`more-changes`** / **`defer`** / executive override, emit **`MC_PHASED_RESPONSE_V1`** per below — not prose-only recap.
+
+USER_CHECKPOINT — approve commit and Before deploy walk on this lane.
 
 ### Pre-send self-check (binding)
 
@@ -908,7 +964,7 @@ Answer orientation **inside** **`display.markdown`** and ship **`askQuestion`** 
 
 ### Combined authorization
 
-Use **one** **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** (`modalTitle`: *Coding session — approve, commit, Before deploy*) — recap + modal in one message per rule **2**. **Do not** chain separate modals for approve, then commit, then Before deploy when this subsection applies.
+When Checkpoint auto-advance does **not** apply (non-Checkpoint dispatch, or any failed clean criterion above), use **one** **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** (`modalTitle`: *Coding session — approve, commit, Before deploy*) — recap + modal in one message per rule **2**. **Do not** chain separate modals for approve, then commit, then Before deploy when this subsection applies.
 
 **When to use the combined modal (normative):** plan-anchored run **and** §7 **`### Before deploy`** has at least one **`[ ]`** item (not empty, not only *None — …*, not all `[x]`).
 
@@ -972,9 +1028,12 @@ Run on the **developer's response turn** after a cut-point pick — **not** in t
 | **`executive-override-push`** (Before deploy unchecked) | Same as **`commit-only`** row, then **`git push`** on the response turn when commit succeeded — override only |
 | **`commit-only-skip-before-deploy`** | 1. **`git commit`** if dirty · 2. Append dated skip note under §7 or **`## Follow-ups`** · 3. [Auto-spawn pre-pr-review](#auto-spawn-pre-pr-review) |
 | **`commit-only`** (Before deploy satisfied or free-form) | 1. **`git commit`** if dirty · 2. Verify clean · 3. [Auto-spawn pre-pr-review](#auto-spawn-pre-pr-review) |
+| **`commit-only`** (Checkpoint auto-advance, plan-anchored) | Same as **`commit-only`** (Before deploy unchecked) row — **always** run inline Before deploy **`deploy-walk`** before pre-PR spawn, even when §7 boxes are already `[x]` |
 | **`executive-override-push`** (Before deploy satisfied or free-form) | Same as **`commit-only`** row, then **`git push`** when commit succeeded |
 | **`spawn-before-deploy-walk`** | [Before deploy deploy-walk handoff](#before-deploy-deploy-walk-handoff) inline |
 | **`skip-before-deploy`** | Dated skip note · [Auto-spawn pre-pr-review](#auto-spawn-pre-pr-review) |
+
+- **`defaultOptionId: commit-only`** when implementation is clean and the tree is dirty (developer may still pick **`more-changes`** or **`defer`**).
 
 If commit fails or tree stays dirty after commit, stop with `partial` — do not run inline **`deploy-walk`** or spawn **`pre-pr-review`**.
 
