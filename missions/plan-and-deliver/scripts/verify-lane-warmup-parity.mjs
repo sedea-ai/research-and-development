@@ -92,6 +92,60 @@ const ROLE_MANIFESTS = {
     ],
     skillRelPath: 'missions/plan-and-deliver/skills/worktree-bootstrap/SKILL.md',
   },
+  'squad-leader-mission-maintenance': {
+    laneRules: [
+      '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
+      '.sedea/centers/sedea/rules/4_mission.mdc',
+      '.sedea/centers/sedea/missions/mission-maintenance/plan.mdc',
+      '.sedea/centers/sedea/docs/mission-three-lane-cadence.md',
+    ],
+  },
+  'squad-leader-center-maintenance': {
+    laneRules: [
+      '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
+      '.sedea/centers/sedea/rules/4_mission.mdc',
+      '.sedea/centers/sedea/missions/center-maintenance/plan.mdc',
+      '.sedea/centers/sedea/docs/mission-three-lane-cadence.md',
+    ],
+  },
+  'squad-leader-sedea-governed-repo-setup': {
+    laneRules: [
+      '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
+      '.sedea/centers/sedea/rules/4_mission.mdc',
+      '.sedea/centers/sedea/missions/sedea-governed-repo-setup/plan.mdc',
+      '.sedea/centers/sedea/docs/mission-three-lane-cadence.md',
+    ],
+  },
+  'squad-leader-cursor-rules-improvement': {
+    laneRules: [
+      '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
+      '.sedea/centers/sedea/rules/4_mission.mdc',
+      '.sedea/centers/sedea/missions/cursor-rules-improvement/plan.mdc',
+      '.sedea/centers/sedea/docs/mission-three-lane-cadence.md',
+    ],
+  },
+  'squad-leader-cursor-center-rules-alignment': {
+    laneRules: [
+      '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
+      '.sedea/centers/sedea/rules/4_mission.mdc',
+      '.sedea/centers/sedea/missions/cursor-center-rules-alignment/plan.mdc',
+      '.sedea/centers/sedea/docs/mission-three-lane-cadence.md',
+    ],
+  },
+  'squad-leader-smart-center-upstream-sync': {
+    laneRules: [
+      '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
+      '.sedea/centers/sedea/rules/4_mission.mdc',
+      '.sedea/centers/sedea/missions/smart-center-upstream-sync/plan.mdc',
+    ],
+  },
+  'squad-leader-mission-completeness-triage': {
+    laneRules: [
+      '.sedea/centers/sedea/rules/2_ask-question-instructions.mdc',
+      '.sedea/centers/sedea/rules/4_mission.mdc',
+      '.sedea/centers/sedea/missions/mission-completeness-triage/plan.mdc',
+    ],
+  },
 };
 
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
