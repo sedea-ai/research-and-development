@@ -2,7 +2,7 @@
 name: brainstorm-research
 description: >-
   Optional free-form research session on a spawned child lane. Produces a
-  brainstorm report under the active dispatch bundle docs/ for downstream PRD,
+  brainstorm report under `.sedea/operations/.../docs/` for downstream PRD,
   Ad-Hoc PRD, quick-fix planning, or debug handover. Invoked from R&D mission
   intake when the developer selects brainstorm-first.
 designation:
@@ -15,14 +15,10 @@ inputs:
       Mission that spawned this lane (plan-and-deliver, single-phase, quick-fix,
       debug-and-fix).
     required: true
-  bundleDirectory:
-    type: string
-    description: Absolute dispatch bundle directory from lane identity / spawn preamble; optional when operationsDocsDirectory is supplied.
-    required: false
   operationsDocsDirectory:
     type: string
     description: Absolute workspace scope-level docs directory under .sedea/operations/.../docs/ from lane identity or spawn inputs.
-    required: false
+    required: true
   researchTopic:
     type: string
     description: Optional short title for the research session and report filename.
@@ -99,9 +95,9 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 **Actor:** **Brainstorm research agent** — spawned child lane only.
 
-**Act when** the invoker selected **`brainstorm-first`** at mission intake and supplied **`invokerMissionSlug`** plus a resolvable **docs write root** per **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution* (`bundleDirectory` → `<bundleDirectory>/docs/` or `operationsDocsDirectory`).
+**Act when** the invoker selected **`brainstorm-first`** at mission intake and supplied **`invokerMissionSlug`** plus **`operationsDocsDirectory`** per **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*.
 
-If **`invokerMissionSlug`** is missing or neither docs path resolves, stop with `status: "partial"`, `outputs.missingFields` populated — do not write files.
+If **`invokerMissionSlug`** is missing or **`operationsDocsDirectory`** does not resolve, stop with `status: "partial"`, `outputs.missingFields` populated — do not write files.
 
 ## Research session (steps)
 
@@ -143,7 +139,7 @@ Required `outputs` fields:
 - `outputs.brainstormReportPath`
 - `outputs.brainstormReportRef` — `@`-prefixed path for handoff
 - `outputs.reportTitle`
-- `outputs.bundleDirectory`
+- `outputs.operationsDocsDirectory`
 - `outputs.invokerMissionSlug`
 - `outputs.developerApprovedReport` — `true` only on **Approve report**
 - `outputs.abandonMission` — `true` only on **Abandon dispatch**

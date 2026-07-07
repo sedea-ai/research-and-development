@@ -3,7 +3,7 @@ name: ad-hoc-prd
 description: >-
  Scaffold a minimal Ad-Hoc PRD (bugs / small improvements) as
  `ad_hoc_<slug>_<hex>.ad-hoc-prd.md` under the resolved operations docs
- write root (bundle `docs/` or scope-level `operationsDocsDirectory`;
+ write root (`operationsDocsDirectory` under `.sedea/operations/.../docs/`;
  never construct `.sedea/operations/.../...` paths).
  Ad-Hoc PRD is upstream root input for **`master-planner`**; no existing `.plan.md`
  link is required. For **Ad-Hoc PRD creator** agent sessions — explicit
@@ -25,14 +25,10 @@ inputs:
     type: string
     description: Change-request description used to draft Problem, Desired outcome, and Proposed solution.
     required: true
-  bundleDirectory:
-    type: string
-    description: Absolute dispatch bundle directory from lane identity / spawn preamble; optional when operationsDocsDirectory is supplied.
-    required: false
   operationsDocsDirectory:
     type: string
     description: Absolute workspace scope-level docs directory under .sedea/operations/.../docs/ from lane identity or spawn inputs.
-    required: false
+    required: true
   sourceSummary:
     type: string
     description: Optional short summary of where this ad-hoc request came from.
@@ -124,9 +120,9 @@ This skill **never** emits **`mission_control_spawn_agent`** for **`master-plann
 1. **Create intent** — upstream step chose the ad-hoc change-request path (e.g. plan protocol “ad-hoc task description” branch).
 2. **Title** — non-empty title for the Ad-Hoc PRD (handoff fields or captured change-request summary).
 3. **Details** — non-empty change-request body.
-4. **Docs write root** — resolve per **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution* from non-empty **`bundleDirectory`** → `<bundleDirectory>/docs/` or **`operationsDocsDirectory`** from spawn **`inputs`** / lane identity.
+4. **Docs write root** — resolve per **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution* from **`operationsDocsDirectory`** in spawn **`inputs`** / lane identity.
 
-If neither resolves, stop with `partial` and report `outputs.missingFields` (for example `["bundleDirectory", "operationsDocsDirectory"]`); do not invent a path or continue with a guessed operations path. In standalone mode, collect missing **title** / **details** via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act*.
+If **`operationsDocsDirectory`** does not resolve, stop with `partial` and report `outputs.missingFields` (for example `["operationsDocsDirectory"]`); do not invent a path or continue with a guessed operations path. In standalone mode, collect missing **title** / **details** via **AskQuestion**, **`MC_PHASED_RESPONSE_V1`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** and **`../README.md`** § *Recap, structured choice, act*.
 
 **Details:** Payload text — change-request description, thread excerpt, labeled context — use to draft **§1 Problem**, **§2 Desired outcome**, and **§3 Proposed solution**. If thin, use concise **TBD** bullets and say what to confirm.
 
@@ -146,10 +142,9 @@ New Ad-Hoc PRDs are written under the **resolved docs write root** per **`.sedea
 
 | Priority | Source | Write root |
 |----------|--------|------------|
-| 1 | Non-empty **`bundleDirectory`** | `<bundleDirectory>/docs/` |
-| 2 | **`operationsDocsDirectory`** from spawn **`inputs`** or lane identity | That absolute scope-level `docs/` directory |
+| 1 | **`operationsDocsDirectory`** from spawn **`inputs`** or lane identity | That absolute scope-level `docs/` directory under `.sedea/operations/` |
 
-If neither resolves, stop with `partial` and report `outputs.missingFields` naming the gap. Do **not** construct **`.sedea/operations/.../docs/`** from user-id, **`joint`**, or mtime heuristics; do **not** write under legacy **`joint/docs/`**.
+If **`operationsDocsDirectory`** does not resolve, stop with `partial` and report `outputs.missingFields` naming the gap. Do **not** construct **`.sedea/operations/.../docs/`** from user-id, **`joint`**, or mtime heuristics; do **not** write under legacy **`joint/docs/`** or per-dispatch bundle `docs/`.
 
 Create **`docs/`** under the resolved write root when missing.
 
@@ -214,7 +209,7 @@ Required `outputs` fields:
 - `outputs.prdPath`
 - `outputs.prdRef`
 - `outputs.prdTitle`
-- `outputs.bundleDirectory`
+- `outputs.operationsDocsDirectory`
 - `outputs.developerApprovedPrd` — `true` only when the developer selected **Approve PRD** on this lane; `false` on non-terminal results
 - `outputs.missingFields`
 - `outputs.roadmapHints`
@@ -243,7 +238,7 @@ Ledger expectations:
 Error states:
 
 - Missing required inputs → `status: "partial"`, no file write, `continuationStatus: "active"`, and `missingFields` populated.
-- Missing docs write root (`bundleDirectory` and `operationsDocsDirectory` both absent) → `status: "partial"`, no file write, `missingFields` naming the gap.
+- Missing docs write root (`operationsDocsDirectory` absent) → `status: "partial"`, no file write, `missingFields` naming the gap.
 - File already exists at the generated path → generate a different 8-hex suffix once; if still blocked, return `failure`.
 - Write failure → `status: "failure"` or `partial` if recoverable, with `errors[].message` and `remainingTasks`.
 
