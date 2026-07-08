@@ -30,9 +30,12 @@ const RULE_PATHS = [
   '.cursor/rules/mission-control-agent-runtime.mdc',
 ];
 
+const RUN_TOKEN = 'AGENT_RUN_' + 'REQUEST_V1';
+const RESULT_TOKEN = 'AGENT_RESULT_' + 'RESPONSE_V1';
+
 const FORBIDDEN = [
-  { label: 'AGENT_RUN_REQUEST_V1', re: /AGENT_RUN_REQUEST_V1/ },
-  { label: 'AGENT_RESULT_RESPONSE_V1', re: /AGENT_RESULT_RESPONSE_V1/ },
+  { label: RUN_TOKEN, re: new RegExp(RUN_TOKEN) },
+  { label: RESULT_TOKEN, re: new RegExp(RESULT_TOKEN) },
   { label: 'dual-stack fallback doc', re: /dual-stack|routeAgentMessagingDualStack/i },
   { label: 'sentinel fallback doc', re: /sentinel fallback/i },
   { label: 're-issue terminal sentinel nudge', re: /Re-issue the same terminal line/i },

@@ -11,7 +11,7 @@ alwaysApply: false
 
 The outcomes below span the **full cadence** (PRD → plans → implementation → PR → deploy → reconcile). **Not every step runs on the Squad Leader lane** for a `plan and deliver` dispatch — see **Squad operations** for who spawns whom. Skill procedures live under `missions/plan-and-deliver/skills/`; **worktree naming** and the strategic hosting-repo loop are in `.sedea/centers/research-and-development/docs/development-process.md` (**Protocol branches** + **Cadence** — *protocol branch* is skill routing, not git). **This `plan.mdc`** remains canonical for dispatch protocol §§1–8, spawn ownership, and §8 ship ledger.
 
-8. **§8 automation-only** — Squad Leader ship ledger rows update **exclusively** via Mission Control **host sync** from ship child **`AGENT_RESULT_RESPONSE_V1`** terminals (including **`coding-session`** re-emits for inline milestones). Manual **Ship recap** paste is **not** a supported §8 input path. Unscripted milestones are **mission gaps** — see §8 *Automation completeness*.
+8. **§8 automation-only** — Squad Leader ship ledger rows update **exclusively** via Mission Control **host sync** from ship child **`mission_control_send_agent_result`** terminals (including **`coding-session`** re-emits for inline milestones). Manual **Ship recap** paste is **not** a supported §8 input path. Unscripted milestones are **mission gaps** — see §8 *Automation completeness*.
 
 ### Cadence reference (all branches — not Squad Leader protocol steps)
 
@@ -109,7 +109,7 @@ This diagram is the **dispatch ownership map**. It answers: which agent on this 
 | **Downstream skill agents** | Further child lanes | **`phase-planner`** spawn from inline **`new-plan`** on planner; nested **`phase-planner`** from phase inline tree; **`coding-session`** → `pre-pr-review` | `MC_DISPATCH_RESOLVED_V1` |
 | **Detached branches** | Often separate session / phrase | Invoked via `development-process.md` protocol branch names | Automatic Squad Leader spawn from §§1–5 |
 
-**Host rules:** each `AGENT_RUN_REQUEST_V1` opens a child lane; parent waits for `AGENT_RESULT_RESPONSE_V1` when the skill says so. Squad Leader **§7** tracks planning `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`; **§8** tracks ship rows per PR plan — it does not re-run detached child skills from the leader lane.
+**Host rules:** each `mission_control_spawn_agent` opens a child lane; parent waits for `mission_control_send_agent_result` when the skill says so. Squad Leader **§7** tracks planning `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`; **§8** tracks ship rows per PR plan — it does not re-run detached child skills from the leader lane.
 
 ```mermaid
 flowchart TB
@@ -239,7 +239,7 @@ flowchart TD
 
 - **§§1–7** — Squad Leader **planning** steps on the leader lane (see prose subsections below).
 - **§8** — Squad Leader **ship oversight** on the leader lane; detached skills run elsewhere.
-- **Spawn nodes** — emit `AGENT_RUN_REQUEST_V1`; stop until `AGENT_RESULT_RESPONSE_V1`.
+- **Spawn nodes** — emit `mission_control_spawn_agent`; stop until `mission_control_send_agent_result`.
 - **§6** — **not** decomposition routing (that lives on the **master-planner** child lane — **AskQuestion** + inline **`delivery-phases`** / **`pr-breakdown`** in `planner/SKILL.md` Step 7). See §6 *Forbidden on the Squad Leader lane*.
 - **§7** — register **planning** downstream lanes/plans from child `outputs`; do not infer completion from silence.
 - **§8** — register **ship** progress per PR plan; **do not** propose **`resolved`** dispatch while ship rows are open unless the developer explicitly closes planning-only (see §8).
@@ -248,14 +248,14 @@ flowchart TD
 
 This subsection is the **Squad Leader** contract for §§3, 5, 6, and 7. Sedea host behavior is defined in **`.sedea/centers/sedea/rules/4_mission.mdc`** (spawn invocation, agent session closure). **Planning** child lanes use each skill’s **`## Completion (spawned)`**; **ship** lanes use the same terminal line with field lists in domain sections (see **`missions/plan-and-deliver/skills/README.md`** § Planning spawn, § Ship spawn, § Inline-only).
 
-**Host vs “wait.”** Mission Control does **not** block the parent turn while a child runs. **Wait** means: emit **`AGENT_RUN_REQUEST_V1`**, announce that you are waiting for a child result, then **stop** further protocol work on the leader lane until Mission Control delivers a silent UserSend that begins with **`Mission Control: agent-result-response delivered.`** When that stop ends the assistant turn, open a **next-step resume** structured choice (**#external-wait**) naming resume paths before ending the turn per [`.sedea/centers/sedea/skills/README.md`](../../sedea/skills/README.md) § *Concurrency contract* — do not prose-only announce wait. Follow the response-protocol footer in the delivered message before §6, §7, or another spawn.
+**Host vs “wait.”** Mission Control does **not** block the parent turn while a child runs. **Wait** means: emit **`mission_control_spawn_agent`**, announce that you are waiting for a child result, then **stop** further protocol work on the leader lane until Mission Control delivers a silent UserSend that begins with **`Mission Control: agent-result-response delivered.`** When that stop ends the assistant turn, open a **next-step resume** structured choice (**#external-wait**) naming resume paths before ending the turn per [`.sedea/centers/sedea/skills/README.md`](../../sedea/skills/README.md) § *Concurrency contract* — do not prose-only announce wait. Follow the response-protocol footer in the delivered message before §6, §7, or another spawn.
 
-**§3 resume (Author PRD agent).** After each `AGENT_RESULT_RESPONSE_V1` for §3:
+**§3 resume (Author PRD agent).** After each `mission_control_send_agent_result` for §3:
 
 | Check | Action |
 |-------|--------|
 | `outputs.continuationOwner: author-prd-agent` and `outputs.continuationStatus: active` | **Acknowledge only** on the leader lane — PRD approval / revision runs on the **Author PRD** child lane (see **`author-prd`** steps 10–11). Do **not** duplicate approval **AskQuestion** here. |
-| `outputs.continuationStatus: terminal` and `outputs.developerApprovedPrd: true` with `prdRef` | **Auto-chain §4 → §5 on the same leader turn:** compile seed from approved outputs (`prdRef`, `prdTitle`, …), run §5 spawn preflight, emit **`AGENT_RUN_REQUEST_V1`** for **`master-planner`**. **Forbidden:** leader-lane **AskQuestion** to re-approve PRD, seed review gate, or “confirm spawn master-planner” before emit. |
+| `outputs.continuationStatus: terminal` and `outputs.developerApprovedPrd: true` with `prdRef` | **Auto-chain §4 → §5 on the same leader turn:** compile seed from approved outputs (`prdRef`, `prdTitle`, …), run §5 spawn preflight, emit **`mission_control_spawn_agent`** for **`master-planner`**. **Forbidden:** leader-lane **AskQuestion** to re-approve PRD, seed review gate, or “confirm spawn master-planner” before emit. |
 | `outputs.continuationStatus: terminal` without `developerApprovedPrd: true` | USER_CHECKPOINT — pick next step when Author PRD child terminates without approved PRD |
 | `status: partial` / missing `prdRef` / missing required inputs | USER_CHECKPOINT — collect missing fields or retry per **`author-prd`** **`## Completion (spawned)`** |
 
@@ -277,9 +277,9 @@ This subsection is the **Squad Leader** contract for §§3, 5, 6, and 7. Sedea h
 3. Acknowledge without presenting planning route choices on the leader lane.
 4. After §7 planning entries are terminal, continue **§8** before proposing dispatch resolution (§7 alone is **not** sufficient for **`resolved`** on a full cadence dispatch).
 
-**Nested spawns.** The **Master Plan agent** (and decomposition agents) may emit further **`AGENT_RUN_REQUEST_V1`** lines on child lanes. The Squad Leader does **not** duplicate those spawns; it only consumes **terminal or updated** child results that bubble up through §7.
+**Nested spawns.** The **Master Plan agent** (and decomposition agents) may emit further **`mission_control_spawn_agent`** lines on child lanes. The Squad Leader does **not** duplicate those spawns; it only consumes **terminal or updated** child results that bubble up through §7.
 
-**Spawn run-request display metadata (binding).** Every **`AGENT_RUN_REQUEST_V1`** on this mission — Squad Leader §§3 and 5 and nested planning/ship spawns — must satisfy **`missions/plan-and-deliver/skills/README.md`** § *Universal spawn preflight* (including display-metadata rows) and [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../rules/50_mission-control-display-metadata-discipline.mdc) § *Spawn discipline (parents)*:
+**Spawn run-request display metadata (binding).** Every **`mission_control_spawn_agent`** on this mission — Squad Leader §§3 and 5 and nested planning/ship spawns — must satisfy **`missions/plan-and-deliver/skills/README.md`** § *Universal spawn preflight* (including display-metadata rows) and [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../rules/50_mission-control-display-metadata-discipline.mdc) § *Spawn discipline (parents)*:
 
 | Field | Rule |
 |-------|------|
@@ -348,7 +348,7 @@ USER_CHECKPOINT — pick intake mode or confirm PRD intake summary before spawni
    - **Supporting materials** (paths, URLs, pasted notes) — or explicit **no sources yet**
 3. For **`manage`**, read the existing PRD at `targetPath` when readable; if fetch fails, use **AskQuestion** (§ *Unreadable PRD source* below).
 4. Present intake summary (title, description excerpt, source list) and open structured choice in **one turn**: proceed to Author PRD, revise intake, or **More details for option _**.
-5. **Forbidden:** emit **`AGENT_RUN_REQUEST_V1`** while `prdDescription` is missing or intake is unconfirmed.
+5. **Forbidden:** emit **`mission_control_spawn_agent`** while `prdDescription` is missing or intake is unconfirmed.
 
 **Suggested intake fields**
 
@@ -393,7 +393,7 @@ USER_CHECKPOINT — pick next step when brainstorm child reports failure or part
 
 **Procedure**
 
-1. Emit **`AGENT_RUN_REQUEST_V1`** for **`brainstorm-research`** with **`warmUpRules`** including **`plan-and-deliver/plan.mdc`** (§§1–2.5).
+1. Emit **`mission_control_spawn_agent`** for **`brainstorm-research`** with **`warmUpRules`** including **`plan-and-deliver/plan.mdc`** (§§1–2.5).
 2. Open **next-step resume** structured choice (**#external-wait**) before ending the turn.
 3. On terminal **`developerApprovedReport: true`**, compile §3 **`author-prd`** **`inputs`** from report outputs and emit §3 spawn without re-collecting §2 fields on the leader lane.
 4. On **`abandonMission: true`**, propose dispatch resolution — do not spawn §3.
@@ -414,9 +414,9 @@ USER_CHECKPOINT — pick next step when brainstorm child reports failure or part
 1. Compile child **`inputs`** from §2: `prdTitle`, `prdDescription`, `operation`, `targetPath` when set, `sourceMaterials`, optional `sectionPolicy`, `existingPrdBody` when **`manage`**, and **`operationsDocsDirectory`** from lane identity / spawn preamble.
 2. Set **`initiatingPrompt`** with the user's description and numbered source list; instruct the child to extend the source ledger and **not** invent scope from title alone.
 3. Run **`skills/README.md`** § *Universal spawn preflight* (including display metadata). Set **`name`** to `PRD-{prdTitle}` and **`description`** from PRD scope — not generic child placeholders (rule **50** § *Lane title prefix conventions*).
-4. Emit exactly one **`AGENT_RUN_REQUEST_V1`** for **`author-prd`** with a new `correlationId`, dispatch-unique `slug`, and preflight **`inputs`**.
+4. Emit exactly one **`mission_control_spawn_agent`** for **`author-prd`** with a new `correlationId`, dispatch-unique `slug`, and preflight **`inputs`**.
 5. Announce that the **Squad Leader** is waiting for the child lane; open a **next-step resume** structured choice (**#external-wait**) before ending the turn.
-6. Stop until Mission Control delivers **`AGENT_RESULT_RESPONSE_V1`** for the same `correlationId`.
+6. Stop until Mission Control delivers **`mission_control_send_agent_result`** for the same `correlationId`.
 7. Apply **§3 resume**. The **Author PRD agent** owns recap, approval, and revision (skill steps 10–11) — **do not** duplicate approval on the leader lane.
 8. Continue to §4 only when `continuationStatus: terminal`, `developerApprovedPrd: true`, and `prdRef` is readable. When those hold, **do not end the leader turn** until §5 **`master-planner`** spawn is emitted or a §4 data-gap **AskQuestion** blocks spawn preflight.
 
@@ -497,13 +497,13 @@ When an explicit developer override applies, replace the **`Parent:`** line with
 
    **Seed vs spawn (binding):** **`Parent: null`** in the §4 seed block is semantic (root delivery plan). The spawn line must still include **`"parent": "null"`** as a **string** in **`inputs`** — not JSON null and not omission of the key. See **`planner/SKILL.md`** § *Wire encoding — nullable `parent`* and **`skills/README.md`** § *Universal spawn preflight* row **1b**.
 
-   **Stop** and surface a one-line fix list when any required key is missing, renamed, or nested under the wrong parent key. Do **not** emit `AGENT_RUN_REQUEST_V1` until preflight passes.
+   **Stop** and surface a one-line fix list when any required key is missing, renamed, or nested under the wrong parent key. Do **not** emit `mission_control_spawn_agent` until preflight passes.
 
    Set **`name`** to `MP-{featurePlanningTitle}` (or PRD title) and **`description`** to a one-line Master Plan drafting summary — not generic "Planner" / "Child agent" placeholders alone (README § *Universal spawn preflight*; rule **50** § *Lane title prefix conventions*).
 
-3. Emit exactly one `AGENT_RUN_REQUEST_V1` request for the **Master Plan agent** using the `master-planner` skill path, a **new** `correlationId`, dispatch-unique `slug`, topic-specific **`name`** / **`description`**, and the preflight **`inputs`** from step 2. See **`planner/SKILL.md`** § *Spawn contract* for a valid example line and failure modes.
-4. Emit **`AGENT_RUN_REQUEST_V1`**, announce that the **Squad Leader** is waiting because later protocol steps need the produced plan path and complexity result, and open a **next-step resume** structured choice (**#external-wait**) before ending the turn.
-5. Stop protocol execution until Mission Control delivers `AGENT_RESULT_RESPONSE_V1` for the same `correlationId`.
+3. Emit exactly one `mission_control_spawn_agent` request for the **Master Plan agent** using the `master-planner` skill path, a **new** `correlationId`, dispatch-unique `slug`, topic-specific **`name`** / **`description`**, and the preflight **`inputs`** from step 2. See **`planner/SKILL.md`** § *Spawn contract* for a valid example line and failure modes.
+4. Emit **`mission_control_spawn_agent`**, announce that the **Squad Leader** is waiting because later protocol steps need the produced plan path and complexity result, and open a **next-step resume** structured choice (**#external-wait**) before ending the turn.
+5. Stop protocol execution until Mission Control delivers `mission_control_send_agent_result` for the same `correlationId`.
 6. Validate that returned outputs include a readable Master Plan path, complexity band, continuation owner/status, and ledger-shaped arrays (`activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`) before continuing.
 
 ### 6. Acknowledge Master Plan status
@@ -638,11 +638,11 @@ flowchart TB
 
 **Known contract gaps (documented, not invented):** No skill-owned **Merge PR** action; merge is developer/GitHub. Loop-back after reconciliation is via post-create-pr gate + **`start-pr-review`**, not auto-spawn.
 
-**Start `coding-session`:** Runs on a **ship lane** (spawned child or detached session) — **not** a Squad Leader spawn from §§1–7. **Detached** means off the **leader** protocol §§1–7, **not** “only the Squad Leader may start it.” Planning child lanes (**`master-planner`**, **`phase-planner`**, Quick Fix Plan agent) emit §5d **`AGENT_RUN_REQUEST_V1`** from inline **`pr-plan`** on **their own lane** after §5c. Entry paths, required inputs, and anti-patterns: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Start implementation (`coding-session` entry)*.
+**Start `coding-session`:** Runs on a **ship lane** (spawned child or detached session) — **not** a Squad Leader spawn from §§1–7. **Detached** means off the **leader** protocol §§1–7, **not** “only the Squad Leader may start it.” Planning child lanes (**`master-planner`**, **`phase-planner`**, Quick Fix Plan agent) emit §5d **`mission_control_spawn_agent`** from inline **`pr-plan`** on **their own lane** after §5c. Entry paths, required inputs, and anti-patterns: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Start implementation (`coding-session` entry)*.
 
 **Pre-review verification:** Before developer review on **`coding-session`**, run hosting-repo **pre-review verification** per applicable **`.cursor/rules/`** (curated **Project rules** / plan **§5** — commands stay in hosting rules only). See [Ship cut-point gate](skills/coding-session/SKILL.md#ship-cut-point-gate-approve-commit-before-deploy) and rule **20** § *Review before commit*.
 
-Procedures, gates, and spawn contracts live in those skills and in **`.sedea/centers/research-and-development/docs/development-process.md`** (**Protocol branches** table and § *Ship chain*). The Squad Leader **does not** emit `AGENT_RUN_REQUEST_V1` for this table unless a future protocol step explicitly adds it.
+Procedures, gates, and spawn contracts live in those skills and in **`.sedea/centers/research-and-development/docs/development-process.md`** (**Protocol branches** table and § *Ship chain*). The Squad Leader **does not** emit `mission_control_spawn_agent` for this table unless a future protocol step explicitly adds it.
 
 **Ship ledger row (per PR plan)**
 
@@ -660,7 +660,7 @@ Maintain one row per in-scope **PR plan** path under `.sedea/operations/.../plan
 
 `not-started` → `worktree` → `implementing` → `pre-pr-review` → `pr-open` → `pr-review` → `pr-merged` → `deploy-walk` → `reconcile` → `done`
 
-**Ship child `outputs` hints (when `AGENT_RESULT_RESPONSE_V1` bubbles up)** — see **`skills/README.md`** § Ship spawn. Typical mappings:
+**Ship child `outputs` hints (when `mission_control_send_agent_result` bubbles up)** — see **`skills/README.md`** § Ship spawn. Typical mappings:
 
 | Child skill | Advance `phase` when `outputs` include |
 |-------------|----------------------------------------|
@@ -683,7 +683,7 @@ Maintain one row per in-scope **PR plan** path under `.sedea/operations/.../plan
 
 **Host-sync ledger delivery**
 
-Ship skills run on **detached** lanes; the Squad Leader transcript often shows **no** raw child **`AGENT_RESULT_RESPONSE_V1`**. Progress reaches §8 **only** when the Mission Control host persists **`ship-ledger.v1.json`** and enqueues the silent leader-lane sync message after a qualifying ship child terminal.
+Ship skills run on **detached** lanes; the Squad Leader transcript often shows **no** raw child **`mission_control_send_agent_result`**. Progress reaches §8 **only** when the Mission Control host persists **`ship-ledger.v1.json`** and enqueues the silent leader-lane sync message after a qualifying ship child terminal.
 
 ### Mission Control host sync (section 8)
 
@@ -691,7 +691,7 @@ When Mission Control hosts a **`plan and deliver`** dispatch, the extension **mu
 
 | Step | Behavior |
 |------|----------|
-| **Trigger** | A **spawned ship child** lane emits terminal or **re-emitted** **`AGENT_RESULT_RESPONSE_V1`** for **`coding-session`** or **`pre-pr-review`** with **`outputs.targetPlanPath`** and a derivable **`outputs.shipPhase`** (explicit or host-inferred). **`coding-session`** **re-emits** also qualify when they carry §8 fields after inline milestones (**`pr-review`**, **`create-pr`**, **`deploy-walk`**, **`plan-reconcile`**) or inline deprecated **`worktree-bootstrap`** retry — those skills are **not** separate host-sync child terminals. |
+| **Trigger** | A **spawned ship child** lane emits terminal or **re-emitted** **`mission_control_send_agent_result`** for **`coding-session`** or **`pre-pr-review`** with **`outputs.targetPlanPath`** and a derivable **`outputs.shipPhase`** (explicit or host-inferred). **`coding-session`** **re-emits** also qualify when they carry §8 fields after inline milestones (**`pr-review`**, **`create-pr`**, **`deploy-walk`**, **`plan-reconcile`**) or inline deprecated **`worktree-bootstrap`** retry — those skills are **not** separate host-sync child terminals. |
 | **Persist** | Merge one row per `targetPlanPath` into **`ship-ledger.v1.json`** in the dispatch bundle directory (alongside **`dispatch.yaml`**). |
 | **Deliver** | Queue a silent **UserSend** on the **Squad Leader** lane whose body starts with **`Mission Control: ship-ledger sync (section 8).`** and includes the host-sync field block (same keys as *Host-sync field reference* below). The leader agent **must** parse it and refresh §8 rows before other protocol work. |
 | **Audit** | Append **`ship-ledger-row-updated`** to **`dispatch-events.v1.ndjson`**. |
@@ -704,7 +704,7 @@ When Mission Control hosts a **`plan and deliver`** dispatch, the extension **mu
 
 **Limits**
 
-- Host sync **does not** replace child **`AGENT_RESULT_RESPONSE_V1`** delivery to parent lanes, domain **`continuationStatus`** fields, or *Pre-resolution checklist* / **`MC_DISPATCH_RESOLVED_V1`** gates.
+- Host sync **does not** replace child **`mission_control_send_agent_result`** delivery to parent lanes, domain **`continuationStatus`** fields, or *Pre-resolution checklist* / **`MC_DISPATCH_RESOLVED_V1`** gates.
 - If **`outputs.targetPlanPath`** or derivable **`shipPhase`** is missing, the host **skips** ledger sync for that result — treat as a **skill contract failure**.
 - **`pr-review`** is **not** a separate child terminal — **`coding-session`** **must** re-emit with `shipPhase: pr-review` after inline triage. See [`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`](../../rules/30_planning-target-resolution.mdc) § *§8 ship ledger and inline `pr-review`*.
 - Leader-tab UI may lag **`ship-ledger.v1.json`** briefly; prefer the host-sync message and dispatch-bundle file over UI-only state.
@@ -716,7 +716,7 @@ Before treating §8 as fully operational on a **`plan and deliver`** dispatch, e
 | Audit fail | Action |
 |------------|--------|
 | Milestone has no scripted terminal contract | **Mission gap** — extend the ship skill; do not add manual recap |
-| Child finished but host sync skipped | Fix terminal **`outputs`**; re-emit **`AGENT_RESULT_RESPONSE_V1`** on the ship lane |
+| Child finished but host sync skipped | Fix terminal **`outputs`**; re-emit **`mission_control_send_agent_result`** on the ship lane |
 | Gap cannot be closed in-session | Start **mission completeness triage** as a **new** Mission Control dispatch on **sedea** (`mission completeness triage` / `report mission gap`) — this dispatch cannot open it; file a Mission Completeness Report under the resolved operations **`docs/`** write root |
 
 Until the audit passes, treat **`plan-and-deliver`** §8 automation as **incomplete** for dispatch resolution purposes.

@@ -156,7 +156,7 @@ USER_CHECKPOINT — pick quick-fix intake mode and confirm scope before spawn.
 - **execution:** spawned
 - **Intent:** Delegate minimal parent scaffold and **`new-plan`** + **`pr-plan`** inline to a focused planning agent.
 - **Target agent role:** Quick Fix Plan agent
-- **skillPath (binding):** [`.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`](.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md) — host **`AGENT_RUN_REQUEST_V1`** uses this single path per [spawn contracts README](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md) § *Universal spawn preflight*.
+- **skillPath (binding):** [`.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`](.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md) — host **`mission_control_spawn_agent`** uses this single path per [spawn contracts README](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md) § *Universal spawn preflight*.
 - **Inline on child lane (not separate spawns):** [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md), [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md) — executed per §4 inside the **`quick-fix-plan`** child lane.
 - **Required rule context:** Sedea baseline, **this `plan.mdc`**, **`development-process.md`**, [`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`](.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc), plan-and-deliver **`skills/README.md`**.
 - **Inputs:** `intakeMode` (`provide-list` | `description-of-fix`), `changeList`, optional `changeDescription` (required when `intakeMode` is `description-of-fix`), `title` from Mission Control, `centerSlug: research-and-development`, `complexityConfirmed: true`.
@@ -172,7 +172,7 @@ USER_CHECKPOINT — pick next step when Quick Fix Plan child reports failure or 
 - **`initiatingPrompt`:** one narrative prompt string weaving the confirmed bullet list, scope/complexity confirmation, and full `changeDescription` when the prose intake path was used — not separate structured sub-fields.
 - **`warmUpRules`:** include **`quick-fix/plan.mdc`** instead of **`plan-and-deliver/plan.mdc`**.
 
-**Agent session closure:** Child **`AGENT_RESULT_RESPONSE_V1`**; leader waits for host delivery before §6 (**#external-wait**).
+**Agent session closure:** Child **`mission_control_send_agent_result`**; leader waits for host delivery before §6 (**#external-wait**).
 
 ### 4. Minimal parent and PR plan (Quick Fix Plan agent lane)
 
@@ -193,7 +193,7 @@ USER_CHECKPOINT — pick next step when Quick Fix Plan child reports failure or 
 3. **`new-plan`** inline — `mode: indexed-child`, `childKind: pr-plan`, `index: 1`, parent paths from step 2.
 4. **`pr-plan`** inline — populate §§1–4 from bullet list; §§5–8 remain **`_TBD_`** for **`coding-session`** (normative).
 5. At **`pr-plan`** §5c/§5d — spawn **`coding-session`** with planning handoff `inputs` (`readyForImplementation`, `targetPlanPath`, `upstreamSkill: pr-plan`, etc.) per **`pr-plan/SKILL.md`**.
-6. Emit child terminal **`AGENT_RESULT_RESPONSE_V1`** with plan paths and handoff status.
+6. Emit child terminal **`mission_control_send_agent_result`** with plan paths and handoff status.
 
 **Forbidden on this lane:** **`master-planner`**, **`pr-breakdown`**, **`delivery-phases`**, **`phase-planner`**, second PR row, Squad Leader **`MC_DISPATCH_RESOLVED_V1`**.
 
@@ -213,7 +213,7 @@ The Squad Leader **does not** spawn **`coding-session`** from §§1–3. The **Q
 
 - **Type:** Finish/stop logic
 - **Intent:** Acknowledge Quick Fix Plan agent terminal; register PR plan path on planning ledger.
-- **Inputs:** §3 child **`AGENT_RESULT_RESPONSE_V1`**.
+- **Inputs:** §3 child **`mission_control_send_agent_result`**.
 - **Expected output:** One-line status ack; open ship row when `readyForImplementation` reported.
 - **Next-step resolution:** Continue §7; do not re-run planning on leader lane.
 

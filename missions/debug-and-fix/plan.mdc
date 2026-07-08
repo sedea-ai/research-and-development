@@ -122,9 +122,9 @@ USER_CHECKPOINT — pick intake mode or provide issue summary before spawning th
   - `inputs` — validated fields above.
   - `warmUpRules` — skill frontmatter defaults plus mission context paths when needed.
   - `initiatingPrompt` — protocol step, symptom, and any user decisions from step 2.
-- `expected output`: Child **`AGENT_RESULT_RESPONSE_V1`** with `outputs.fixStatus`, `outputs.worktreePath`, `outputs.worktreeName`, `outputs.hostingRoot`, `outputs.exitRecommendation` (`code-promotion` | `ad-hoc-prd` | `findings-report-only` | `blocked`), `outputs.fixSummary`, `outputs.testEvidence`.
+- `expected output`: Child **`mission_control_send_agent_result`** with `outputs.fixStatus`, `outputs.worktreePath`, `outputs.worktreeName`, `outputs.hostingRoot`, `outputs.exitRecommendation` (`code-promotion` | `ad-hoc-prd` | `findings-report-only` | `blocked`), `outputs.fixSummary`, `outputs.testEvidence`.
 - `next-step resolution`: On `fixStatus: verified`, continue to step 4 (auto-advance). On `blocked` or `failed`, continue to step 6 (debug session findings report). On `partial`, USER_CHECKPOINT gate below.
-- **Agent session closure**: Child emits one parseable **`AGENT_RESULT_RESPONSE_V1`** line per skill **`## Completion (spawned)`**. Squad Leader waits for host delivery before continuing (**#external-wait**).
+- **Agent session closure**: Child emits one parseable **`mission_control_send_agent_result`** line per skill **`## Completion (spawned)`**. Squad Leader waits for host delivery before continuing (**#external-wait**).
 
 USER_CHECKPOINT — pick next step when debug child reports partial status.
 - **Dispatch resolution**: Remains Squad Leader responsibility — child does not emit **`MC_DISPATCH_RESOLVED_V1`**.

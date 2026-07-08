@@ -20,7 +20,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CENTERS_ROOT = path.resolve(__dirname, '../../../../../');
 
 /** Legacy sentinel strings — must not appear in skill docs after MCP-only migration. */
-const FORBIDDEN_SENTINELS = /AGENT_RUN_REQUEST_V1|AGENT_RESULT_RESPONSE_V1/;
+const RUN_TOKEN = 'AGENT_RUN_' + 'REQUEST_V1';
+const RESULT_TOKEN = 'AGENT_RESULT_' + 'RESPONSE_V1';
+const FORBIDDEN_SENTINELS = new RegExp(`${RUN_TOKEN}|${RESULT_TOKEN}`);
 
 /** Skills exempt from spawn-table requirements (inline-only policy). */
 const INLINE_ONLY_EXEMPT = new Set([
