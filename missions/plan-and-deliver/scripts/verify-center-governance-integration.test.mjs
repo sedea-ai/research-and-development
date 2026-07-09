@@ -51,6 +51,12 @@ test('verify-designation.mjs exits 0 on catalog SKILL.md and Pathfinder warm-up'
   assert.match(out, /OK: designation verified/);
 });
 
+test('verify-checkpoint-steps.mjs warn-only exits 0 (phase 1 scaffold)', () => {
+  const out = runScript('verify-checkpoint-steps.mjs');
+  assert.match(out, /verify-checkpoint-steps:/);
+  assert.match(out, /governance file\(s\) scanned/);
+});
+
 test('verify-lane-warmup-parity.mjs --bootstrap full exits 0 for all roles', () => {
   const out = runScript('verify-lane-warmup-parity.mjs', ['--bootstrap', 'full']);
   assert.match(out, /OK: lane warm-up parity passed/);
@@ -61,6 +67,13 @@ test('verify-lane-warmup-parity.mjs --bootstrap slim exits 0 (§5.3 merge gate)'
   const out = runScript('verify-lane-warmup-parity.mjs', ['--bootstrap', 'slim']);
   assert.match(out, /OK: lane warm-up parity passed/);
   assert.match(out, /bootstrap=slim/);
+});
+
+test('verify-checkpoint-steps.mjs warn-only exits 0 (phase 1 scaffold)', () => {
+  const out = runScript('verify-checkpoint-steps.mjs');
+  assert.match(out, /verify-checkpoint-steps:/);
+  const code = runScriptExit('verify-checkpoint-steps.mjs');
+  assert.equal(code, 0);
 });
 
 test('lane-manifest-contract.md documents PRD §5.6 L1–L5 sunset gates', async () => {
