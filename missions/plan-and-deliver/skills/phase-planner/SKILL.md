@@ -137,6 +137,46 @@ After a **material** phase plan edit on **this phase subtree** that affects **on
 | N7 | Omit terminal lanes from **`targetSlugs`** before calling |
 | N8 | New work → **`mission_control_spawn_agent`** — never notify as a spawn workaround |
 
+### Plan-change notification receive (child lane)
+
+When Mission Control delivers **`Mission Control: plan-change-notification delivered.`** on **this** spawned **`phase-planner`** lane, treat it as mid-phase delivery handoff — not skill terminal completion and not Step **5e** child-result merge.
+
+**Intake (binding):**
+
+1. Parse host envelope fields: **`summary`**, **`changeType`**, **`affectedPlanPaths`**, optional **`excerptPointers`**, **`requestedChildActions`**, **`initiatingContext`**.
+2. **`Read`** each **`affectedPlanPaths`** entry in full before acting.
+3. Compare to **`inputs.targetPlanPath`**, phase subtree plans, **`activeLanes`**, and open **`### PR list`** rows — do **not** close the phase delivery row solely because notify arrived.
+4. Keep **`outputs.continuationStatus: active`** while open child lanes or inline decomposition work remains.
+
+**Checkpoint vs external-wait (binding):** Notify delivery is **developer-input USER_CHECKPOINT** — **not** external-wait. Emit structured choice on the same turn after re-read; do **not** auto-advance to Step **5e** terminal merge or refocus parent.
+
+USER_CHECKPOINT — parent plan-change notification received on phase-planner child lane.
+
+**Required options** (`modalTitle`: *Phase planner — plan change notification*; list in this order):
+
+| Option id | Label |
+|-----------|--------|
+| `acknowledge-only` | Acknowledge — continue phase delivery with updated context |
+| `re-read-revise` | Re-read / revise affected phase or PR plan sections |
+| `plan-reconcile` | Run inline **`plan-reconcile`** when authorized on this subtree |
+| `escalate-parent` | Escalate to **`master-planner`** or Squad Leader |
+| `stop-work` | Stop phase delivery work (cancellation or developer-directed) |
+| `more-details` | More details for option _ |
+
+**Option semantics (binding):**
+
+| Option | Act |
+|--------|-----|
+| **`acknowledge-only`** | Merge notify context into lane ledger; resume prior step — **no** terminal MCP result |
+| **`re-read-revise`** | Update phase plan §§ or child spawn **`inputs`** when paths intersect — keep phase row open |
+| **`plan-reconcile`** | Inline **`plan-reconcile`** per contract — merge ledger; **no** terminal result solely from notify |
+| **`escalate-parent`** | Bubble summary upstream — **forbidden** **`mission_control_refocus_parent_lane`** solely from notify |
+| **`stop-work`** | Pause phase delivery; **`partial`** only when genuinely blocked |
+
+**Forbidden on notify delivery (binding):** Terminal **`mission_control_send_agent_result`** solely due to notification; **`mission_control_refocus_parent_lane`** solely due to notification; skipping **`affectedPlanPaths`** re-read; treating notify as Step **5e** child terminal merge.
+
+Normative protocol: **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notify protocol*; **`../README.md`** § *Child delivery checkpoint (receive)*.
+
 ## Trigger
 
 Invocation context (mission dispatch and structured choices):

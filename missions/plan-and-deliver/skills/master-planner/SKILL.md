@@ -132,6 +132,46 @@ After a **material** Master Plan edit that affects **ongoing work** on named **n
 | N7 | Enumerate targets from **`activeLanes`** / registry — omit terminal lanes before calling |
 | N8 | New lanes or new work → **`mission_control_spawn_agent`** — never notify as a spawn workaround |
 
+### Plan-change notification receive (child lane)
+
+When Mission Control delivers **`Mission Control: plan-change-notification delivered.`** on **this** spawned **`master-planner`** lane, treat it as Master Plan decomposition handoff — not skill terminal completion.
+
+**Intake (binding):**
+
+1. Parse host envelope: **`summary`**, **`changeType`**, **`affectedPlanPaths`**, optional **`excerptPointers`**, **`requestedChildActions`**, **`initiatingContext`**.
+2. **`Read`** each **`affectedPlanPaths`** entry in full before acting.
+3. Compare to **`inputs.masterPlanPath`**, **`### Delivery phases`** rows, **`activeLanes`**, and spawned child plan paths. When change does **not** alter active decomposition, default path is acknowledge-only.
+4. Keep **`outputs.continuationStatus: active`** while open **`phase-planner`** / ship children remain.
+
+**Checkpoint vs external-wait (binding):** Notify delivery is **developer-input USER_CHECKPOINT** — **not** external-wait. Structured choice on the same turn after re-read.
+
+USER_CHECKPOINT — parent plan-change notification received on master-planner child lane.
+
+**Required options** (`modalTitle`: *Master planner — plan change notification*; list in this order):
+
+| Option id | Label |
+|-----------|--------|
+| `acknowledge-only` | Acknowledge — continue Master Plan delivery (no decomposition change) |
+| `re-read-revise` | Re-read / revise Master Plan or affected child plan sections |
+| `plan-reconcile` | Run inline **`plan-reconcile`** when authorized on this feature subtree |
+| `escalate-parent` | Escalate to Squad Leader — change needs dispatch-level decision |
+| `stop-work` | Stop Master Plan delivery work (cancellation or developer-directed) |
+| `more-details` | More details for option _ |
+
+**Option semantics (binding):**
+
+| Option | Act |
+|--------|-----|
+| **`acknowledge-only`** | Record context; resume Step **7b** / child aggregation — **no** terminal MCP result |
+| **`re-read-revise`** | Update Master Plan §§ or **`Delivery phases`** rows when **`affectedPlanPaths`** intersect — keep decomposition open |
+| **`plan-reconcile`** | Inline **`plan-reconcile`** when authorized — **no** terminal result solely from notify |
+| **`escalate-parent`** | Summarize for Squad Leader — **forbidden** **`mission_control_refocus_parent_lane`** solely from notify |
+| **`stop-work`** | Pause delivery; **`partial`** only when genuinely blocked |
+
+**Forbidden on notify delivery (binding):** Terminal **`mission_control_send_agent_result`** solely due to notification; **`mission_control_refocus_parent_lane`** solely from notify; skipping **`affectedPlanPaths`** re-read.
+
+Normative protocol: **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notify protocol*; **`../README.md`** § *Child delivery checkpoint (receive)*.
+
 ## Refresh lane display (when stale)
 
 After **`featurePlanningTitle`** / Master Plan scope is clear (before or right after Step 1 warm-up):

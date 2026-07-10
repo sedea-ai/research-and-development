@@ -127,18 +127,73 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 ## Agent messaging (MCP)
 
-**MCP spawn/result skill.** Parent→child spawn and child terminal result use MCP tools per **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Agent-to-agent spawn protocol*.
+**MCP spawn/result/notify-receive skill.** Parent→child spawn, child terminal result, and parent plan-change notify delivery use MCP tools per **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Agent-to-agent spawn protocol* and § *MCP notify protocol*.
 
 | Action | MCP tool |
 |--------|----------|
 | Parent spawn (when this skill emits a child lane) | **`mission_control_spawn_agent`** |
 | **This** spawned lane terminal (and terminal re-emits) | **`mission_control_send_agent_result`** |
+| Parent plan-change notify (receive only — **forbidden** on this lane) | Host-delivered UserSend — see [Plan-change notification receive (child lane)](#plan-change-notification-receive-child-lane) |
 
 **Binding:**
 
 - Run **`../README.md`** § *MCP spawn preflight* (rows M1–M8) before every MCP spawn; **forbidden** host-resolved identity keys in MCP args (`correlationId`, `dispatchId`, `slotId`, … — see README § *Host-resolved identity*).
 - Inline skills on this mission stay **inline-only** — no spawn wire change unless the protocol step explicitly spawns a child lane.
+- **`coding-session`** is a **notify recipient**, not a notify caller — **forbidden** **`mission_control_notify_child_lanes`** on this lane; escalate via upstream planner or Squad Leader.
 
+### Plan-change notification receive (child lane)
+
+When Mission Control delivers a silent UserSend whose first line is **`Mission Control: plan-change-notification delivered.`**, treat it as a **parent plan-change handoff** — not terminal completion, not implicit external-wait resume, and **not** permission to close the ship chain.
+
+**Intake (binding):**
+
+1. **Detect** the preamble line and parse the host envelope: **`summary`**, **`changeType`**, **`affectedPlanPaths`**, optional **`excerptPointers`**, optional **`requestedChildActions`**, optional **`initiatingContext`**, parent slug/agent id.
+2. **`Read`** each path in **`affectedPlanPaths`** in full (`Read` tool, no offset/limit skip) **before** acting or offering options.
+3. **Compare** grounded plan content to lane **`inputs`** (`targetPlanPath`, `targetPlanSlug`, `parentPlanPath`, ledger sidecar) and current implementation state.
+4. **Keep** **`outputs.continuationStatus: active`** on any in-flight ship work — notify does not mark PR ship complete.
+
+**Checkpoint vs external-wait (binding):** Plan-change notification delivery is a **developer-input USER_CHECKPOINT** on this lane — **not** implicit external-wait. Emit **`MC_PHASED_RESPONSE_V1`** or **AskQuestion** on the **same turn** after re-read and recap; do **not** end with prose-only acknowledgment or auto-advance into ship steps without the developer pick.
+
+USER_CHECKPOINT — parent plan-change notification received; pick how to respond before continuing implementation or ship work.
+
+**Required recap** (include in **`display.markdown`** when using **`MC_PHASED_RESPONSE_V1`**):
+
+- One line: parent slug, **`changeType`**, and **`summary`**.
+- Bullet list of **`affectedPlanPaths`** re-read (confirm each file was loaded).
+- One line comparing whether **`inputs.targetPlanPath`** or anchored PR plan intersects the change (yes/no + which sections).
+
+**Required options** (`modalTitle`: *Coding session — plan change notification*; list in this order):
+
+| Option id | Label |
+|-----------|--------|
+| `acknowledge-only` | Acknowledge — continue current implementation with updated context |
+| `re-read-revise` | Re-read / revise affected plan sections on this lane |
+| `plan-reconcile` | Run inline **`plan-reconcile`** when authorized (plan-anchored ship) |
+| `escalate-parent` | Escalate to parent planner — change needs upstream decision |
+| `stop-work` | Stop work on this lane (when **`changeType: cancellation`** or developer-directed) |
+| `more-details` | More details for option _ |
+
+**Option semantics (binding):**
+
+| Option | Act |
+|--------|-----|
+| **`acknowledge-only`** | Record acknowledgment in chat; resume prior ship-chain step — **no** terminal MCP result |
+| **`re-read-revise`** | Edit anchored plan §§ or implementation scope per re-read; stay **`continuationStatus: active`** |
+| **`plan-reconcile`** | Inline **`plan-reconcile`** per its contract when plan-anchored and ship rules loaded — merge ledger; **no** terminal result solely from notify |
+| **`escalate-parent`** | Summarize gap for upstream **`phase-planner`** / **`pr-plan`** / Squad Leader — **no** **`mission_control_refocus_parent_lane`** solely from notify |
+| **`stop-work`** | Pause implementation; may emit **`partial`** only when skill work is genuinely blocked — **not** because notify arrived |
+
+When **`requestedChildActions`** is present, surface matching options in recap (for example **`re-read-plan`** → prefer **`re-read-revise`**; **`run-plan-reconcile`** → prefer **`plan-reconcile`**; **`acknowledge-only`** → default **`acknowledge-only`**; **`stop-work`** → include **`stop-work`**).
+
+**Forbidden on notify delivery (binding):**
+
+- Terminal **`mission_control_send_agent_result`** solely because notification arrived.
+- **`mission_control_refocus_parent_lane`** solely because notification arrived.
+- Treating notify as **`pre-pr-review`** / child-result external-wait — no host **`correlationId`** merge on parent from notify alone.
+- Skipping **`Read`** of **`affectedPlanPaths`** before the USER_CHECKPOINT gate.
+- Classifying notify as external-wait to avoid a turn-end modal under Checkpoint trust.
+
+Normative protocol summary: **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notify protocol* § *Child agent duty*; **`../README.md`** § *Spawn vs notify* and § *Child delivery checkpoint (receive)*.
 
 ## Worktree create → attach → bootstrap (ownership)
 
@@ -412,6 +467,7 @@ Under Checkpoint trust, **happy-path protocol steps auto-advance without a turn-
 | Inline **`pr-review`** — triage disposition / fix scope | **`pr-review`** Step **3b** / Step **4** disposition gates |
 | Before / After deploy — manual §7 verification | **`deploy-walk`** [Manual step await gate](../deploy-walk/SKILL.md#manual-step-await-gate-binding) |
 | Pre-PR findings after child returns | [Review feedback approval gate](#review-feedback-approval-gate) |
+| Parent plan-change notify UserSend | [Plan-change notification receive (child lane)](#plan-change-notification-receive-child-lane) |
 
 **Implicit external-wait** (host or async event may resume the lane **without** a developer modal pick on that turn): **`mission_control_send_agent_result`** delivery from spawned **`pre-pr-review`**; Squad Leader **`#external-wait`** resume per mission `plan.mdc` — still open the **next-step resume** structured choice **before** **StreamFinal** when the skill says so. **Forbidden:** classifying *waiting for the developer to review the PR on GitHub and return* as external-wait — GitHub reviewers are external; **lane continuation** is developer-input via the gates above.
 
@@ -432,6 +488,7 @@ Under Checkpoint trust, **happy-path protocol steps auto-advance without a turn-
 | **Post-merge tail** (cleanup → promote-pin hint → After deploy walk entry) | **Auto-advance** — no turn-end modal between PR merge and first After deploy manual step | exception: cleanup partial / merge unconfirmed / promote-pin hard failure |
 | **After deploy deploy-walk** — manual §7 steps (Production Deploy Steps) | **Gate** — **sole** USER_CHECKPOINT surface **after PR merge** on this lane | [`deploy-walk` Manual step await gate](../deploy-walk/SKILL.md#manual-step-await-gate-binding) |
 | **Post-after-deploy tail** (plan-reconcile → **`prShipComplete`**) | **Auto-advance** — run remainder inventory without batch modal when clean | exception: reconcile flags requiring developer picks |
+| **Plan-change notification receive** | **Gate** — developer-input USER_CHECKPOINT after mandatory re-read | [Plan-change notification receive (child lane)](#plan-change-notification-receive-child-lane) — **not** external-wait |
 
 **Skip worktree-open modal (binding):** When [Auto-authorize implementation (pr-plan spawn)](#auto-authorize-implementation-pr-plan-spawn) applies, layer 2 is satisfied without opening [Worktree-open gate](#worktree-open-gate) — not a regression for this calibration.
 

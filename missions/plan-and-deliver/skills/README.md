@@ -388,6 +388,16 @@ Parent planner skills (**`master-planner`**, **`phase-planner`**, **`pr-breakdow
 
 Notify does **not** replace child terminal **`mission_control_send_agent_result`** merge on parent lanes (see **`phase-planner`** Step **5e**, **`pr-breakdown`** Step **6b**). Feature flag **`sedea.features.plan-change-notification`** must be on for host delivery (default off until dogfood PR 4).
 
+**Child delivery checkpoint (receive) — binding:** Eligible **child** lanes that receive notify UserSend must implement § *Plan-change notification receive (child lane)* in their skill docs. v1 required skills:
+
+| Skill | Receive section |
+|-------|-----------------|
+| **`coding-session`** | § *Plan-change notification receive (child lane)* — ship-lane recipient during PR implementation |
+| **`phase-planner`** | § *Plan-change notification receive (child lane)* — mid phase delivery |
+| **`master-planner`** | § *Plan-change notification receive (child lane)* — Master Plan child during decomposition |
+
+**Receive contract (all listed skills):** mandatory **`Read`** of each **`affectedPlanPaths`** entry; USER_CHECKPOINT with acknowledge / re-read-revise / plan-reconcile / escalate / stop-work options; **forbidden** terminal **`mission_control_send_agent_result`** solely due to notify; notify is **developer-input USER_CHECKPOINT**, not external-wait. Extend the table for other spawned plan-and-deliver children when dogfood surfaces gaps. Normative summary: **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notify protocol* § *Child agent duty*.
+
 ### Lane title prefix (spawn `name`)
 
 Before MCP row **M8**, set spawn **`name`** (and child lane **`title`** on refresh) to **`{prefix}-{semantic title}`** per [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Lane title prefix conventions*:
