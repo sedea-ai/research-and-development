@@ -130,9 +130,9 @@ This skill does not own approval modals — **`coding-session`** collects develo
 
 ## Checkpoint turn UX (skill-local)
 
-Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`pre-pr-review`**; other ship-chain skills document their own markers.
+Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`pre-pr-review`**; invoker missions **`plan-and-deliver`**, **`single-phase`**, **`quick-fix`**, and **`debug-and-fix`** document their own **`coding-session`** ship gates — see **`coding-session/SKILL.md`** § *Checkpoint turn UX* for Review feedback approval and Create-PR handoff.
 
-**Real-dispatch test loop (binding):** After merge, run one full **`pre-pr-review`** spawn on a Checkpoint dispatch through Step **8** — verify Steps **1–7** auto-advance and Step **8** **always** auto-emits terminal + parent refocus (including **`no-go`**) without a modal; the coding-session parent receives the bubble-up and owns next-step gates before the parent phase advances **`deploy-walk`** PR 3 — per **Ship-chain skills UX** § *Single-concern strategy*.
+**Real-dispatch test loop (binding):** After merge, run one full **`pre-pr-review`** spawn on a Checkpoint dispatch through Step **8** — verify Steps **1–7** auto-advance and Step **8** **always** auto-emits terminal + parent refocus (including **`no-go`**) without a modal; the **`coding-session`** parent receives the bubble-up and owns next-step gates before the parent phase advances the next ship-chain skill PR — per **Phase 2 — R&D center audit** § *Single-concern strategy*.
 
 Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md).
 
@@ -147,6 +147,14 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 | **6** — Score categories | Auto-advance through category table | — |
 | **7** — Proposed follow-ups | Auto-advance (handoff only; no plan mutation) | — |
 | **8** — Report and result | Auto-advance — report, parent refocus, terminal same turn (all outcomes including **`no-go`**) | — |
+
+### Developer input vs external-wait (Checkpoint)
+
+Under Checkpoint trust, **happy-path** reviewer steps (**1–8**) **auto-advance without a turn-end modal** on this lane. This skill owns **no** developer-input **`USER_CHECKPOINT`** markers — **`coding-session`** owns Review feedback approval, Create-PR handoff (exceptional), and post-create-pr gates after terminal bubble-up.
+
+**Forbidden on this lane:** prose-only report handback without **`mission_control_send_agent_result`**; **`MC_PHASED_RESPONSE_V1`** / AskQuestion at Step **8** (including **`no-go`**); *tell me when*, *waiting for developer*, or *stay advisory until you pick* — parent lane gates apply after **`mission_control_refocus_parent_lane`**.
+
+**Exception paths** (missing inputs, wrong anchor, empty diff, reused coding-agent context) emit **`failure`** / **`aborted`** / **`partial`** terminal results — not developer-choice modals on this reviewer lane.
 
 ## Session orientation table (binding)
 
@@ -183,6 +191,8 @@ For `anchorType: "plan"`, `targetPlanPath` is required and must point to a per-P
 
 If any required input is missing, stop with `failure`. Do not ask the developer to reconstruct a seed; the spawning `coding-session` agent owns input assembly.
 
+- **Next-step resolution:** Auto-advance to [Refresh lane display](#refresh-lane-display-when-stale) when validation passes — no `USER_CHECKPOINT` on happy-path spawn handoff. On missing required inputs, emit `failure` terminal — not a missing-inputs modal on this lane.
+
 ## Refresh lane display (when stale)
 
 After **`targetPlanSlug`** or free-form scope is validated (end of Step 1):
@@ -194,9 +204,13 @@ After **`targetPlanSlug`** or free-form scope is validated (end of Step 1):
 
 See [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Child lane — refresh own slot when labels are stale*.
 
+- **Next-step resolution:** Auto-advance to Step **2** after display refresh or skip — no `USER_CHECKPOINT` on this step.
+
 ## Step 2 — Fresh reviewer lane
 
 Confirm this is a fresh reviewer lane. Do not reuse context from the coding agent that implemented the worktree. If the lane already contains implementation edits or coding-agent tool history, stop with `aborted` and request a fresh `pre-pr-review` spawn.
+
+- **Next-step resolution:** Auto-advance to Step **3** on a clean detached lane — no `USER_CHECKPOINT` on this step.
 
 ## Step 3 — Load standards and rules
 
@@ -204,10 +218,14 @@ Read `.sedea/centers/research-and-development/docs/development-process.md` in fu
 
 Read every path from `projectRules`. If a rule path is missing, report it as `partial` unless the rule is clearly irrelevant to the diff.
 
+- **Next-step resolution:** Auto-advance to Step **4** — no `USER_CHECKPOINT` on this step.
+
 ## Step 4 — Load anchor
 
 - `plan`: read `targetPlanPath`. Verify per-PR template sections §§ 1–7 are present; § 8 and `## Follow-ups` are optional. Do not mutate §§ 1–8.
 - `free-form`: no plan file; review the committed diff only.
+
+- **Next-step resolution:** Auto-advance to Step **5** when anchor loads — no `USER_CHECKPOINT` on this step. Wrong plan template → `failure` terminal.
 
 ## Step 5 — Read committed diff
 
@@ -225,6 +243,8 @@ git status --short --ignore-submodules=dirty
 If `git status --short` is non-empty, continue against the committed diff but evaluate dirty-tree degradation using `git status --short --ignore-submodules=dirty` (aligns with `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc` submodule-only drift guidance). Only non-submodule local edits should be flagged as not part of the reviewed cut point.
 
 If there are zero commits ahead and no diff, stop with `failure`: there is nothing to review.
+
+- **Next-step resolution:** Auto-advance to Step **6** when a committed diff exists — no `USER_CHECKPOINT` on this step.
 
 ## Pre-PR phase boundary (plan anchor)
 
@@ -282,6 +302,8 @@ Verdict per row: `PASS`, `FLAG`, or `FAIL`. `FAIL` blocks PR creation or merge r
 | **F2** | Repo-rule compliance |
 | **F3** | General code quality |
 
+- **Next-step resolution:** Auto-advance to Step **7** after category scoring — no `USER_CHECKPOINT` on this step.
+
 ## Step 7 — Proposed follow-ups
 
 For `plan` anchor only: collect actionable `FLAG` items that are not blockers as **proposed** `## Follow-ups` for the PR plan. Do **not** mutate the plan file from this reviewer lane; the active **`coding-session`** agent must present these proposed follow-ups to the developer and receive explicit approval before appending them.
@@ -296,6 +318,8 @@ Rules:
 6. **Exclude** every item that only restates **`### After deploy`** or post-merge production verification — omit entirely (see **§7 After deploy — silent omission** above), not in `proposedFollowUps` or handback.
 
 For `free-form`, skip file writes.
+
+- **Next-step resolution:** Auto-advance to Step **8** — handoff only; no plan mutation and no `USER_CHECKPOINT` on this step.
 
 ## Step 8 — Report and result
 
