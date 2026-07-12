@@ -104,7 +104,7 @@ Squad Leader steps **§3** and **§5** spawn child lanes for **`author-prd`** an
 
 | Skill | Typical invoker | Squad Leader ledger |
 |-------|-----------------|---------------------|
-| `author-prd` | Squad Leader §3 | Child lane owns PRD recap + approval (steps 10–11); **one `questions` entry per open item, Approve/Revise last** (step 10 — never resolve-only without Approve/Revise); leader §4 only after `terminal` + `developerApprovedPrd: true`; no nested child lanes |
+| `author-prd` | Squad Leader §3 | Child lane owns PRD recap + approval at step **10** USER_CHECKPOINT ( **`## Checkpoint turn UX (skill-local)`** ); **one `questions` entry per open item, Approve/Revise last** — never resolve-only without Approve/Revise; leader §4 only after `terminal` + `developerApprovedPrd: true`; no nested child lanes |
 | `master-planner` | Squad Leader §5 | Seed ledger; §6 ack when `continuationOwner: master-plan-agent` |
 | `phase-planner` | inline **`new-plan`** spawn | Runs **`delivery-phases`** / **`pr-breakdown`** inline on **its child lane**; owns phase subtree through ship-complete; **`master-planner`** ack-only while **`continuationOwner: phase-planner-agent`** is active |
 | `delivery-phases` | **`master-planner`** or **`phase-planner` inline** | Runs **`new-plan`** inline on invoker lane |

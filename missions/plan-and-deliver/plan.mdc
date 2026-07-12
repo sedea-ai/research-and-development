@@ -254,7 +254,7 @@ This subsection is the **Squad Leader** contract for §§3, 5, 6, and 7. Sedea h
 
 | Check | Action |
 |-------|--------|
-| `outputs.continuationOwner: author-prd-agent` and `outputs.continuationStatus: active` | **Acknowledge only** on the leader lane — PRD approval / revision runs on the **Author PRD** child lane (see **`author-prd`** steps 10–11). Do **not** duplicate approval **AskQuestion** here. |
+| `outputs.continuationOwner: author-prd-agent` and `outputs.continuationStatus: active` | **Acknowledge only** on the leader lane — PRD approval / revision runs on the **Author PRD** child lane at **`author-prd`** step **10** USER_CHECKPOINT (see **`author-prd/SKILL.md`** **`## Checkpoint turn UX (skill-local)`** and steps 10–11). Do **not** duplicate approval **AskQuestion** here. |
 | `outputs.continuationStatus: terminal` and `outputs.developerApprovedPrd: true` with `prdRef` | **Auto-chain §4 → §5 on the same leader turn:** compile seed from approved outputs (`prdRef`, `prdTitle`, …), run §5 spawn preflight, emit **`mission_control_spawn_agent`** for **`master-planner`**. **Forbidden:** leader-lane **AskQuestion** to re-approve PRD, seed review gate, or “confirm spawn master-planner” before emit. |
 | `outputs.continuationStatus: terminal` without `developerApprovedPrd: true` | USER_CHECKPOINT — pick next step when Author PRD child terminates without approved PRD |
 | `status: partial` / missing `prdRef` / missing required inputs | USER_CHECKPOINT — collect missing fields or retry per **`author-prd`** **`## Completion (spawned)`** |
@@ -455,7 +455,7 @@ USER_CHECKPOINT — pick next step when brainstorm child reports failure or part
 4. Emit exactly one **`mission_control_spawn_agent`** for **`author-prd`** with a new `correlationId`, dispatch-unique `slug`, and preflight **`inputs`**.
 5. Announce that the **Squad Leader** is waiting for the child lane; open a **next-step resume** structured choice (**#external-wait**) before ending the turn.
 6. Stop until Mission Control delivers **`mission_control_send_agent_result`** for the same `correlationId`.
-7. Apply **§3 resume**. The **Author PRD agent** owns recap, approval, and revision (skill steps 10–11) — **do not** duplicate approval on the leader lane.
+7. Apply **§3 resume**. The **Author PRD agent** owns recap, approval, and revision at **`author-prd`** step **10** USER_CHECKPOINT (open-item + **Approve PRD** / **Revise PRD** co-present per **`author-prd/SKILL.md`** **`## Checkpoint turn UX (skill-local)`**) — **do not** duplicate approval on the leader lane.
 8. Continue to §4 only when `continuationStatus: terminal`, `developerApprovedPrd: true`, and `prdRef` is readable. When those hold, **do not end the leader turn** until §5 **`master-planner`** spawn is emitted or a §4 data-gap **AskQuestion** blocks spawn preflight.
 
 ### 4. Collect planning seed

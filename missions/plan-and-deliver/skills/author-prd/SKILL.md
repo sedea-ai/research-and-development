@@ -90,6 +90,38 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 - Run **`../README.md`** § *MCP spawn preflight* (rows M1–M8) before every MCP spawn; **forbidden** host-resolved identity keys in MCP args (`correlationId`, `dispatchId`, `slotId`, … — see README § *Host-resolved identity*).
 - Inline skills on this mission stay **inline-only** — no spawn wire change unless the protocol step explicitly spawns a child lane.
 
+## Checkpoint turn UX (skill-local)
+
+Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`author-prd`**; invoker mission **`plan and deliver`** documents Squad Leader gates — see **`plan-and-deliver/plan.mdc`** §3 spawn handover and **§3 resume (Author PRD agent)** for leader-lane ack / auto-chain.
+
+**Real-dispatch test loop (binding):** After merge, run one full **`author-prd`** spawn on a Checkpoint dispatch through step **10** PRD approval (open-item + **Approve PRD** / **Revise PRD** co-present) and collect a developer verdict before the parent phase advances the next skill PR — per **Planning protocol skills UX** § *Single-concern strategy*.
+
+Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md).
+
+| Step | Checkpoint behavior | Gate |
+|------|---------------------|------|
+| **1–1b** — Validate + leader intake guard | Auto-advance when spawn `inputs` and docs write root resolve | **Gate** when required fields missing — [Missing inputs gate](#missing-inputs-gate-binding); **`failure`** when leader intake incomplete |
+| **2–8** — Ledger, evidence, draft, write | Auto-advance on happy path | exception: write blocked → `failure` / `partial` |
+| **9** — Refresh lane display | Auto-advance when spawn labels already match scope | run MCP display update then auto-advance when stale |
+| **Post-write MCP result** (`developerApprovedPrd: false`) | External-wait on Squad Leader — leader **acks only** per **`plan.mdc`** §3 resume | **not** permission to advance **`master-planner`** on leader |
+| **10** — Present for approval | **Gate** — **first developer-pick gate on this lane** | PRD approval (below) |
+| **10a** — Open-item resolution | **Gate** — apply pick, return to step **10** | same multi-question approval shape |
+| **11** — On approve | Auto-advance to terminal **`mission_control_send_agent_result`** | — |
+
+### Missing inputs gate (binding)
+
+When **`operationsDocsDirectory`** ( **`create`** ) or required spawn **`inputs`** cannot resolve and the Squad Leader cannot supply them on the leader lane:
+
+USER_CHECKPOINT — provide missing Author PRD inputs on this lane.
+
+| Option id | Label |
+|-----------|--------|
+| `provide-docs-root` | Supply operations docs directory |
+| `provide-description` | Supply PRD description / intake fields |
+| `defer` | Defer — return partial result to Squad Leader |
+| `more-details` | More details for option _ |
+
+- **Next-step resolution:** Auto-advance to step **2** when all required inputs resolve — no `USER_CHECKPOINT` on happy-path spawn handoff with complete `inputs`.
 
 ## Purpose
 
@@ -110,6 +142,8 @@ Gather evidence, calibrate section policy, and draft or update a Product or Feat
 ## Procedure
 
 1. Validate the operation and resolve **docs write root** (binding — **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*):
+
+   - **Next-step resolution:** Auto-advance to step **1b** when validation passes — no `USER_CHECKPOINT` on happy path. When **`operationsDocsDirectory`** or required **`create`** fields are missing, open [Missing inputs gate](#missing-inputs-gate-binding) or return `failure` / `partial` with `outputs.missingFields` when the skill cannot collect on this lane.
  - `create` drafts a new PRD.
  - `manage` updates or reviews an existing PRD.
  - **`create`:** resolve write root: `operationsDocsDirectory` from spawn **`inputs`** or lane identity, or explicit `targetPath` when under `.sedea/operations/`. If none resolve → `failure` with `errors` and `summary` naming the gap — **do not write**.
@@ -119,39 +153,68 @@ Gather evidence, calibrate section policy, and draft or update a Product or Feat
  - If `prdDescription` is missing or empty → end with `failure` and ask the Squad Leader to complete **plan.mdc** §2 intake (do not draft).
  - When `sourceMaterials` is empty and the user did not explicitly choose **no sources yet** on the leader lane → run step 3 (evidence loop) before drafting; **do not** infer goals, requirements, or acceptance criteria from `prdTitle` alone.
  - Treat `prdDescription` and leader `sourceMaterials` as authoritative seeds; ask only for gaps mandatory sections still lack.
+
+   - **Next-step resolution:** Auto-advance to step **2** when intake guard passes — no `USER_CHECKPOINT` on happy path.
+
 2. Initialize a source ledger:
  - start from `prdDescription`, `sourceMaterials`, and any documents, URLs, notes, paths, excerpts, screenshots, thoughts, or related artifacts from the Squad Leader handoff.
  - leave the ledger empty when no seed materials were supplied.
  - preserve attribution so claims can be traced back to sources.
  - list unreadable or unavailable seed sources as blockers or caveats.
+
+   - **Next-step resolution:** Auto-advance to step **3** — no `USER_CHECKPOINT` on this step.
+
 3. Run the evidence-gathering loop:
  - use **AskQuestion**, **`mission_control_present_structured_choice`** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** § **Context and structured choice** to ask for documents, URLs, write-ups, thoughts, screenshots, mocks, user or stakeholder evidence, implementation constraints, and related PRDs when needed — put each choosable path in modal `options`, not prose menus.
  - read local files and `@path` references completely.
  - fetch readable URLs when available; if a URL is inaccessible, ask for an accessible copy or pasted content.
  - extract candidate facts into the source ledger after each added material.
  - stop collecting only when mandatory sections have enough evidence, or when the user explicitly says no more material is available.
+
+   - **Next-step resolution:** Auto-advance to step **4** when the evidence loop completes — no `USER_CHECKPOINT` on happy path (structured choice within step **3** when gathering material is not a separate protocol gate).
+
 4. Calibrate section policy:
  - use caller-provided policy when present.
  - ask the user to classify sections when their importance is unclear or when policy affects planning readiness.
  - otherwise apply the default policy below.
  - do not require optional sections when they are not relevant.
+
+   - **Next-step resolution:** Auto-advance to step **5** — no `USER_CHECKPOINT` on this step.
+
 5. Identify gaps and ask targeted questions:
  - identify product problem, users, goals, non-goals, requirements, dependencies, risks, rollout, and acceptance criteria.
  - ask targeted follow-up questions for missing mandatory content.
  - report important-section gaps and ask whether to gather more data, mark them optional/not applicable, or carry them as visible gaps.
  - mark contradictions and missing mandatory information as open questions until resolved.
+
+   - **Next-step resolution:** Auto-advance to step **6** — no `USER_CHECKPOINT` on this step.
+
 6. Draft or update the PRD:
  - keep section ordering stable unless the existing PRD uses a clearly intentional structure.
  - retain useful existing content in `manage` mode.
  - omit optional sections that have no supporting evidence.
  - include `TBD` only when the gap is intentionally surfaced for review.
+
+   - **Next-step resolution:** Auto-advance to step **7** — no `USER_CHECKPOINT` on this step.
+
 7. Run completeness review:
  - mandatory gaps block `planningReadiness: ready`.
  - important gaps are reported but do not always block planning.
  - optional gaps do not block planning.
+
+   - **Next-step resolution:** Auto-advance to step **8** — no `USER_CHECKPOINT` on this step.
+
 8. Write the document when an output path is resolved, then re-read it and verify the required sections.
+
+   - **Next-step resolution:** Auto-advance to step **9** after successful write — emit non-terminal **`mission_control_send_agent_result`** with `developerApprovedPrd: false` when **`plan.mdc`** §3 requires leader ack before step **10**; do **not** treat that ack as PRD approval.
+
 9. **Refresh lane display** when spawn labels are generic — MCP **`mission_control_update_lane_display`** on this lane only (rule **50**). **`title`:** `PRD-{semantic title}` where semantic title is **`prdTitle`** or approved PRD heading — see [rule **50**](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Lane title prefix conventions*.
+
+   - **Next-step resolution:** Auto-advance to step **10** — no `USER_CHECKPOINT` on this step.
+
 10. **Present for approval** — Recap path, `planningReadiness`, and gap summary. Call **`mission_control_present_structured_choice`** (spawned lanes) or **AskQuestion** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**.
+
+USER_CHECKPOINT — approve, revise, or resolve open items on this PRD before Squad Leader §4 seed compile.
 
  **Detect open items** before building the modal: `outputs.openQuestions`, missing mandatory or important sections, unresolved `TBD` markers, contradictions, and `planningReadiness: partial` or `blocked`.
 
@@ -171,7 +234,11 @@ Gather evidence, calibrate section policy, and draft or update a Product or Feat
 
 10a. **On open-item resolution pick** — Apply the selected resolution for **that question's item** to the PRD and source ledger, re-run step 7 completeness review, rewrite when needed (step 8), then return to step 10 with the same multi-question approval shape.
 
+   - **Next-step resolution:** Re-open step **10** PRD approval gate after each resolution pick.
+
 11. **On approve** — Set `outputs.developerApprovedPrd: true`, emit terminal **`mission_control_send_agent_result`** with `continuationStatus: terminal` and `continuationOwner: squad-leader`.
+
+   - **Next-step resolution:** Auto-advance to terminal MCP result — no additional `USER_CHECKPOINT` on this step.
 
 ## Default section policy
 
@@ -300,7 +367,7 @@ Use this template as a starting point. Remove optional sections that do not appl
 
 ## Completion (spawned)
 
-The **`plan and deliver`** Squad Leader spawns this skill on a child lane (**`plan.mdc`** §3). The **Author PRD agent** owns recap, approval, and revision (steps 10–11) — the Squad Leader does **not** duplicate approval on the leader lane.
+The **`plan and deliver`** Squad Leader spawns this skill on a child lane (**`plan.mdc`** §3). The **Author PRD agent** owns recap, approval, and revision (steps 10–11) — the Squad Leader does **not** duplicate approval on the leader lane. Under Checkpoint trust, step **10** is the **USER_CHECKPOINT** surface (open-item + **Approve PRD** / **Revise PRD** co-present) — see **`## Checkpoint turn UX (skill-local)`** above; leader lane follows **`plan.mdc`** §3 resume only.
 
 ### MCP result preflight (`mission_control_send_agent_result`)
 
