@@ -131,7 +131,7 @@ When inline on **`coding-session`** After deploy under [Post-merge Checkpoint ch
 | **Autonomous agent-executable pass** | Auto-advance while next steps are agent-executable | exception: run failure → block or manual handback |
 | **Manual step await** / **Step 4** presentation | **Gate** — primary developer-pick surface on inline walk | [Manual step await gate](#manual-step-await-gate-binding) |
 | **Before deploy complete** → **`deploy-walk deployed`** | **Gate** when sub-section completes or developer invokes status transition | [Deploy status transition gate](#deploy-status-transition-gate-binding) |
-| **`approve-deploy-closure`** | **Gate** before Status `deployed → done` and capstone todo flip | [Deploy closure approval gate](#deploy-closure-approval-gate-binding) |
+| **`approve-deploy-closure`** | **Auto-advance** — resolve **`approve-deploy-closure`** **same turn** when After deploy is fully satisfied (Status `deployed → done` + capstone) | **Gate** on Non-Checkpoint / exception only — [Deploy closure approval gate](#deploy-closure-approval-gate-binding) |
 
 ### Host classifier coupling (binding)
 
@@ -205,7 +205,7 @@ Give developers a **consistent state snapshot** during deploy verification so th
 
 **Population rules:** Same as [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`](../coding-session/SKILL.md) § *Session orientation table (binding)* — use `—` when unknown; never invent paths or PR numbers.
 
-**Mandatory gates (this skill):** [Inline walk bootstrap](#inline-walk-bootstrap) start; [Target plan pick gate](#target-plan-pick-gate-binding); each [Step 4 — Step presentation contract](#step-4--step-presentation-contract) manual presentation; [Deploy status transition gate](#deploy-status-transition-gate-binding); [Deploy with gaps gate](#deploy-with-gaps-gate-binding); [Deploy closure approval gate](#deploy-closure-approval-gate-binding); every developer-await **AskQuestion** / **`mission_control_present_structured_choice`** ([Deploy developer-await modal options](#deploy-developer-await-modal-options-binding)).
+**Mandatory gates (this skill):** [Inline walk bootstrap](#inline-walk-bootstrap) start; [Target plan pick gate](#target-plan-pick-gate-binding); each [Step 4 — Step presentation contract](#step-4--step-presentation-contract) manual presentation; [Deploy status transition gate](#deploy-status-transition-gate-binding); [Deploy with gaps gate](#deploy-with-gaps-gate-binding); [Deploy closure approval gate](#deploy-closure-approval-gate-binding) (**Non-Checkpoint / exception only** under Checkpoint — clean path auto-advances **`approve-deploy-closure`**); every developer-await **AskQuestion** / **`mission_control_present_structured_choice`** ([Deploy developer-await modal options](#deploy-developer-await-modal-options-binding)).
 
 ## Worktree path visibility (binding)
 
@@ -322,9 +322,25 @@ Only **`proceed-deployed-with-gaps`** authorizes the status mutation when gaps r
 
 ### Deploy closure approval gate (binding)
 
-When **`### After deploy`** is fully `[x]` (or skipped) while `**Status:**` is `deployed`, or the last After-deploy **`done`** completes the sub-section, close with structured choice **before** flipping `deployed → done` or mutating capstone todo **`deploy-test-plan-verified`**.
+When **`### After deploy`** is fully `[x]` (or skipped) while `**Status:**` is `deployed`, or the last After-deploy **`done`** completes the sub-section, resolve checklist closure — either auto-advance (Checkpoint clean path) or structured choice (Non-Checkpoint / exception) — **before** flipping `deployed → done` or mutating capstone todo **`deploy-test-plan-verified`**.
 
-USER_CHECKPOINT — approve deploy checklist closure.
+#### Checkpoint — auto-advance `approve-deploy-closure` (binding)
+
+Under Checkpoint trust, **auto-advance** as if the developer picked **`approve-deploy-closure`** — **no** **`mission_control_present_structured_choice`** and **no** `USER_CHECKPOINT` on this happy path — when **all** hold:
+
+1. **`### After deploy`** is fully `[x]` or empty/skipped by design, and `**Status:**` is `deployed`.
+2. No unresolved blockers, skips requiring review, or open **`returnToImplementation`** handback on this walk.
+3. Developer did **not** name **`review-deploy-checklist`**, **`leave-status-deployed`**, or **`return-to-implementation-new-worktree`** in the **same** message.
+
+When clean: one-line recap (*Checkpoint — closing deploy checklist*) + **Act on this same turn** — flip `**Status:** deployed → done` and run [Frontmatter capstone](#frontmatter-capstone--deploy-test-plan-verified-pending--done) mutation. **Forbidden:** opening the Non-Checkpoint modal below; ending StreamFinal with *approve deploy checklist closure?* while waiting for a developer pick; treating the leftover `USER_CHECKPOINT` under Non-Checkpoint as applying to this clean path.
+
+**Exception — gate required:** When any clean criterion fails, After-deploy satisfaction is ambiguous, or the developer named review / leave-deployed / return-to-implementation in the **same** message, call **`mission_control_present_structured_choice`** per below.
+
+#### Non-Checkpoint and exception modal (binding)
+
+USER_CHECKPOINT — approve deploy checklist closure. defaultOptionId: approve-deploy-closure
+
+When Checkpoint auto-advance does **not** apply (non-Checkpoint dispatch, or any failed clean criterion above):
 
 | Option id | Label (brief) | Act |
 |-----------|---------------|-----|
@@ -337,7 +353,7 @@ USER_CHECKPOINT — approve deploy checklist closure.
 Only **`approve-deploy-closure`** authorizes the Status `deployed → done` flip and **`deploy-test-plan-verified`** `pending → done` mutation. **`return-to-implementation-new-worktree`** sets **`outputs.returnToImplementation: true`** — hand back to **`coding-session`**; do **not** flip to `done`.
 
 - **`defaultOptionId: approve-deploy-closure`** when After deploy is fully satisfied and no blockers remain.
-- **Checkpoint on parent lane:** Parent **`coding-session`** defers this gate to **`deploy-walk`** inline — **forbidden:** duplicate **`approve-deploy-closure`** modal on **`coding-session`** under Checkpoint auto-advance (see **`coding-session/SKILL.md`** § *Post-merge Checkpoint chain*).
+- **Checkpoint on parent lane:** Parent **`coding-session`** defers closure to **`deploy-walk`** inline auto-advance — **forbidden:** duplicate **`approve-deploy-closure`** modal on **`coding-session`** (see **`coding-session/SKILL.md`** § *Post-merge Checkpoint chain*).
 
 On inline start, run [Inline walk bootstrap](#inline-walk-bootstrap) — do not wait for `deploy-walk present 1`.
 
@@ -549,7 +565,7 @@ If `{note}` is omitted in `deploy-walk <N> done`, append `*(YYYY-MM-DD: done.)*`
 After the edit, **check whether step N was the last `[ ]` in the active sub-section**:
 
 - If `### Before deploy` is now fully `[x]` and Status is `drafted`, open [Deploy status transition gate](#deploy-status-transition-gate-binding) — include the verbatim first After-deploy step in **`displayMarkdown`** when helpful.
-- If `### After deploy` is now fully `[x]` and Status is `deployed`, open [Deploy closure approval gate](#deploy-closure-approval-gate-binding).
+- If `### After deploy` is now fully `[x]` and Status is `deployed`, resolve [Deploy closure approval gate](#deploy-closure-approval-gate-binding) — under Checkpoint trust **auto-advance** **`approve-deploy-closure`** **same turn**; otherwise open the Non-Checkpoint / exception modal.
 - Otherwise, if step N+1 is **agent-executable**, continue [Autonomous agent-executable pass](#autonomous-agent-executable-pass) in the same turn (no `deploy-walk present` wait).
 - If step N+1 is **manual**, close with **AskQuestion** or **`mission_control_present_structured_choice`** per [Manual step await gate](#manual-step-await-gate-binding) — **`present-next-manual-step`**, **`all-manual-steps-done`**, or **More details for option _** — put the verbatim next unchecked step line in **`displayMarkdown`**.
 
@@ -594,7 +610,7 @@ For each remaining manual step line, apply the same `StrReplace` flip as [§ `de
 
 **Forbidden:** batch-flip **agent-executable** steps the agent has not run. **Forbidden:** batch-flip across sub-sections (Before vs After) in one command — run **`deploy-walk deployed`** / lifecycle gates between sub-sections as usual.
 
-**After batch flip:** run the same branches as the last step's **`done`** in that sub-section (Before complete → **`deploy-walk deployed`** hint; After complete → [closure gate](#deploy-walk-n-done--deploy-walk-n-done-note--flip-box-advance-hint) with **`approve-deploy-closure`** options).
+**After batch flip:** run the same branches as the last step's **`done`** in that sub-section (Before complete → **`deploy-walk deployed`** hint; After complete → [Deploy closure approval gate](#deploy-closure-approval-gate-binding) — Checkpoint auto-advance **`approve-deploy-closure`** when clean).
 
 Confirmation: *"Marked {count} {Before or After}-deploy manual steps done in one take: {comma-separated step numbers}."*
 
@@ -613,7 +629,7 @@ Pre-conditions:
 
 After status flip, close with **AskQuestion** or **`mission_control_present_structured_choice`**: *Present After-deploy step 1* (equivalent to **`deploy-walk present 1`**), *Deploy walk status*, or **More details for option _** — put the verbatim first After-deploy step line in **`displayMarkdown`**.
 
-If `### After deploy` has no `[ ]` items at all (it's empty by design or already all `[x]` — unusual), reply: *"Status flipped: `drafted → deployed`. No `### After deploy` steps remain. Deploy checklist closure still requires approval."* Then open [Deploy closure approval gate](#deploy-closure-approval-gate-binding) before flipping `deployed → done` or changing `deploy-test-plan-verified` to `done`.
+If `### After deploy` has no `[ ]` items at all (it's empty by design or already all `[x]` — unusual), reply: *"Status flipped: `drafted → deployed`. No `### After deploy` steps remain."* Then resolve [Deploy closure approval gate](#deploy-closure-approval-gate-binding) — under Checkpoint trust **auto-advance** **`approve-deploy-closure`** **same turn**; otherwise open the Non-Checkpoint / exception modal before flipping `deployed → done` or changing `deploy-test-plan-verified` to `done`.
 
 ### `deploy-walk status` — read-only summary
 
@@ -728,7 +744,7 @@ History is **append-only**. Never overwrite or compact prior `*(YYYY-MM-DD: ...)
 
 PR plans carry a YAML todo whose `id` is **`deploy-test-plan-verified`** (see [`development-process.md`](../../../../docs/development-process.md) § *Per-PR plan template* § 7 — Frontmatter capstone). It stays `pending` until every Before-deploy and After-deploy checkbox is `[x]` **and** the deploy section's `**Status:**` reads `done`.
 
-Only after the developer approves **Approve deploy checklist closure**, when this skill sets `**Status:**` from `deployed` → `done` (last After-deploy checkbox, or the empty-After-deploy chain from `deploy-walk deployed`), **immediately** apply a second `StrReplace` on frontmatter using this **exact** `old_string` / `new_string` pair (byte-identical to [`pr-plan`](../pr-plan/SKILL.md) § 4a-bis and on-disk plans — do not paraphrase the `content: >-` body):
+When this skill sets `**Status:**` from `deployed` → `done` — after Checkpoint auto-advance **`approve-deploy-closure`**, or after the developer picks **Approve deploy checklist closure** on Non-Checkpoint / exception (last After-deploy checkbox, or the empty-After-deploy chain from `deploy-walk deployed`) — **immediately** apply a second `StrReplace` on frontmatter using this **exact** `old_string` / `new_string` pair (byte-identical to [`pr-plan`](../pr-plan/SKILL.md) § 4a-bis and on-disk plans — do not paraphrase the `content: >-` body):
 
 ```
 old_string:

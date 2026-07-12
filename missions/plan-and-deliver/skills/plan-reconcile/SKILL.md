@@ -98,7 +98,7 @@ Give developers a **consistent state snapshot** during inline reconcile so they 
 
 **Population rules:** Same as [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`](../coding-session/SKILL.md) § *Session orientation table (binding)* — use inline context; never invent paths or PR numbers.
 
-**Mandatory gates (this skill):** [Approve PR-tracked reconcile mutations gate](#approve-pr-tracked-reconcile-mutations-gate-binding); [Archive candidates gate](#archive-candidates-gate-binding); [Follow-ups triage gate](#follow-ups-triage-gate-binding); [Post-ship workspace cleanup gate](#post-ship-workspace-cleanup-gate-binding); [Inline closure gate](#inline-closure-gate-binding).
+**Mandatory gates (this skill):** [Approve PR-tracked reconcile mutations gate](#approve-pr-tracked-reconcile-mutations-gate-binding) (**Non-Checkpoint / exception only** under Checkpoint — clean path auto-advances **`approve-reconcile-mutations`**); [Archive candidates gate](#archive-candidates-gate-binding) (**Non-Checkpoint / exception only** under Checkpoint — clean path auto-selects **own plan only**); [Follow-ups triage gate](#follow-ups-triage-gate-binding); [Post-ship workspace cleanup gate](#post-ship-workspace-cleanup-gate-binding); [Inline closure gate](#inline-closure-gate-binding).
 
 ## Checkpoint turn UX (skill-local)
 
@@ -111,22 +111,38 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 | Step | Checkpoint behavior | Gate |
 |------|---------------------|------|
 | **1** — Preview reconcile (dry-run) | Auto-advance | exception: script failure → stop with recap |
-| **1b** — Approve PR-tracked reconcile mutations | **Gate** when dry-run reports **`archived`** or mutation-worthy entries | [Approve PR-tracked reconcile mutations gate](#approve-pr-tracked-reconcile-mutations-gate-binding) |
+| **1b** — Approve PR-tracked reconcile mutations | **Auto-advance** — resolve **`approve-reconcile-mutations`** **same turn** when dry-run reports mutation-worthy PR-tracked entries and no flagged blockers need review | **Gate** on Non-Checkpoint / exception only — [Approve PR-tracked reconcile mutations gate](#approve-pr-tracked-reconcile-mutations-gate-binding) |
 | **2** — Run list-candidates | Auto-advance (read-only JSON) | exception: script failure |
-| **3** — Present candidates + flagged | **Gate** when merged candidate or flagged lists are non-empty | [Archive candidates gate](#archive-candidates-gate-binding) |
+| **3** — Present candidates + flagged | **Auto-advance** — select **own plan only** (`targetPlanSlug` / anchored PR plan) from safe candidates and archive that slug; skip other candidates | **Gate** on Non-Checkpoint / exception (flagged own plan, missing anchor, multi-plan judgement) — [Archive candidates gate](#archive-candidates-gate-binding) |
 | **3.5** — Follow-ups triage | **Gate** per plan with non-empty **`## Follow-ups`** | [Follow-ups triage gate](#follow-ups-triage-gate-binding) |
-| **4** — Archive selected plans | Auto-advance after developer selection | exception: non-zero **`archive`** exit |
+| **4** — Archive selected plans | Auto-advance after selection (implicit or modal) | exception: non-zero **`archive`** exit |
 | **5** — Post-ship workspace cleanup | **Gate** when **`detect-stale-workspaces`** returns candidates | [Post-ship workspace cleanup gate](#post-ship-workspace-cleanup-gate-binding) |
 | **6** — End state summary | Auto-advance recap prose only | — |
 | **Inline closure** (inline on **`coding-session`**) | **Gate** — mandatory developer pick before **`## Completion (inline)`** handback | [Inline closure gate](#inline-closure-gate-binding) |
 
 ### Approve PR-tracked reconcile mutations gate (binding)
 
-When step **1** dry-run reports entries in the **`archived`** bucket (or other mutation-worthy PR-tracked rows), open structured choice **before** non-dry-run **`reconcile`**. **Forbidden:** running **`plan-state.mjs reconcile`** without authorization on the **same turn** as this modal. **Forbidden:** prose-only mutation handoff.
+When step **1** dry-run reports entries in the **`archived`** bucket (or other mutation-worthy PR-tracked rows), resolve authorization **before** non-dry-run **`reconcile`** — either Checkpoint auto-advance or structured choice (Non-Checkpoint / exception). **Forbidden:** running **`plan-state.mjs reconcile`** without authorization on the **same turn** as a Non-Checkpoint / exception modal. **Forbidden:** prose-only mutation handoff.
+
+#### Checkpoint — auto-advance `approve-reconcile-mutations` (binding)
+
+Under Checkpoint trust, **auto-advance** as if the developer picked **`approve-reconcile-mutations`** — **no** **`mission_control_present_structured_choice`** and **no** `USER_CHECKPOINT` on this happy path — when **all** hold:
+
+1. Dry-run reports mutation-worthy PR-tracked entries (for example **`archived`** bucket non-empty).
+2. No flagged blockers that require judgement before mutation (empty **`flagged`** for mutation-blocking reasons, or flagged rows are informational only and documented in recap).
+3. Developer did **not** name **`skip-pr-tracked-reconcile`**, **`review-flagged-first`**, or **`abort-reconcile`** in the **same** message.
+
+When clean: one-line recap (*Checkpoint — approving PR-tracked reconcile mutations*) + **Act on this same turn** — run non-dry-run **`reconcile`**; continue to step **2**. **Forbidden:** opening the Non-Checkpoint modal below; ending StreamFinal with *approve PR-tracked reconcile mutations?* while waiting for a developer pick; treating the leftover `USER_CHECKPOINT` under Non-Checkpoint as applying to this clean path. Parent **`coding-session`** must not re-open this gate as a coding-session modal — see **`coding-session/SKILL.md`** § *Post-merge Checkpoint chain* / remainder inventory.
+
+**Exception — gate required:** When any clean criterion fails, flagged rows need judgement, or the developer named skip/review/abort in the **same** message, call **`mission_control_present_structured_choice`** per below.
+
+#### Non-Checkpoint and exception modal (binding)
+
+USER_CHECKPOINT — approve PR-tracked reconcile mutations before running non-dry-run reconcile. defaultOptionId: approve-reconcile-mutations
+
+When Checkpoint auto-advance does **not** apply (non-Checkpoint dispatch, or any failed clean criterion above):
 
 Put the session orientation table and dry-run report summary in **`displayMarkdown`**.
-
-USER_CHECKPOINT — approve PR-tracked reconcile mutations before running non-dry-run reconcile.
 
 | Option id | Label (brief) | Act |
 |-----------|---------------|-----|
@@ -137,17 +153,33 @@ USER_CHECKPOINT — approve PR-tracked reconcile mutations before running non-dr
 | `more-details` | More details for option _ | Elaborate; re-open this gate |
 
 - **`defaultOptionId: approve-reconcile-mutations`** when dry-run **`archived`** entries are expected and no flagged blockers need review.
-- **Next-step resolution:** Auto-advance through step **1** dry-run on the happy path — no `USER_CHECKPOINT` until this gate when mutations are required.
+- **Next-step resolution:** Auto-advance through step **1** dry-run on the happy path — under Checkpoint, continue into **`approve-reconcile-mutations`** auto-advance when criteria pass; otherwise no `USER_CHECKPOINT` until this Non-Checkpoint / exception modal when mutations are required.
 
 When dry-run reports **no** mutation-worthy PR-tracked entries, **skip** this gate — continue to step **2**.
 
 ### Archive candidates gate (binding)
 
-When step **2** **`list-candidates`** and step **1** **`flagged`** lists merge to a **non-empty** pick set, open structured choice **before** step **4** archive mutations. **Forbidden:** archiving without developer multi-select. **Forbidden:** report-only turn without modal when candidates exist.
+When step **2** **`list-candidates`** and step **1** **`flagged`** lists merge to a **non-empty** pick set, resolve which plans to archive **before** step **4** — either Checkpoint auto-advance (**own plan only**) or structured choice (Non-Checkpoint / exception). **Forbidden:** archiving without selection (implicit or modal). **Forbidden:** report-only turn without modal when candidates exist **and** Checkpoint auto-advance criteria fail.
 
-Put the session orientation table and merged candidate / flagged list in **`displayMarkdown`**.
+#### Checkpoint — auto-advance own-plan archive (binding)
+
+Under Checkpoint trust, **auto-advance** as if the developer selected **only** the anchored ship plan — **no** **`mission_control_present_structured_choice`** and **no** `USER_CHECKPOINT` on this happy path — when **all** hold:
+
+1. Plan-anchored run — **`targetPlanSlug`** (or slug from **`targetPlanPath`**) resolves.
+2. That **own** slug appears in the **safe candidates** list (merged PR / archive-eligible), **not** only in **`flagged`**.
+3. Developer did **not** name **`skip-archive-this-pass`** or demand multi-plan picks in the **same** message.
+
+When clean: one-line recap (*Checkpoint — archiving own plan `<slug>` only*) + record **only** that slug in the archive batch; proceed to step **3.5** when follow-ups exist, else step **4**. **Do not** auto-select sibling or other candidates. **Do not** auto-archive **`flagged`** entries (including flagged own plan) — those require the Non-Checkpoint / exception modal. **Forbidden:** opening *pick plans to archive…* multi-select on the clean own-plan path; treating the leftover `USER_CHECKPOINT` under Non-Checkpoint as applying to this clean path.
+
+**Exception — gate required:** When the own slug is missing from candidates, appears only under **`flagged`**, multiple plans require judgement, Checkpoint does not apply, or the developer named skip / multi-select in the **same** message, call **`mission_control_present_structured_choice`** per below.
+
+#### Non-Checkpoint and exception modal (binding)
 
 USER_CHECKPOINT — pick plans to archive from reconcile candidates and flagged entries.
+
+When Checkpoint auto-advance does **not** apply:
+
+Put the session orientation table and merged candidate / flagged list in **`displayMarkdown`**.
 
 | Option id | Label (brief) | Act |
 |-----------|---------------|-----|
@@ -155,9 +187,9 @@ USER_CHECKPOINT — pick plans to archive from reconcile candidates and flagged 
 | `skip-archive-this-pass` | Skip archive this pass | No **`archive`** invocations; continue to step **5** or end summary when applicable |
 | `more-details` | More details for option _ | Elaborate; re-open this gate |
 
-Prompt text: **`Pick plans to archive. Candidates are safe to archive; flagged plans need judgement (selecting them will archive with signal "flagged: <reason>" — only do this if you intend to close out).`**
+Prompt text: **`Pick plans to archive. Candidates are safe to archive; flagged plans need judgement (selecting them will archive with signal "flagged: <reason>" — only do this if you intend to close out).`** Under Checkpoint exception when the own plan is present, prefer selecting **own plan only** unless the developer explicitly expands scope.
 
-- **Next-step resolution:** Auto-advance through steps **1** and **2** on the happy path — no `USER_CHECKPOINT` until merged lists are non-empty.
+- **Next-step resolution:** Auto-advance through steps **1** and **2** on the happy path — under Checkpoint, continue into own-plan archive auto-advance when criteria pass; otherwise no `USER_CHECKPOINT` until this Non-Checkpoint / exception modal when merged lists are non-empty.
 
 When both lists are empty, **skip** this gate — continue to step **3.5** only when something in scope has follow-ups; otherwise step **6** summary.
 
