@@ -220,7 +220,7 @@ Apply the shared planning open-item contract from `../README.md` to every **deli
 
 When the skill was spawned with `routeLock: "delivery-phases"` (or with `parentAgentRole: "master-plan-agent"` or `"phase-planner-agent"` after the developer chose **Delivery phases**), the decision is already made upstream. Acknowledge *"Route locked: Delivery phases."* and skip directly to Step 5. Do not ask the developer to choose `Delivery phases` vs `PR breakdown` again.
 
-When no upstream route lock exists, use **AskQuestion** or **`MC_PHASED_RESPONSE_V1`** to ask:
+When no upstream route lock exists, use **AskQuestion** or **`mission_control_present_structured_choice`** to ask:
 
 USER_CHECKPOINT — choose decomposition route (Delivery phases vs PR breakdown).
 
@@ -317,7 +317,7 @@ Required **`options`** (adapt labels; keep **K** visible in the **`prompt`** whe
 | `abandon` | Abandon this branch |
 | `more-details` | More details for option _ |
 
-- When **K > 0** and step **5d** recap is complete → open this gate via **`MC_PHASED_RESPONSE_V1`** (spawned lanes) or **AskQuestion** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**. Apply **Step 4-open-items** when open items exist — this approval question stays last in `questions[]`.
+- When **K > 0** and step **5d** recap is complete → open this gate via **`mission_control_present_structured_choice`** (spawned lanes) or **AskQuestion** per **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**. Apply **Step 4-open-items** when open items exist — this approval question stays last in `questions[]`.
 - When **K = 0** → drafting failure; do **not** open this gate.
 - **`defaultOptionId: approve-list`** when **K > 0** and no blocking open items remain.
 

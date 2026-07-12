@@ -152,7 +152,7 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 
 Under Checkpoint trust, **happy-path** reviewer steps (**1–8**) **auto-advance without a turn-end modal** on this lane. This skill owns **no** developer-input **`USER_CHECKPOINT`** markers — **`coding-session`** owns Review feedback approval, Create-PR handoff (exceptional), and post-create-pr gates after terminal bubble-up.
 
-**Forbidden on this lane:** prose-only report handback without **`mission_control_send_agent_result`**; **`MC_PHASED_RESPONSE_V1`** / AskQuestion at Step **8** (including **`no-go`**); *tell me when*, *waiting for developer*, or *stay advisory until you pick* — parent lane gates apply after **`mission_control_refocus_parent_lane`**.
+**Forbidden on this lane:** prose-only report handback without **`mission_control_send_agent_result`**; **`mission_control_present_structured_choice`** / AskQuestion at Step **8** (including **`no-go`**); *tell me when*, *waiting for developer*, or *stay advisory until you pick* — parent lane gates apply after **`mission_control_refocus_parent_lane`**.
 
 **Exception paths** (missing inputs, wrong anchor, empty diff, reused coding-agent context) emit **`failure`** / **`aborted`** / **`partial`** terminal results — not developer-choice modals on this reviewer lane.
 

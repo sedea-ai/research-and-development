@@ -63,7 +63,7 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 
 ### Developer input vs external-wait (Checkpoint)
 
-Under Checkpoint trust, **happy-path** triage steps (Steps **0–3a**, **1b**, approved fix edits, Step **5** after push or skipped-only pick) **auto-advance without a turn-end modal**. **Developer-input** surfaces — disposition scope, commit/push depth, and cycle resume — are **USER_CHECKPOINT** gates on **this lane** (via **`coding-session`** when inline); **must** close with **`MC_PHASED_RESPONSE_V1`** / **AskQuestion**, not prose idle handoff.
+Under Checkpoint trust, **happy-path** triage steps (Steps **0–3a**, **1b**, approved fix edits, Step **5** after push or skipped-only pick) **auto-advance without a turn-end modal**. **Developer-input** surfaces — disposition scope, commit/push depth, and cycle resume — are **USER_CHECKPOINT** gates on **this lane** (via **`coding-session`** when inline); **must** close with **`mission_control_present_structured_choice`** / **AskQuestion**, not prose idle handoff.
 
 **Forbidden:** *Review the PR and tell me when to continue*, *wait for the user to review*, *tell me when review is done*, or *auto-advancing (no modal)* when dispositions need approval, commit/push is pending, or the developer must pick the next ship action. **Forbidden:** classifying *waiting for the developer to return after GitHub review* as rule **2** external-wait — lane continuation is developer-input via this skill's disposition gate or **`coding-session`** [Post-create-pr handoff gate](../coding-session/SKILL.md#post-create-pr-handoff-gate).
 

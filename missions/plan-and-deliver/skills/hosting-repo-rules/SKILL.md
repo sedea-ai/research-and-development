@@ -207,7 +207,7 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 
 ### Developer input vs external-wait (Checkpoint)
 
-Under Checkpoint trust, **happy-path** substeps (validation, worktree-setup, `.mdc` implementation until review-ready) **auto-advance without a turn-end modal**. **Ship cut-point**, **post-create-pr**, and **`pr-review`** return picks are **developer-input** — **USER_CHECKPOINT** surfaces — and **must** close with **`MC_PHASED_RESPONSE_V1`** / **AskQuestion**.
+Under Checkpoint trust, **happy-path** substeps (validation, worktree-setup, `.mdc` implementation until review-ready) **auto-advance without a turn-end modal**. **Ship cut-point**, **post-create-pr**, and **`pr-review`** return picks are **developer-input** — **USER_CHECKPOINT** surfaces — and **must** close with **`mission_control_present_structured_choice`** / **AskQuestion**.
 
 **Forbidden:** prose-only turn ends at developer-input gates — use structured choice instead of idle-handoff phrasing (conduct 1 § No idle handoff).
 
@@ -264,7 +264,7 @@ USER_CHECKPOINT — authorize rules-only worktree and implementation on this lan
 
 ## Ship cut-point gate (binding)
 
-When **`.mdc`** implementation is **ready for developer review**, **stop** product edits and reach this gate — Checkpoint auto-advance or **`MC_PHASED_RESPONSE_V1`** on exception paths. Rules-only lane: **no** inline **`deploy-walk`** — cut-point authorizes **commit only** before **`pre-pr-review`** spawn.
+When **`.mdc`** implementation is **ready for developer review**, **stop** product edits and reach this gate — Checkpoint auto-advance or **`mission_control_present_structured_choice`** on exception paths. Rules-only lane: **no** inline **`deploy-walk`** — cut-point authorizes **commit only** before **`pre-pr-review`** spawn.
 
 **Precondition:** [Step 3 — Implement](#3-implement) complete; edits limited to **`WORKTREE_ROOT/.cursor/rules/`**.
 
@@ -278,7 +278,7 @@ Under Checkpoint trust, **auto-advance** as if the developer picked **`commit-on
 
 Recap diff summary on the auto-advance turn; run **`git commit`** on the **next** turn when tree dirty; then spawn **`pre-pr-review`** when tree is clean.
 
-**Exception — gate required:** When any clean criterion fails or the developer requests **`more-changes`** / **`defer`**, emit **`MC_PHASED_RESPONSE_V1`** per below — not prose-only recap.
+**Exception — gate required:** When any clean criterion fails or the developer requests **`more-changes`** / **`defer`**, emit **`mission_control_present_structured_choice`** per below — not prose-only recap.
 
 USER_CHECKPOINT — approve commit on rules-only lane before pre-PR review.
 
@@ -302,7 +302,7 @@ After inline [create-pr](create-pr/SKILL.md) records `prUrl` / `prNumber` on **t
 
 **When required:** Same turn as inline **`create-pr`** **`## Completion (inline)`** with PR URL.
 
-**Forbidden:** prose-only PR URL recap without **`MC_PHASED_RESPONSE_V1`** at this handoff.
+**Forbidden:** prose-only PR URL recap without **`mission_control_present_structured_choice`** at this handoff.
 
 USER_CHECKPOINT — pick next ship action after rules-only PR creation on this lane.
 

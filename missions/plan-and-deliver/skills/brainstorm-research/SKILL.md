@@ -109,7 +109,7 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 
 ### Developer input vs external-wait (Checkpoint)
 
-Under Checkpoint trust, **happy-path protocol steps auto-advance without a turn-end modal**. Emit **`MC_PHASED_RESPONSE_V1`** or **AskQuestion** only at **USER_CHECKPOINT** markers in this skill, **implicit external-wait** surfaces, or **exception** paths.
+Under Checkpoint trust, **happy-path protocol steps auto-advance without a turn-end modal**. Emit **`mission_control_present_structured_choice`** or **AskQuestion** only at **USER_CHECKPOINT** markers in this skill, **implicit external-wait** surfaces, or **exception** paths.
 
 **Developer-input** (continuation requires the **developer** to pick a modal option on **this lane**) is **not** external-wait. Step **4** report approval is **developer-input USER_CHECKPOINT** — **must** close the turn with structured choice; **Forbidden:** prose-only idle handoff (for example tell-me-when / review-and-reply / pick-in-chat substitutes for the modal).
 
@@ -129,7 +129,7 @@ Under Checkpoint trust, **happy-path protocol steps auto-advance without a turn-
 
 USER_CHECKPOINT — approve brainstorm report, revise research, or abandon dispatch on this lane. defaultOptionId: approve-report
 
-**Spawned lane — sentinel-first (binding):** On spawned **`brainstorm-research`** lanes, **in order to use the AskQuestion modal**, emit **`MC_PHASED_RESPONSE_V1`** (sentinel line **1**; recap in **`display.markdown`**; options in **`askQuestion`**) per **`../README.md`** § *Recap, structured choice, act* and **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**.
+**Spawned lane — MCP structured choice (binding):** On spawned **`brainstorm-research`** lanes, **in order to use the AskQuestion modal**, call **`mission_control_present_structured_choice`** (recap in **`displayMarkdown`**; options in **`askQuestion`**) per **`../README.md`** § *Recap, structured choice, act* and **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**.
 
 | Option id | Label |
 |-----------|--------|
@@ -138,7 +138,7 @@ USER_CHECKPOINT — approve brainstorm report, revise research, or abandon dispa
 | `abandon-dispatch` | Abandon dispatch — direction not viable |
 | `more-details` | More details for option _ |
 
-**Forbidden at step 4:** prose-only recap with bullet menus; tell-me-when / review-and-reply handoff; ending without **`MC_PHASED_RESPONSE_V1`** / **AskQuestion** on spawned lanes.
+**Forbidden at step 4:** prose-only recap with bullet menus; tell-me-when / review-and-reply handoff; ending without **`mission_control_present_structured_choice`** / **AskQuestion** on spawned lanes.
 
 ## Research session (steps)
 
@@ -154,7 +154,7 @@ USER_CHECKPOINT — approve brainstorm report, revise research, or abandon dispa
 
    - **Next-step resolution:** Auto-advance to step **4** after successful write — no `USER_CHECKPOINT` on this step.
 
-4. **Present for approval** — Recap report path and §5 Handoff summary excerpt in **`display.markdown`** when using **`MC_PHASED_RESPONSE_V1`**. Open [Report approval gate](#report-approval-gate-binding) via **`MC_PHASED_RESPONSE_V1`** or **AskQuestion** — **same turn**, not prose-only.
+4. **Present for approval** — Recap report path and §5 Handoff summary excerpt in **`displayMarkdown`** when using **`mission_control_present_structured_choice`**. Open [Report approval gate](#report-approval-gate-binding) via **`mission_control_present_structured_choice`** or **AskQuestion** — **same turn**, not prose-only.
 
    - **Next-step resolution:** **Gate** — developer pick required before steps **5** / **6**.
 
