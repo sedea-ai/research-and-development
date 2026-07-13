@@ -18,9 +18,9 @@ Planning protocol branches act on a specific `.plan.md` under the **`.sedea/oper
 
 When a turn **requires a user reply** before you continue (pick a planning branch, confirm a target plan, choose list index **N** for **`new-plan`**), collect that pick through **AskQuestion** per [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc). **Supersedes** the former *AskQuestion or numbered bullet list* option in this rule. Mission Control **AskQuestion** also exposes **free-form text** on the modal — use it for extra instruction alongside an `option` pick; do not reopen choices in prose chat.
 
-**Snapshot table.** The *Next viable moves* column may use **numbered rows** so the developer can read the plan tree in one glance. Those numbers are **reference labels** for the snapshot — offer the same moves as **AskQuestion** `options` on **every** turn (§ above).
+**Snapshot table.** The *Next viable moves* column may use **numbered rows** so the developer can read the plan tree in one glance. Those numbers are **reference labels** for the snapshot — when a pick is required, offer the same moves as **AskQuestion** `options` (§ above).
 
-**Recap and structured choice.** When the snapshot is long, follow [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc) § **Context and structured choice** and **`../missions/plan-and-deliver/skills/README.md`** § *Recap, structured choice, act*: **required on every turn** — **AskQuestion tool** or **`mission_control_present_structured_choice`** (`displayMarkdown` = snapshot; `askQuestion` = one `option` per move, brief `label`, branch + target in `prompt` when needed). **Forbidden:** recap-only turn without a modal. Split per rule **2** priority **3** only when impractical — then the **next** message must call **`mission_control_present_structured_choice`**.
+**Recap and structured choice.** When the snapshot is long **and a pick is required**, follow [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc) § **Context and structured choice** and **`../missions/plan-and-deliver/skills/README.md`** § *Recap, structured choice, act*: same turn — **AskQuestion tool** or **`mission_control_present_structured_choice`** (`displayMarkdown` = snapshot; `askQuestion` = one `option` per move, brief `label`, branch + target in `prompt` when needed). Under **`trustLevel: checkpoint`**, mid-flow unambiguous continuation (§ *Resolution order* bullet 4) **auto-advances** without a modal. Non-Checkpoint trust still uses every-turn structured choice per rule **2**. **Forbidden:** recap-only / snapshot-only turn when a pick is required. Split per rule **2** priority **3** only when impractical — then the **next** message must call **`mission_control_present_structured_choice`**.
 
 ## At a glance — planning vs ship (read first)
 
@@ -213,3 +213,21 @@ Emit a fresh snapshot when:
 Each planning skill (**new-plan**, **phase-planner**, **pr-plan**, **delivery-phases**, **pr-breakdown**) receives the target path as **pre-resolved structured input**. When loading a skill, the agent states the target up front (one line).
 
 Skills still run their own **template / stage verification** on disk. If a skill loads without a resolved target, **stop** and resolve via this rule before proceeding.
+
+## Checkpoint step continuation (binding)
+
+This file is the **planning-target resolution contract** (snapshot tables, depth-first gates, plan-path binding) — not a mission protocol with executable ship steps. Under **`trustLevel: checkpoint`**, developer-pick UX for ambiguous targets and lane-change snapshots still uses **AskQuestion** / **`mission_control_present_structured_choice`** per § *Sedea input channel*; mid-flow unambiguous hops **auto-advance**. **Do not** add literal `USER_CHECKPOINT` gate markers here for happy-path resolution or depth-first eligibility compute — markers and option tables live on invoker planning skills (`master-planner`, `phase-planner`, `pr-plan`, `new-plan`, …) and rule **2**.
+
+| Surface | Designation | Owner |
+|---------|-------------|--------|
+| Explicit path / AskQuestion option / mid-flow unambiguous continuation | **auto-advance** | § *Resolution order* bullets 1–4 |
+| Lane-change snapshot when a pick is required (same turn as modal) | **checkpoint** | § *Standard flow* steps 2–3; § *Sedea input channel* |
+| Still ambiguous after resolution order → fresh snapshot + AskQuestion | **checkpoint** | § *Resolution order* bullet 5 — **not** snapshot-only prose |
+| Depth-first expand eligibility compute / ship-complete read | **auto-advance** | § *Depth-first expansion eligibility* |
+| Detached incomplete PR plan ordered before coding-session in snapshot | **checkpoint** | § *PR-plan completeness before coding-session* — first option finishes plan (or override label) |
+| Planning readiness vs ship signal tables (reference only) | **baseline-governs** (reference) | § *Planning readiness vs ship* — no turn UX |
+| §8 host-sync / rule 20 cadence disambiguation (reference) | **baseline-governs** (reference) | §§ *§8 ship ledger*, *Disambiguation* — ship gates owned by **`coding-session`** / rule **20** |
+
+**Forbidden in this file:** prescribing prose *tell me when* / *come back when* / *I'll wait* / *over to you* / *reply with results* after an ambiguous target or lane-change snapshot; snapshot-only / recap-only ends when a pick is required; duplicating invoker AskQuestion option tables; live `USER_CHECKPOINT` tokens on happy-path resolution hops.
+
+**Related:** Checkpoint step-table template — [`.sedea/centers/sedea/docs/pr-step-table-template.md`](.sedea/centers/sedea/docs/pr-step-table-template.md). Marker syntax — [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md). Turn completion — [`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`](.sedea/centers/sedea/rules/2_ask-question-instructions.mdc).
