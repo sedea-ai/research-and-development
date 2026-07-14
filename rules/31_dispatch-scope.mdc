@@ -43,7 +43,7 @@ Operations **dispatch** persistence is **DbOnly terminal** (Phase 6). Follow Sed
 | **DbOnly (terminal — only supported)** | Dispatch CRUD via workspace DB + MCP; no epoch-folder discovery; no filesystem dispatch bundle IO |
 | ~~Phase 0 / Hybrid / FsReadOnly~~ | **Retired** — not supported |
 
-**Flag-off unsupported:** `sedea.features.dispatch-storage-rxdb: false` (or equivalent) surfaces an explicit error — it does **not** restore filesystem bundles.
+**DbOnly-only:** there is no supported flag-off, kill-switch, or feature-flag path that restores filesystem dispatch bundles or Hybrid / FsReadOnly IO. Agents must treat DbOnly as the only live contract — do not chase deleted storage-phase feature flags as overrides.
 
 Plans and docs under `.sedea/operations/.../plans/` and `docs/` remain filesystem for now (out of Phase 6 scope).
 
