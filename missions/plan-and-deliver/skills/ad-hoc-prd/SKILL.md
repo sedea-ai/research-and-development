@@ -163,6 +163,11 @@ See [`.sedea/centers/research-and-development/rules/50_mission-control-display-m
 
 ## Checkpoint turn UX (skill-local)
 
+### R&D center edit destination gate (binding)
+
+When this skill would write under **`.sedea/centers/research-and-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *R&D center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/research-and-development` as Own on `sedea-ai/app`.
+
+
 Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`ad-hoc-prd`**; invoker missions **`single-phase`** and **`debug-and-fix`** document their own Squad Leader gates — see **`single-phase/plan.mdc`** §3 / §2 and **`debug-and-fix/plan.mdc`** §5c for spawn and leader-lane resume tables.
 
 **Real-dispatch test loop (binding):** After merge, run one full **`ad-hoc-prd`** spawn on a Checkpoint dispatch through step **5** PRD approval and collect a developer verdict before the parent phase advances the next cross-mission skill PR — per **Planning protocol skills UX** § *Single-concern strategy*.

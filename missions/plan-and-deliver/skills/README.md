@@ -41,6 +41,32 @@ When a skill runs **inline** on the invoker’s lane (not spawned via **`mission
 
 **Inline `deploy-walk` on `coding-session`:** Agents must self-run agent-executable checklist steps (shell, grep/logs, file read/parse) per **`deploy-walk/SKILL.md`** § *Agent capability inventory (binding)* — manual steps require numbered **Testing steps** in § *Step 4 — Step presentation contract* and close with **`USER_CHECKPOINT`** gates (manual step await, deploy status transition, deploy closure approval) per § *Checkpoint turn UX (skill-local)* — not prose-only deploy handoff.
 
+## R&D center edit destination gate (binding)
+
+Applies to **all PRD and planning skills** on this center (`author-prd`, `ad-hoc-prd`, `brainstorm-research`, `master-planner`, `phase-planner`, `delivery-phases`, `pr-breakdown`, `new-plan`, `pr-plan`, and **`quick-fix-plan`**). Happy-path PRD/plan writes under **`.sedea/operations/`** do **not** open this gate.
+
+**Trigger:** any step that would **create, edit, move, or delete** files under **`.sedea/centers/research-and-development/`** (center git content — rules, missions, skills, docs, `center.yaml`).
+
+USER_CHECKPOINT — pick R&D center edit destination before any center write.
+
+| Option id | Label | Action |
+|-----------|-------|--------|
+| `ship-app-rd` | Ship in `sedea-ai/research-and-development` — Sedea app process / ops | Continue on the **app-focused** center remote; require hosting **Own centers** listing for `research-and-development` → `git@github.com:sedea-ai/research-and-development.git` and **`CENTER_WORKTREE_ROOT`** before writes |
+| `delegate-base-rd` | Delegate to base center — `sedea-centers/research-and-development` | **Stop** local center writes; developer continues on **`sedea-centers-development-hosting-repo`** for **general** R&D center operating-model changes |
+| `pause` | Pause — stop until I say more | No writes |
+| `more-details` | More details for option _ | Elaborate; re-ask |
+
+**How to choose (nature of the change):**
+
+| Destination | When |
+|-------------|------|
+| **`sedea-ai/research-and-development`** (`ship-app-rd`) | Change reflects how the **Sedea app** is developed, its processes and operations |
+| **`sedea-centers/research-and-development`** (`delegate-base-rd`) | Change applies to how the research-and-development center operates **in general** — not app-specific |
+
+**Forbidden:** writing center files without this gate; treating **`sedea-centers/research-and-development`** as Own on **`sedea-ai/app`**; editing the primary hosting clone’s submodule checkout without **`CENTER_WORKTREE_ROOT`**.
+
+Each listed skill **must** point here from its Checkpoint / pre-write guidance. Do not re-author a divergent option table in individual skills.
+
 ## Recap, structured choice, act (plan-and-deliver)
 
 Mission Control delivery for skills that mix long plan output with structured user choice. Canonical Sedea rules: **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** § **Context and structured choice**. Hosting-repo runtime: **`.cursor/rules/mission-control-agent-runtime.mdc`**.
