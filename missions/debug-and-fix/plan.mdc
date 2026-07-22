@@ -13,7 +13,7 @@ alwaysApply: false
 ## Objectives
 
 1. **Log-first diagnosis** — Bootstrap a debug worktree, prioritize log access and debug instrumentation before substantive code analysis.
-2. **Fix loop** — Propose fixes with test scenarios; apply on developer approval; run automated tests and guided manual verification; loop on failure until fixed or blocked.
+2. **Fix loop** — Propose fixes with test scenarios; apply on developer approval; run automated tests and guided manual verification; loop on failure until fixed or blocked. Manual verification may emit a copy-safe **Deploy Step Verification** agent handoff prompt (`sedea-for-testing` / **`perform deploy step verification`**) per **`debug-and-fix/SKILL.md`** § *Deploy Step Verification (agent handoff)* — especially when no PR-plan deploy anchor exists; DSV is a **detached** dispatch (not spawned from this mission).
 3. **Post-fix routing** — After a verified fix (or abandon), the developer confirms the exit on the debug child lane (step 7); under Checkpoint trust the **Squad Leader** treats that confirmation as **auto-approval** and routes per **`exitRecommendation`** / **`abandonMission`** without repeating §4:
    - **Code promotion** — spawn a §5 planning child (**`new-plan`** plus inline **`pr-plan`**); **that planning lane** runs **`pr-plan` §5c–§5d** and spawns **`coding-session`** on the debug worktree (Squad Leader does **not** emit the §5d spawn), so deploy tests and additional written tests have a PR plan to update.
    - **Ad-Hoc PRD only** — spawn **`ad-hoc-prd`** to capture fix context without starting code promotion.

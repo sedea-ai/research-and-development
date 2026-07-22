@@ -97,7 +97,7 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 | **2** — Worktree create, attach, bootstrap | Auto-advance on happy path after success-class **`bootstrapStatus`** | **Gate** on setup/bootstrap failure — [Bootstrap retry gate](#bootstrap-retry-gate-binding) |
 | **3** — Logs first | Auto-advance through log collection and instrumentation | exception: missing log access → `blocked` terminal |
 | **4** — Analyze and propose fix | **Gate** — developer approves fix proposal before implementation | [Fix proposal gate](#fix-proposal-gate-binding) |
-| **5** — Apply fix | Auto-advance automated tests on happy path | **Gate** for each manual test scenario — [Manual test verification gate](#manual-test-verification-gate-binding); **waiting** when developer runs tests outside chat |
+| **5** — Apply fix | Auto-advance automated tests on happy path | **Gate** for each manual test scenario — [Manual test verification gate](#manual-test-verification-gate-binding); **waiting** when developer runs tests outside chat; optional **Deploy Step Verification** agent handoff ([§ agent handoff](#deploy-step-verification-agent-handoff-binding)) |
 | **6** — Fix loop | Auto-advance routing back to step **3** or forward to step **7** | exception: `blocked` → terminal with evidence |
 | **7** — Post-fix recommendation + terminal | **Gate** — confirm **`exitRecommendation`** or abandon (binding Squad Leader auto-approval); then worktree path recap + bubble-up | Confirmation on this lane skips mission **§4**; leader override only when exit missing/ambiguous |
 
@@ -230,8 +230,68 @@ USER_CHECKPOINT — confirm manual test scenario results on this lane.
 | `scenario-pass` | Scenario passed — continue | Advance to next scenario or step **6** when all pass |
 | `scenario-fail` | Scenario failed — return to diagnosis | Return to step **3** (logs first on new evidence) |
 | `run-tests-outside-chat` | Running tests outside chat — resume when done | External-wait — same gate on resume with results |
+| `copy-dsv-handoff` | Copy Deploy Step Verification agent prompt | Emit [Deploy Step Verification (agent handoff)](#deploy-step-verification-agent-handoff-binding) in the same turn’s **`displayMarkdown`** (or re-emit if already shown); re-open this gate — does **not** mark the scenario passed |
 | `blocked-manual` | Blocked — cannot complete manual test | Set **`fixStatus: blocked`**; terminal with evidence |
 | `more-details` | More details for option _ | Elaborate; re-open this gate |
+
+##### Deploy Step Verification (agent handoff) (binding)
+
+When manual scenarios need an **agent** to verify them (especially when **no** PR-plan `## 7. Deploy test plan` anchor exists yet), emit a copy-safe prompt for a **detached** Mission Control dispatch of **Perform Deploy Step Verification** (`sedea-for-testing` / `perform-deploy-step-verification` — command phrase **`perform deploy step verification`**). Confirm that center exists on the hosting repo before naming the path; if it is missing, say so and keep user-facing gate options.
+
+**When to emit**
+
+| Trigger | Rule |
+|---------|------|
+| Developer picks **`copy-dsv-handoff`** | **Must** include the fenced handoff block in **`displayMarkdown`** on that turn |
+| First manual-test gate of the session when scenarios are agent-executable (commands, logs, HTTP, introspection) and **no** `targetPlanPath` is in scope | **Should** include the handoff block proactively in **`displayMarkdown`** above the modal (developer may still use user-facing options) |
+
+**Forbidden**
+
+- Treating developer-facing scenario bullets (“open the UI and confirm …”) as the agent handoff body
+- Implying this mission **spawns** Deploy Step Verification — the developer starts a **new** Mission Control dispatch (detached)
+- Requiring a PR-plan path when debug has none — free-form checklist intake is valid for DSV
+- Prose-only “paste something into Deploy Step Verification” without the fenced agent prompt
+
+**Prompt shape (LLM consumer — agent-targeted)**
+
+Put this under a `### Deploy Step Verification (agent handoff)` heading. Optimize for an agent reader (rule **1** § *Generating content for another agent*): completeness over brevity. Fill placeholders from the approved proposal and known env.
+
+````markdown
+### Deploy Step Verification (agent handoff)
+
+Copy into a **new** Mission Control dispatch on center **`sedea-for-testing`**, mission **Perform Deploy Step Verification**.
+
+```text
+perform deploy step verification
+
+## Goal
+Verify the following debug-session manual scenarios for the fix under test. Prefer autonomous checks (shell, HTTP, log grep, introspection). Do not ask the developer to run commands you can run.
+
+## Context
+- Hosting root: <absolute HOSTING_ROOT>
+- Debug worktree (if product fix lives there): <absolute WORKTREE_ROOT>
+- Worktree name: <worktreeName>
+- Environment: <local|staging|… or unknown>
+- PR plan deploy anchor: <targetPlanPath or "none — free-form checklist below">
+
+## Scenarios to verify
+1. <scenario id / title> — success: <one-line criteria>
+2. …
+
+## How to verify (agent)
+For each scenario:
+- Run concrete commands or scripts (name argv; cwd under HOSTING_ROOT or WORKTREE_ROOT as appropriate).
+- Use log tail/grep, HTTP probes, or read-only introspection when UI is not required.
+- Record pass/fail + evidence per scenario.
+- Authorized ops hint: shell, http, log-grep, read-only-db, write-scratch (narrow further if known).
+
+## Out of scope
+- Do not re-implement the product fix.
+- Do not mark debug-and-fix scenarios passed — report results back so the developer can pick scenario-pass / scenario-fail on the debug lane.
+```
+````
+
+After the developer runs DSV and returns, they resume this gate with **`scenario-pass`** / **`scenario-fail`** (or **`run-tests-outside-chat`** while waiting).
 
 ### 6 — Fix loop
 
