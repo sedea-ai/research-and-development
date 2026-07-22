@@ -578,7 +578,7 @@ One or more diagrams showing what the implementation will look like. Pick the di
 - State diagram — lifecycle / state-machine changes.
 - ER / schema diagram — data model or database changes.
 
-Use **Mermaid** (in fenced ```mermaid blocks) so the diagrams render in Cursor and on the Plan Board. Include only what is necessary to understand the *shape*; don't draft pseudocode here. If multiple diagrams are needed, label each one.
+Use **Mermaid** (in fenced ```mermaid blocks) so the diagrams render in Cursor and on the Plan Board. Include only what is necessary to understand the *shape*; don't draft pseudocode here. If multiple diagrams are needed, label each one. Follow [`.sedea/centers/sedea/docs/mermaid-authoring.md`](.sedea/centers/sedea/docs/mermaid-authoring.md) — opaque ids, sequence `Note` single-line (no `<br/>`), flowchart-only `<br/>` in quoted node labels.
 
 ### § 5 Changes
 
