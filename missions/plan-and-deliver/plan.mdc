@@ -611,7 +611,7 @@ USER_CHECKPOINT — retry, revise scope, accept partial resolution, or abandon w
 ### 8. Ship cadence ledger and dispatch resolution gates
 
 - **Type:** Finish/stop logic
-- **Intent:** Close the gap between **objectives** (implementation → PR → deploy → reconcile) and **Squad Leader** protocol. The Squad Leader **tracks** detached ship work and **gates** `mission_control_propose_dispatch_resolution`; it does **not** spawn ship skills from this section.
+- **Intent:** Close the gap between **objectives** (implementation → PR → deploy → reconcile) and **Squad Leader** protocol. The Squad Leader **tracks** detached ship work and **gates** `mission_control_propose_dispatch_resolution`; it does **not** spawn ship skills from this section — **except** the [Release-versions dissolve gate](#release-versions-dissolve-gate-binding) (once-per-dispatch **`capture-release-note`** spawn when the hosting overlay requires it).
 - **Inputs:** Planning ledger state from §7; developer messages on the leader lane; **`coding-session`** child `outputs` (especially `developerApprovedImplementation`, `targetPlanPath` after the worktree-open gate); explicit developer status when ship runs on other lanes.
 - **Expected output:** Updated **ship ledger** per PR plan; status acknowledgement; **`mission_control_propose_dispatch_resolution`** only when gates below allow.
 - **Next-step resolution:**
@@ -831,25 +831,87 @@ Before calling MCP **`mission_control_propose_dispatch_resolution`** when the de
    - After host sync arrives, parse it, refresh §8 rows, then continue to *Dispatch resolution gates*.
 3. **Developer done-language alone** does not satisfy step 2 — host-sync fields or explicit planning-only choice are required.
 4. When proposing **`resolved`**, the **`summary`** must name each tracked PR plan (path or slug) and its final `phase` + `rowStatus`.
+5. **Release-versions dissolve gate** — run [Release-versions dissolve gate](#release-versions-dissolve-gate-binding) **before** any `mission_control_propose_dispatch_resolution` call (including **`partial`** / **`abandoned`** / **`aborted`** when the gate applies). Ship pre-resolution above remains mandatory; this gate is **additional**.
+
+### Release-versions dissolve gate (binding)
+
+**Owner:** Squad Leader on this R&D delivery mission (also inherited by wrapper missions that cross-ref this section).
+
+**Overlay source of truth:** Unfenced **`releaseVersions`** in the active hosting repo **`.cursor/rules/dot-sedea.mdc`**. On-value is exactly **`release-versions`**. Consumers **must not** redefine the key. Absent or any other value → treat as **off**.
+
+**Leader state (`releaseNoteStatus` — once per dispatch):**
+
+| Value | Meaning |
+|-------|---------|
+| `not-required` | Flag off **or** no commits landed — gate skipped |
+| `pending` | Spawned (or must spawn); waiting for terminal success |
+| `success` | Release-note skill reported terminal **success** this dispatch |
+| `failed` | Terminal non-success; hard-block until retry succeeds |
+
+**Commits landed (binding — detect without inventing host sync):**
+
+| Signal | Treat as |
+|--------|----------|
+| Overlay ≠ `release-versions` | **Skip** — set `releaseNoteStatus: not-required` |
+| Planning-only close / empty ship ledger / never left `not-started` | **No commits** → skip |
+| Any §8 ship row reached `shipPhase` ≥ `implementing`, or known worktree `git log <baseRef>..HEAD` ≥ 1 for this dispatch | **Commits landed** |
+| Findings-only / Ad-Hoc PRD / abandon **without** code commits | **No commits** → skip |
+
+**Checks (all required to spawn):**
+
+1. Overlay on-value is **`release-versions`**.
+2. Commits landed (table above).
+3. `releaseNoteStatus` is **not** already `success`.
+
+**Action when checks pass and status is not `success`:**
+
+1. If not yet spawned this dispatch (`releaseNoteStatus` unset / `not-required` wrongly / first pass): emit **`mission_control_spawn_agent`** **once** with:
+   - **`skillPath`:** `.sedea/centers/sedea/skills/capture-release-note/SKILL.md` (phase-3 skill body may be absent until that phase lands — hard-block still applies when the flag is on and commits landed)
+   - **`slug`:** `release-note` (dispatch-unique; **do not** open a second lane after success)
+   - **`name`:** `RN-Capture release note` (rule **50** prefix shape)
+   - **`description`:** Per-dispatch release-note fragment for unreleased notes
+   - **`inputs`:** minimal skill contract fields when the skill exists; otherwise empty object `{}`
+2. Set `releaseNoteStatus: pending` and **#external-wait** for child **`mission_control_send_agent_result`**.
+3. On terminal **`status: success`** → set `releaseNoteStatus: success` → continue existing ship / pre-resolution gates → may propose dissolve.
+4. On pending / fail / abort → set `releaseNoteStatus: failed` when terminal non-success; **hard-block** — **do not** call **`mission_control_propose_dispatch_resolution`**.
+
+USER_CHECKPOINT — release-note skill pending or failed; run or retry only (no skip-and-resolve).
+
+**Required options** when hard-blocked (`modalTitle`: *Release notes — hard-block dissolve*):
+
+| Option id | Label |
+|-----------|--------|
+| `retry-release-note` | Spawn / retry release-note skill |
+| `more-details` | More details for option _ |
+
+**Forbidden:**
+
+- Calling **`mission_control_propose_dispatch_resolution`** while flag is on, commits landed, and `releaseNoteStatus` is not `success`.
+- Skip-and-resolve / “close without notes” options when the gate applies.
+- Re-spawning after `releaseNoteStatus: success` (once-per-dispatch).
+- Soft-warn instead of hard-block when the gate applies.
+
+**Skip (no spawn, no hard-block):** flag off **or** no commits landed → `releaseNoteStatus: not-required`; proceed with existing ship / pre-resolution gates only.
 
 **Dispatch resolution gates (Squad Leader only)**
 
 | Propose | When |
 |---------|------|
-| **`resolved`** | Planning ledger complete per §7 **and** every ship row is `closed` with `phase: done` (or legitimately empty ship ledger **and** developer chose planning-only close via USER_CHECKPOINT). |
-| **`partial`** | Useful planning or ship work landed, but identifiable follow-up remains (open PR, deploy, reconcile, or planning debt). |
-| **`abandoned`** / **`aborted`** | Developer stops or execution cannot continue; say so in `summary`. |
+| **`resolved`** | Planning ledger complete per §7 **and** every ship row is `closed` with `phase: done` (or legitimately empty ship ledger **and** developer chose planning-only close via USER_CHECKPOINT) **and** [Release-versions dissolve gate](#release-versions-dissolve-gate-binding) is satisfied (`not-required` or `success`). |
+| **`partial`** | Useful planning or ship work landed, but identifiable follow-up remains (open PR, deploy, reconcile, or planning debt) — **and** release-versions gate is satisfied when it applies. |
+| **`abandoned`** / **`aborted`** | Developer stops or execution cannot continue; say so in `summary`. When release-versions gate applies and notes are not `success`, prefer structured **retry** over dissolve; if the developer abandons the **whole dispatch**, `summary` must state release-note was incomplete. |
 
 **Never** propose **`resolved`** when:
 
 - Any ship row is `open` or `blocked` and the developer has not explicitly chosen **planning-only** dispatch closure.
 - The developer signals done or wrap-up but **no** host-sync update was parsed on the leader dispatch this session for rows that are still `open` or `blocked` (use *Pre-resolution checklist* USER_CHECKPOINT first).
 - Only the **planning** ledger is empty — objectives 4–7 in this mission plan still imply ship unless the developer opted out via §8 USER_CHECKPOINT.
+- Release-versions gate applies and `releaseNoteStatus` is not `success` (hard-block).
 
 **Procedure**
 
 1. After §7 reports planning complete, scan for PR plans with implementation handoff signals; open a ship row for each via host sync (or confirm none — then USER_CHECKPOINT for planning-only vs active ship).
 2. On each leader-lane turn that touches ship, update rows from **host-sync** messages and **`ship-ledger.v1.json`** before other protocol work.
 3. When host sync is missing for an `open` row, run *Pre-resolution checklist* **AskQuestion** before proposing dispatch resolution.
-4. When the developer signals done on **this dispatch**, run *Pre-resolution checklist* then re-check all rows against the gates table; choose `resolved` / `partial` / `abandoned` accordingly.
-5. Put the recap in the MCP **`summary`** argument; list open PR plans or deferred ship work when status is **`partial`**.
+4. When the developer signals done on **this dispatch**, run *Pre-resolution checklist*, then [Release-versions dissolve gate](#release-versions-dissolve-gate-binding), then re-check all rows against the gates table; choose `resolved` / `partial` / `abandoned` accordingly.
+5. Put the recap in the MCP **`summary`** argument; list open PR plans or deferred ship work when status is **`partial`**; name `releaseNoteStatus` when the dissolve gate ran.

@@ -316,7 +316,7 @@ USER_CHECKPOINT — close dispatch planning-only vs keep ship active when no shi
 
 USER_CHECKPOINT — approve dispatch resolution when planning and ship gates allow.
 
-**Dispatch resolution:** Squad Leader proposes **`mission_control_propose_dispatch_resolution`** when planning complete and ship rows closed (or planning-only close per plan-and-deliver §8 gates).
+**Dispatch resolution:** Squad Leader proposes **`mission_control_propose_dispatch_resolution`** when planning complete and ship rows closed (or planning-only close per plan-and-deliver §8 gates). **Also run** plan-and-deliver §8 [Release-versions dissolve gate](.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc#release-versions-dissolve-gate-binding) before any dissolve call — **no duplicate full prose here**.
 
 ## Related assets
 
