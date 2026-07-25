@@ -8,7 +8,8 @@ description: >-
 designation:
   allowed: >-
     Generate release-note fragment; structured approve/revise; write hosting
-    (and optional R&D center) unreleased fragment; terminal releaseNoteStatus
+    (and optional R&D center) unreleased fragment; register fragment path(s) in
+    Mission Control Relevant Links after first write; terminal releaseNoteStatus
   forbidden: >-
     Dispatch resolution; skip-and-resolve; bump/publish consolidation; overlay edits;
     re-spawn after success; sedea-builtin-center skill body
@@ -55,7 +56,7 @@ warmUpRules:
 
 **Spawn-only (binding).** Squad Leaders spawn this skill **once per dispatch** when the hosting overlay sets **`releaseVersions: release-versions`** and commits landed — see [`../plan.mdc`](../../plan.mdc) § *Release-versions dissolve gate*. Mission Control validates frontmatter **`inputs`** at spawn time. **Forbidden:** running this skill **inline** on the Squad Leader lane as a substitute for the once-per-dispatch child; inventing a second spawn after terminal **`success`**; landing or editing a skill body under **`.sedea/centers/sedea/skills/`** or **`sedea-builtin-center`**.
 
-**Owns:** generate → structured approve/revise → write unreleased fragment(s) → terminal **`mission_control_send_agent_result`** with **`releaseNoteStatus`** signal for the dissolve gate.
+**Owns:** generate → structured approve/revise → write unreleased fragment(s) → register fragment path(s) in Relevant Links (first write) → terminal **`mission_control_send_agent_result`** with **`releaseNoteStatus`** signal for the dissolve gate.
 
 **Out of scope:** overlay enablement; bump/sentinel consolidation; GitHub Release publish; Master Plan / phase planning; dispatch resolution.
 
@@ -119,10 +120,12 @@ flowchart TD
   D --> E[USER_CHECKPOINT approve or revise]
   E -->|revise| D
   E -->|approve| F[Write hosting unreleased]
-  F --> G{writeRdCenterUnreleased?}
+  F --> R[Relevant Links register]
+  R --> G{writeRdCenterUnreleased?}
   G -->|yes| H[Write R&D center unreleased]
   G -->|no| I[Terminal success]
-  H --> I
+  H --> R2[Register RD Relevant Links]
+  R2 --> I
   E -->|abort| J[Terminal non-success]
 ```
 
@@ -140,7 +143,7 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 | **2** — Collect commits | Auto-advance | exception: no commits → `failure` (leader should not have spawned) |
 | **3** — Draft fragment | Auto-advance | — |
 | **4** — Approve / revise | **Gate** — USER_CHECKPOINT | approve → write; revise → redraft; abort → non-success |
-| **5** — Write unreleased path(s) | Auto-advance after approve | exception: write failure → `failure` |
+| **5** — Write unreleased path(s) + Relevant Links | Auto-advance after approve | exception: write failure → `failure`; Relevant Links MCP failure → log + continue (do not fail capture) |
 | **6** — Terminal MCP result | Auto-advance | — |
 
 ## Session orientation table (binding)
@@ -243,12 +246,14 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release not
    - Prefer `YYYY-MM-DD-<kebab-dispatch-title-or-short-id>.md`
    - If the file exists, append `-2`, `-3`, … rather than overwrite.
 3. **Write** the approved markdown to that hosting path (primary clone **`HOSTING_ROOT`** — unreleased notes are hosting tracked docs under `docs/`, not `.sedea/operations/`).
-4. When `writeRdCenterUnreleased: true` and `rdCenterRoot` is set:
+4. **Relevant Links (first write — binding):** On the **same turn** as the first successful hosting write for this skill run, call MCP **`mission_control_update_relevant_documents`** with the absolute hosting fragment path so Mission Control Relevant Links lists the new file. Prefer `{ path, kind: "other", label }` (label = fragment basename or short dispatch title). **Do not** call this before the write succeeds. Host dedupes — safe if the path was already registered.
+5. When `writeRdCenterUnreleased: true` and `rdCenterRoot` is set:
    - Ensure **`rdCenterRoot/docs/release-notes/unreleased/`** exists.
    - Write the same (or R&D-scoped) fragment with a matching filename under that directory.
-5. Record absolute paths in `outputs.hostingFragmentPath` and optional `outputs.rdCenterFragmentPath`.
+   - On that first successful R&D-center write, also call **`mission_control_update_relevant_documents`** for the absolute R&D fragment path (`kind: "other"`).
+6. Record absolute paths in `outputs.hostingFragmentPath` and optional `outputs.rdCenterFragmentPath`. Set `outputs.relevantDocumentsRegistered: true` when the hosting Relevant Links call was attempted after a successful write (even if the stdio MCP ack is transcript-only).
 
-**Forbidden:** writing under `WORKTREE_ROOT/.sedea/operations/`; inventing a second fragment after success on the same dispatch; skipping hosting write when approve succeeded; writing under **`.sedea/centers/sedea/`** or **`sedea-builtin-center`**.
+**Forbidden:** writing under `WORKTREE_ROOT/.sedea/operations/`; inventing a second fragment after success on the same dispatch; skipping hosting write when approve succeeded; writing under **`.sedea/centers/sedea/`** or **`sedea-builtin-center`**; registering Relevant Links for a path that was not written this run; treating Relevant Links registration failure as a reason to skip the hosting write or withhold terminal **`releaseNoteStatus: success`** when the fragment file exists.
 
 - **Next-step resolution:** Auto-advance to Step **6**.
 
@@ -265,6 +270,7 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release not
 | `outputs.hostingFragmentPath` | Absolute path written |
 | `outputs.rdCenterFragmentPath` | Absolute path when written; omit otherwise |
 | `outputs.fragmentFilename` | Basename only |
+| `outputs.relevantDocumentsRegistered` | `true` after Step **5** Relevant Links call for the hosting fragment |
 
 On abort / failure / write error: `status` ∈ `aborted` \| `failure` \| `partial`; `outputs.releaseNoteStatus: failed`; include `errors[].message` when useful.
 
@@ -284,6 +290,7 @@ Call MCP **`mission_control_send_agent_result`** exactly once at skill terminal 
 | `hostingFragmentPath` | string | Absolute path under hosting unreleased |
 | `rdCenterFragmentPath` | string | Optional absolute R&D center unreleased path |
 | `fragmentFilename` | string | Basename |
+| `relevantDocumentsRegistered` | boolean | Hosting fragment registered via **`mission_control_update_relevant_documents`** after first write |
 | `baseRef` | string | Range base used |
 | `commitCount` | number | Commits considered in the draft |
 
@@ -299,6 +306,8 @@ Call MCP **`mission_control_send_agent_result`** exactly once at skill terminal 
 | Skip-and-resolve / close without notes | Terminal non-success only; leader hard-blocks |
 | Second spawn after `releaseNoteStatus: success` | Leader once-per-dispatch — this skill does not re-open |
 | Write only R&D center, skip hosting | Hosting write is required on approve |
+| Skip Relevant Links after first hosting write | Step **5** item **4** — call **`mission_control_update_relevant_documents`** same turn |
+| Fail capture because Relevant Links MCP ack is transcript-only | Registration is best-effort for panel UX; fragment write + **`releaseNoteStatus`** still govern dissolve |
 | Land skill under builtin-center / `.sedea/centers/sedea/skills/` | R&D plan-and-deliver path only |
 | Edit overlay / bump scripts here | Out of scope — later phases |
 | Prose-only idle at approve gate | Always MCP structured choice |
