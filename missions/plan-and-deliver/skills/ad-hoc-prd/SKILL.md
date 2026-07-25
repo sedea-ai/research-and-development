@@ -220,6 +220,8 @@ USER_CHECKPOINT — provide missing ad-hoc PRD inputs on this lane.
  - **`Master Plan:`** line — `_TBD_` plus one sentence that **`master-planner`** will create the `.plan.md` from this Ad-Hoc PRD and the developer should paste or link that path here when it exists (do **not** invent a plan path).
  - **`## 1–3`** sections filled from handoff details; `_TBD_` where unavoidable + say what is missing.
 
+   - **Relevant Links (post-write):** After a successful create or material revise write, call MCP **`mission_control_update_relevant_documents`** with the absolute Ad-Hoc PRD path (`kind: prd`) on this lane — same turn preferred. **Skip** when already registered this session with no content change. Does **not** replace terminal `prdPath` / `prdRef`. See **`../README.md`** § *Relevant Links — post-write registration*.
+
    - **Next-step resolution:** Auto-advance to step **5** after successful write — emit non-terminal **`mission_control_send_agent_result`** with `developerApprovedPrd: false` when the invoker protocol requires leader ack before step **5**; do **not** treat that ack as PRD approval.
 
 5. **Present for approval** — Recap the new file with a backtick path (prefer the hosting-absolute path; a `.sedea/operations/…/docs/…` path is also valid) and a one-line summary of §§1–3. Do **not** use a `file://` Markdown link or put backticks inside a Markdown link label. Use **AskQuestion**, **`mission_control_present_structured_choice`** per **`../README.md`** § *Recap, structured choice, act* and **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`**.

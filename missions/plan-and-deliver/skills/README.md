@@ -89,6 +89,62 @@ Mission Control delivery for skills that mix long plan output with structured us
 - Gate **`options`** must match the skill’s next branches (approve, revise, defer, commit when applicable, **More details for option _**).
 - Reference **`coding-session/SKILL.md`** § *Post-create-pr handoff gate*, **`create-pr/SKILL.md`** § *Developer input vs external-wait (Checkpoint)* (and [Pre-gh authorization gate](../create-pr/SKILL.md#pre-gh-authorization-gate-binding) on exception paths), and **`pr-review/SKILL.md`** Step **4** § *Build disposition options* for ship-path examples (contextual options from triage counts — omit inert Must/Should rows).
 
+## Relevant Links — post-write registration
+
+Mission Control **Relevant Links** refresh from warm-up, spawn `*Path` / `*Ref` inputs, terminal `outputs` keys ending in `Path` / `Ref`, ship-ledger merges, and **explicit** mid-session registration. There is **no** host auto-sniff of Write/StrReplace. Planning skills that create or materially edit ops artifacts **must** register those paths on the calling lane.
+
+### MCP tool
+
+| Tool | Caller | Purpose |
+|------|--------|---------|
+| **`mission_control_update_relevant_documents`** | Any agent on **this** lane | Append in-workspace paths to the **calling slot’s** `relevantDocuments` |
+
+**Args (agent-facing):** `paths` — non-empty array of absolute (or workspace-relative) paths, or `{ path, kind?, label? }` objects. Optional `kind`: `plan` \| `prd` \| `skill` \| `rule` \| `other`. Host injects lane identity — **forbidden:** `dispatchId`, `slotId`, `correlationId` in args.
+
+**Delivery:** Stdio MCP acks are transcript-only; the extension host stream mirror normalizes, dedupes, persists, and patches the panel.
+
+### When to call (binding)
+
+After **Write**, **StrReplace**, or equivalent that **creates or materially edits** a workspace file the lane wants visible in Relevant Links, call **`mission_control_update_relevant_documents`** on the **same turn** (or the next turn before StreamFinal) with those absolute paths.
+
+| Call | Skip |
+|------|------|
+| New or materially edited ops plans, PRDs, brainstorm reports under **`operationsDocsDirectory`** / `.sedea/operations/**/{docs,plans}/` | Read-only `Read` / Grep with no write |
+| Other authored workspace documents the developer should open from Relevant Links | Paths already registered this session with no content change |
+| | Warm-up rules, every `@path` touch, sibling-dispatch folders, transient scratch, build artifacts |
+
+**Authored or materially edited only** — do **not** blanket-register every path you read or the warm-up manifest.
+
+### Kind hints
+
+| Situation | Prefer |
+|-----------|--------|
+| Plan Board `.plan.md` / sidecar pair (plan body) | `kind: plan` |
+| PRD / ad-hoc PRD under ops docs | `kind: prd` |
+| Brainstorm report, misc ops docs | `kind: other` (or omit — host may infer) |
+
+Optional **`label`** overrides the panel display name when the basename is opaque.
+
+### Relationship to other refresh paths
+
+| Path | Role |
+|------|------|
+| Warm-up / spawn `*Path` / `*Ref` | Initial seed — still call MCP for **mid-session** creates |
+| Terminal `outputs` `*Path` / `*Ref` | Durable child handoff on **`mission_control_send_agent_result`** — does **not** replace mid-session register on the active lane |
+| **`mission_control_update_lane_display`** / **`mission_control_update_dispatch_display`** | Tab / dispatch chrome only — **not** documents |
+
+### Forbidden
+
+| Pattern | Why |
+|---------|-----|
+| Register every read path or entire warm-up manifest | Noise; v1 control is skill wording |
+| Supply host identity keys in MCP args | Host injects caller slot |
+| Out-of-workspace / sibling-dispatch paths | Host rejects |
+| Prose-only “add this to Relevant Links” without MCP | Panel does not update |
+| Treating display-metadata MCP as a documents substitute | Wrong tool |
+
+**Per-skill hooks:** `author-prd`, `ad-hoc-prd`, `brainstorm-research`, `master-planner`, `phase-planner`, `new-plan`, `pr-plan`, `pr-breakdown`, and `delivery-phases` each name the post-write call next to their Write/StrReplace steps. Cadence cross-refs: [rule **50**](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Relevant Links (documents)*; [development-process.md](../../../../docs/development-process.md) § *Agent UX pitfalls*.
+
 ### Planning open-item modal contract
 
 Planning composition skills that surface review gaps before approval use the same modal shape as **`author-prd/SKILL.md`** Step **10**. This applies when a planning lane presents open items in generated PRDs, Master Plans, phase plans, PR breakdowns, plan stubs, or PR plans before the developer approves, revises, defers, or starts implementation.
@@ -332,6 +388,7 @@ Normative minimum **`laneRules`** paths per lane role — merged into **`effecti
 | **`ad-hoc-prd` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md`, `.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
 | **`master-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
 | **`quick-fix-plan` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
+| **`capture-release-note` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/4_mission.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/capture-release-note/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
 | **`coding-session` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`, `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md` |
 | **`phase-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
 | **`pre-pr-review` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |

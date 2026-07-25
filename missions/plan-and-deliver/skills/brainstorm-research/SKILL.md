@@ -157,6 +157,8 @@ USER_CHECKPOINT — approve brainstorm report, revise research, or abandon dispa
 
 3. **Write report** — Resolve docs write root per **31_dispatch-scope.mdc** § *Docs write root resolution*; save under that directory as `brainstorm_<slug>_<8hex>.brainstorm-report.md` (kebab slug from title; regenerate hex on collision once).
 
+   - **Relevant Links (post-write):** After a successful create or material revise write, call MCP **`mission_control_update_relevant_documents`** with the absolute report path (`kind: other`) on this lane — same turn preferred. **Skip** when already registered this session with no content change. Does **not** replace terminal `brainstormReportPath` / `brainstormReportRef`. See **`../README.md`** § *Relevant Links — post-write registration*.
+
    - **Next-step resolution:** Auto-advance to step **4** after successful write — no `USER_CHECKPOINT` on this step.
 
 4. **Present for approval** — Recap report path and §5 Handoff summary excerpt in **`displayMarkdown`** when using **`mission_control_present_structured_choice`**. Open [Report approval gate](#report-approval-gate-binding) via **`mission_control_present_structured_choice`** or **AskQuestion** — **same turn**, not prose-only.

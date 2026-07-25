@@ -211,6 +211,8 @@ Gather evidence, calibrate section policy, and draft or update a Product or Feat
 
 8. Write the document when an output path is resolved, then re-read it and verify the required sections.
 
+   - **Relevant Links (post-write):** After a successful create or material edit, call MCP **`mission_control_update_relevant_documents`** with the absolute PRD path (`kind: prd`) on this lane — same turn preferred. **Skip** when the path is already registered this session with no content change. Does **not** replace terminal `prdPath` / `prdRef`. See **`../README.md`** § *Relevant Links — post-write registration*.
+
    - **Next-step resolution:** Auto-advance to step **9** after successful write — emit non-terminal **`mission_control_send_agent_result`** with `developerApprovedPrd: false` when **`plan.mdc`** §3 requires leader ack before step **10**; do **not** treat that ack as PRD approval.
 
 9. **Refresh lane display** when spawn labels are generic — MCP **`mission_control_update_lane_display`** on this lane only (rule **50**). **`title`:** `PRD-{semantic title}` where semantic title is **`prdTitle`** or approved PRD heading — see [rule **50**](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Lane title prefix conventions*.

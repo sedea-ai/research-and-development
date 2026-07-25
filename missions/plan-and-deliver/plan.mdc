@@ -866,7 +866,7 @@ Before calling MCP **`mission_control_propose_dispatch_resolution`** when the de
 **Action when checks pass and status is not `success`:**
 
 1. If not yet spawned this dispatch (`releaseNoteStatus` unset / `not-required` wrongly / first pass): emit **`mission_control_spawn_agent`** **once** with:
-   - **`skillPath`:** `.sedea/centers/sedea/skills/capture-release-note/SKILL.md` (phase-3 skill body may be absent until that phase lands — hard-block still applies when the flag is on and commits landed)
+   - **`skillPath`:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/capture-release-note/SKILL.md`
    - **`slug`:** `release-note` (dispatch-unique; **do not** open a second lane after success)
    - **`name`:** `RN-Capture release note` (rule **50** prefix shape)
    - **`description`:** Per-dispatch release-note fragment for unreleased notes
