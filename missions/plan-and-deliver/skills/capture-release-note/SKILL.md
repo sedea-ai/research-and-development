@@ -3,16 +3,18 @@ name: capture-release-note
 description: >-
   Once-per-dispatch lane: generate a release-note fragment from dispatch commits,
   get developer structured approval, write hosting docs/release-notes/unreleased/
-  (optional R&D-center unreleased), and return terminal success for
-  releaseNoteStatus.
+  (optional R&D-center unreleased), or skip when internal functionality needs no
+  note, and return terminal releaseNoteStatus for the dissolve gate.
 designation:
   allowed: >-
-    Generate release-note fragment; structured approve/revise; write hosting
-    (and optional R&D center) unreleased fragment; register fragment path(s) in
-    Mission Control Relevant Links after first write; terminal releaseNoteStatus
+    Generate release-note fragment; structured approve/revise/skip-internal; write
+    hosting (and optional R&D center) unreleased fragment; register fragment
+    path(s) in Mission Control Relevant Links after first write; terminal
+    releaseNoteStatus (success or skipped) notifying Squad Leader
   forbidden: >-
-    Dispatch resolution; skip-and-resolve; bump/publish consolidation; overlay edits;
-    re-spawn after success; sedea-builtin-center skill body
+    Dispatch resolution; ad-hoc skip outside approve-gate option; bump/publish
+    consolidation; overlay edits; re-spawn after success or skipped;
+    sedea-builtin-center skill body
 inputs:
   baseRef:
     type: string
@@ -56,7 +58,7 @@ warmUpRules:
 
 **Spawn-only (binding).** Squad Leaders spawn this skill **once per dispatch** when the hosting overlay sets **`releaseVersions: release-versions`** and commits landed — see [`../plan.mdc`](../../plan.mdc) § *Release-versions dissolve gate*. Mission Control validates frontmatter **`inputs`** at spawn time. **Forbidden:** running this skill **inline** on the Squad Leader lane as a substitute for the once-per-dispatch child; inventing a second spawn after terminal **`success`**; landing or editing a skill body under **`.sedea/centers/sedea/skills/`** or **`sedea-builtin-center`**.
 
-**Owns:** generate → structured approve/revise → write unreleased fragment(s) → register fragment path(s) in Relevant Links (first write) → terminal **`mission_control_send_agent_result`** with **`releaseNoteStatus`** signal for the dissolve gate.
+**Owns:** generate → structured approve/revise **or** skip-internal → write unreleased fragment(s) + Relevant Links (when approved) **or** skip writes (when internal) → terminal **`mission_control_send_agent_result`** with **`releaseNoteStatus`** (`success` \| `skipped`) so the Squad Leader dissolve gate can clear.
 
 **Out of scope:** overlay enablement; bump/sentinel consolidation; GitHub Release publish; Master Plan / phase planning; dispatch resolution.
 
@@ -126,6 +128,7 @@ flowchart TD
   G -->|no| I[Terminal success]
   H --> R2[Register RD Relevant Links]
   R2 --> I
+  E -->|skip-internal| K[Terminal skipped notify parent]
   E -->|abort| J[Terminal non-success]
 ```
 
@@ -142,9 +145,9 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 | **1** — Validate inputs / resolve roots | Auto-advance | exception: missing hosting root → `failure` |
 | **2** — Collect commits | Auto-advance | exception: no commits → `failure` (leader should not have spawned) |
 | **3** — Draft fragment | Auto-advance | — |
-| **4** — Approve / revise | **Gate** — USER_CHECKPOINT | approve → write; revise → redraft; abort → non-success |
-| **5** — Write unreleased path(s) + Relevant Links | Auto-advance after approve | exception: write failure → `failure`; Relevant Links MCP failure → log + continue (do not fail capture) |
-| **6** — Terminal MCP result | Auto-advance | — |
+| **4** — Approve / revise / skip-internal | **Gate** — USER_CHECKPOINT | approve → write; revise → redraft; skip-internal → Step **6** skipped terminal; abort → non-success |
+| **5** — Write unreleased path(s) + Relevant Links | Auto-advance after approve | exception: write failure → `failure`; Relevant Links MCP failure → log + continue (do not fail capture); **skip** when Step **4** chose skip-internal |
+| **6** — Terminal MCP result | Auto-advance | success (written) or skipped (internal) — both notify Squad Leader |
 
 ## Session orientation table (binding)
 
@@ -205,9 +208,9 @@ Rules:
 
 - **Next-step resolution:** Auto-advance to Step **4**.
 
-### 4. Structured approve / revise
+### 4. Structured approve / revise / skip-internal
 
-USER_CHECKPOINT — approve or revise the release-note fragment before unreleased write. defaultOptionId: approve-fragment
+USER_CHECKPOINT — approve, revise, or skip the release-note fragment before unreleased write. defaultOptionId: approve-fragment
 
 Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release notes — approve fragment*).
 
@@ -223,6 +226,7 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release not
 |-----------|--------|
 | `approve-fragment` | Approve — write unreleased fragment |
 | `revise-fragment` | Revise — I'll give feedback |
+| `skip-internal-not-required` | Internal functionality — release note is not required |
 | `abort-capture` | Abort release-note capture |
 | `more-details` | More details for option _ |
 | `have-question` | I have a question |
@@ -233,9 +237,10 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release not
 |--------|--------|
 | `approve-fragment` | Proceed to Step **5** with the draft as approved text |
 | `revise-fragment` | Collect feedback (chat / Other); redraft Step **3**; re-open this gate — **do not** write yet |
+| `skip-internal-not-required` | **Do not** write unreleased files. Proceed to Step **6** with **`releaseNoteStatus: skipped`** — notify Squad Leader (parent) via terminal result (+ **`mission_control_refocus_parent_lane`** when a parent exists) |
 | `abort-capture` | Terminal **`aborted`** with `outputs.releaseNoteStatus: failed` |
 
-**Forbidden:** writing unreleased files before `approve-fragment`; skip-and-resolve options; auto-write without this gate.
+**Forbidden:** writing unreleased files before `approve-fragment`; inventing skip outside this gate’s **`skip-internal-not-required`** option; auto-write without this gate; treating skip-internal as **`failed`** (that hard-blocks dissolve).
 
 ### 5. Write unreleased fragment(s)
 
@@ -259,22 +264,24 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release not
 
 ### 6. Terminal result
 
-1. Optionally call **`mission_control_refocus_parent_lane`** with a short reason when the Squad Leader should resume dissolve gates.
+1. Call **`mission_control_refocus_parent_lane`** with a short reason when a resolvable parent exists (required after **`skip-internal-not-required`** so the Squad Leader sees the decision; recommended after write success).
 2. Emit **exactly one** terminal **`mission_control_send_agent_result`**:
 
-| Field | Value on happy path |
-|-------|---------------------|
-| `status` | `success` |
-| `summary` | 1–3 sentences naming **`releaseNoteStatus: success`**, hosting fragment path, and optional R&D path |
-| `outputs.releaseNoteStatus` | `success` |
-| `outputs.hostingFragmentPath` | Absolute path written |
-| `outputs.rdCenterFragmentPath` | Absolute path when written; omit otherwise |
-| `outputs.fragmentFilename` | Basename only |
-| `outputs.relevantDocumentsRegistered` | `true` after Step **5** Relevant Links call for the hosting fragment |
+| Field | Value on write happy path | Value on skip-internal |
+|-------|---------------------------|------------------------|
+| `status` | `success` | `success` |
+| `summary` | 1–3 sentences naming **`releaseNoteStatus: success`**, hosting fragment path, and optional R&D path | 1–3 sentences naming **`releaseNoteStatus: skipped`**, reason **internal functionality — release note is not required**, and that no fragment was written — Squad Leader may clear dissolve hard-block |
+| `outputs.releaseNoteStatus` | `success` | `skipped` |
+| `outputs.skipReason` | omit | `internal-functionality-not-required` |
+| `outputs.releaseNoteWritten` | `true` | `false` |
+| `outputs.hostingFragmentPath` | Absolute path written | omit |
+| `outputs.rdCenterFragmentPath` | Absolute path when written; omit otherwise | omit |
+| `outputs.fragmentFilename` | Basename only | omit |
+| `outputs.relevantDocumentsRegistered` | `true` after Step **5** Relevant Links call for the hosting fragment | omit / `false` |
 
 On abort / failure / write error: `status` ∈ `aborted` \| `failure` \| `partial`; `outputs.releaseNoteStatus: failed`; include `errors[].message` when useful.
 
-**Name `releaseNoteStatus` in `summary`** so the Squad Leader dissolve gate can clear hard-block.
+**Name `releaseNoteStatus` in `summary`** (`success` or `skipped`) so the Squad Leader dissolve gate can clear hard-block and the parent is notified of the decision.
 
 ## Completion (spawned)
 
@@ -286,7 +293,9 @@ Call MCP **`mission_control_send_agent_result`** exactly once at skill terminal 
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `releaseNoteStatus` | string | `success` \| `failed` — leader maps to dissolve gate |
+| `releaseNoteStatus` | string | `success` \| `skipped` \| `failed` — leader maps to dissolve gate |
+| `skipReason` | string | Present when skipped — `internal-functionality-not-required` |
+| `releaseNoteWritten` | boolean | `true` after hosting write; `false` on skip-internal |
 | `hostingFragmentPath` | string | Absolute path under hosting unreleased |
 | `rdCenterFragmentPath` | string | Optional absolute R&D center unreleased path |
 | `fragmentFilename` | string | Basename |
@@ -303,8 +312,9 @@ Call MCP **`mission_control_send_agent_result`** exactly once at skill terminal 
 | Anti-pattern | Correct action |
 |--------------|----------------|
 | Auto-write without approve gate | Step **4** USER_CHECKPOINT first |
-| Skip-and-resolve / close without notes | Terminal non-success only; leader hard-blocks |
-| Second spawn after `releaseNoteStatus: success` | Leader once-per-dispatch — this skill does not re-open |
+| Ad-hoc skip / close without notes outside the gate | Only **`skip-internal-not-required`** at Step **4** authorizes skip; terminal **`releaseNoteStatus: skipped`** notifies Squad Leader |
+| Treating skip-internal as `failed` | Use **`skipped`** so dissolve hard-block clears |
+| Second spawn after `releaseNoteStatus: success` or `skipped` | Leader once-per-dispatch — this skill does not re-open |
 | Write only R&D center, skip hosting | Hosting write is required on approve |
 | Skip Relevant Links after first hosting write | Step **5** item **4** — call **`mission_control_update_relevant_documents`** same turn |
 | Fail capture because Relevant Links MCP ack is transcript-only | Registration is best-effort for panel UX; fragment write + **`releaseNoteStatus`** still govern dissolve |
