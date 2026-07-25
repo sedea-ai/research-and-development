@@ -41,6 +41,32 @@ When a skill runs **inline** on the invoker’s lane (not spawned via **`mission
 
 **Inline `deploy-walk` on `coding-session`:** Agents must self-run agent-executable checklist steps (shell, grep/logs, file read/parse) per **`deploy-walk/SKILL.md`** § *Agent capability inventory (binding)* — manual steps require numbered **Testing steps** in § *Step 4 — Step presentation contract* and close with **`USER_CHECKPOINT`** gates (manual step await, deploy status transition, deploy closure approval) per § *Checkpoint turn UX (skill-local)* — not prose-only deploy handoff.
 
+## R&D center edit destination gate (binding)
+
+Applies to **all PRD and planning skills** on this center (`author-prd`, `ad-hoc-prd`, `brainstorm-research`, `master-planner`, `phase-planner`, `delivery-phases`, `pr-breakdown`, `new-plan`, `pr-plan`, and **`quick-fix-plan`**). Happy-path PRD/plan writes under **`.sedea/operations/`** do **not** open this gate.
+
+**Trigger:** any step that would **create, edit, move, or delete** files under **`.sedea/centers/research-and-development/`** (center git content — rules, missions, skills, docs, `center.yaml`).
+
+USER_CHECKPOINT — pick R&D center edit destination before any center write.
+
+| Option id | Label | Action |
+|-----------|-------|--------|
+| `ship-app-rd` | Ship in `sedea-ai/research-and-development` — Sedea app process / ops | Continue on the **app-focused** center remote; require hosting **Own centers** listing for `research-and-development` → `git@github.com:sedea-ai/research-and-development.git` and **`CENTER_WORKTREE_ROOT`** before writes |
+| `delegate-base-rd` | Delegate to base center — `sedea-centers/research-and-development` | **Stop** local center writes; developer continues on **`sedea-centers-development-hosting-repo`** for **general** R&D center operating-model changes |
+| `pause` | Pause — stop until I say more | No writes |
+| `more-details` | More details for option _ | Elaborate; re-ask |
+
+**How to choose (nature of the change):**
+
+| Destination | When |
+|-------------|------|
+| **`sedea-ai/research-and-development`** (`ship-app-rd`) | Change reflects how the **Sedea app** is developed, its processes and operations |
+| **`sedea-centers/research-and-development`** (`delegate-base-rd`) | Change applies to how the research-and-development center operates **in general** — not app-specific |
+
+**Forbidden:** writing center files without this gate; treating **`sedea-centers/research-and-development`** as Own on **`sedea-ai/app`**; editing the primary hosting clone’s submodule checkout without **`CENTER_WORKTREE_ROOT`**.
+
+Each listed skill **must** point here from its Checkpoint / pre-write guidance. Do not re-author a divergent option table in individual skills.
+
 ## Recap, structured choice, act (plan-and-deliver)
 
 Mission Control delivery for skills that mix long plan output with structured user choice. Canonical Sedea rules: **`.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`** § **Context and structured choice**. Hosting-repo runtime: **`.cursor/rules/mission-control-agent-runtime.mdc`**.
@@ -362,6 +388,7 @@ Normative minimum **`laneRules`** paths per lane role — merged into **`effecti
 | **`ad-hoc-prd` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md`, `.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
 | **`master-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
 | **`quick-fix-plan` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
+| **`capture-release-note` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/4_mission.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/capture-release-note/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
 | **`coding-session` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`, `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md` |
 | **`phase-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
 | **`pre-pr-review` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |

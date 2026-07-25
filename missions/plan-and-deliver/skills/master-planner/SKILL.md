@@ -63,6 +63,10 @@ The procedure below is a hard contract — do **not** skip steps, re-order them,
 
 **Worktree removal ownership (binding).** This skill is planning-only — it does **not** create or remove hosting-repo worktrees. **Do not remove worktrees you do not own.** **`git worktree list` is read-only** unless rule **0** § *Worktree ownership* preconditions hold for **that** path. Ship worktrees belong to **`coding-session`** on a separate lane.
 
+## R&D center edit destination gate (binding)
+
+When this skill would write under **`.sedea/centers/research-and-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *R&D center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/research-and-development` as Own on `sedea-ai/app`.
+
 ## Warm-up manifest (spawned)
 
 Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up* / *Definitive `laneRules`*. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table; spawners may omit run-request **`laneRules`** when identical (README spawn preflight row 11). **No `alwaysApply` frontmatter flip.**

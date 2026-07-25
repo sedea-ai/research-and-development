@@ -273,7 +273,7 @@ Same automation contract as plan-and-deliver §8 (*Mission Control host sync*) w
 
 USER_CHECKPOINT — pick planning-only close vs keep ship active when pre-resolution checklist fails.
 
-**Pre-resolution checklist:** Before **`mission_control_propose_dispatch_resolution`**, re-scan ship rows — do not propose **`resolved`** while `open`/`blocked` rows lack host-sync this session unless developer chose planning-only close via USER_CHECKPOINT gate above.
+**Pre-resolution checklist:** Before **`mission_control_propose_dispatch_resolution`**, re-scan ship rows — do not propose **`resolved`** while `open`/`blocked` rows lack host-sync this session unless developer chose planning-only close via USER_CHECKPOINT gate above. **Also run** plan-and-deliver §8 [Release-versions dissolve gate](.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc#release-versions-dissolve-gate-binding) (overlay check → once-per-dispatch release-note spawn → hard-block until success; skip when flag off or no commits) — **no duplicate full prose here**.
 
 ### 8. Dispatch resolution (Squad Leader)
 
