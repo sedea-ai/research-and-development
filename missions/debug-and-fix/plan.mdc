@@ -50,6 +50,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 | `.sedea/centers/sedea/rules/4_mission.mdc` | Mission protocol, spawn/reload manifest |
 | `.sedea/centers/research-and-development/missions/debug-and-fix/plan.mdc` | **This** mission plan |
 | `.sedea/centers/research-and-development/docs/development-process.md` | Cadence and protocol branches |
+| `.sedea/centers/research-and-development/rules/60_github-issue-dispatch-closure.mdc` | Bind GitHub issue at intake; status update before dispatch resolution |
 
 ### `skillWarmUp` — child spawn overrides (binding)
 
@@ -169,9 +170,10 @@ USER_CHECKPOINT — confirm mission intent when the opening command phrase does 
      - **More details for option _**
   1. Remove the matched command prefix from the opening message.
   2. Treat remaining text as initial `issueSummary` when present.
-  3. Collect missing **`issueSummary`** via structured choice when empty.
-  4. Optionally collect **`reproductionSteps`**, **`logHints`**, and **`repoPath`** (default hosting repo root when omitted).
-  5. When **`issueSummary`** improves the dispatch title, re-run **Dispatch display refresh** (§ above) — **skip** when current dispatch chrome already matches.
+  3. When a **GitHub issue URL** is present (Hub intake note or opening/remainder text), bind it on the leader ledger per [rule **60**](../../rules/60_github-issue-dispatch-closure.mdc) and include the URL in handover context.
+  4. Collect missing **`issueSummary`** via structured choice when empty.
+  5. Optionally collect **`reproductionSteps`**, **`logHints`**, and **`repoPath`** (default hosting repo root when omitted).
+  6. When **`issueSummary`** improves the dispatch title, re-run **Dispatch display refresh** (§ above) — **skip** when current dispatch chrome already matches.
 - `valid early-exit conditions`: Stop without spawn if the user declines to provide an issue summary.
 
 USER_CHECKPOINT — pick intake mode or provide issue summary before spawning the debug agent.
@@ -299,6 +301,6 @@ USER_CHECKPOINT — approve dispatch resolution after findings report or code-pr
 - `type`: Finish/stop logic.
 - `intent`: Propose dispatch closure after findings report or code-promotion chain completes.
 - `inputs`: All child terminal outputs, selected exit path, findings report from step 6 when applicable, any external-wait resume selection state.
-- `expected output`: Squad Leader recap and **`mission_control_propose_dispatch_resolution`** when user signals done.
+- `expected output`: Squad Leader recap and **`mission_control_propose_dispatch_resolution`** when user signals done. When **`githubIssueBound`**, apply [rule **60**](../../rules/60_github-issue-dispatch-closure.mdc) status map for the chosen status **before** that MCP call.
 - `next-step resolution`: Terminal when user accepts resolution or continues from resolution card per [`.sedea/centers/sedea/rules/4_mission.mdc`](.sedea/centers/sedea/rules/4_mission.mdc) § *Dispatch resolution*. Before any dissolve call when this dispatch **landed code commits** (code-promotion path), also run plan-and-deliver §8 [Release-versions dissolve gate](.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc#release-versions-dissolve-gate-binding) — skip when findings-only / no commits or overlay flag off. **No duplicate full prose here.**
 - `terminal vs resumable`: **`resolved`** when code-promotion chain completed or findings report delivered; **`partial`** when fix verified but ship pending external action; **`aborted`** / **`abandoned`** on user stop or unrecoverable block.
