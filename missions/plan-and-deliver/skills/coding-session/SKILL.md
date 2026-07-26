@@ -1421,7 +1421,21 @@ Compile the **`pre-pr-review`** child inputs:
 - `worktreeName`
 - `baseRef`
 - `projectRules`: absolute worktree `.cursor/rules/*.mdc` paths curated the same way as the implementation prompt — include **`outputs.reconciledRepoRulesPaths`** from [Repo rules reconciliation (binding)](#repo-rules-reconciliation-binding) when populated.
-- `diffSummary`: commits/files/line counts from the committed diff.
+- `diffSummary`: **object** (`type: object` per `pre-pr-review` frontmatter) — **not** a prose string. Mission Control spawn validation rejects strings (`invalid-inputs`). Minimal shape (populate from the committed diff):
+
+  ```json
+  {
+    "commitCount": 1,
+    "fileCount": 5,
+    "insertions": 116,
+    "deletions": 15,
+    "head": "0b0419e8f5b",
+    "subject": "optional short subject",
+    "files": ["path/a.ts", "path/b.md"]
+  }
+  ```
+
+  **Forbidden:** a single human-readable summary string as `diffSummary`.
 - `ledgerParent`
 - `upstreamSkill: "coding-session"`
 
@@ -1571,7 +1585,7 @@ Construct inline context:
 |----------------------|--------|
 | `targetPlanPath` / `targetPlanSlug` | From coding-session state when plan-anchored |
 | `worktreePath`, `worktreeName`, `baseRef`, `repoUrl` | From worktree / git |
-| `diffSummary` | Commits, files, changes since base |
+| `diffSummary` | Same **object** shape as [Review handoff inputs](#review-handoff-inputs) (not a prose string) |
 | `prePrReviewRecommendation` | `"go"` |
 | `prePrReviewFlags`, `followUpsAppended` | From **`pre-pr-review`** outputs; **`followUpsAppended: false`** unless developer later chooses follow-up append at [Create-PR handoff after go](#create-pr-handoff-after-go) |
 | `ledgerParent` | From coding-session ledger when present |
