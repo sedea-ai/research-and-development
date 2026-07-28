@@ -161,7 +161,7 @@ Fragment approval remains a developer-input **USER_CHECKPOINT**, not external-wa
 | **3** — Draft fragment | Auto-advance | — |
 | **4** — Approve / revise / skip-internal | **Gate** — USER_CHECKPOINT | approve → write; revise → redraft; skip-internal → Step **7** skipped terminal; abort → non-success |
 | **5** — Write unreleased path(s) + Relevant Links | Auto-advance after approve | exception: write failure → `failure`; Relevant Links MCP failure → log + continue (do not fail capture); **skip** when Step **4** chose skip-internal |
-| **6** — Spawn coding-session fragment PR + wait | Auto-advance spawn; **#external-wait** for child result | exception: spawn failure / child non-success → `failure`; **skip** when Step **4** chose skip-internal |
+| **6** — Spawn coding-session fragment PR + wait | Auto-advance spawn; child runs [Release-note fragment ship profile](../coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding) — **no** developer gate after parent **`approve-fragment`**; **#external-wait** for child result | exception: spawn failure / child non-success → `failure`; **skip** when Step **4** chose skip-internal |
 | **7** — Merge proof + terminal MCP result | Auto-advance | success only with merge proof (or skipped internal) — both notify Squad Leader |
 
 ## Session orientation table (binding)
@@ -250,12 +250,22 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release not
 
 | Choice | Action |
 |--------|--------|
-| `approve-fragment` | Proceed to Step **5** with the draft as approved text |
+| `approve-fragment` | Proceed to Step **5** with the draft as approved text — also authorizes fragment PR ship auto-advance per [Fragment approve = ship consent (binding)](#fragment-approve--ship-consent-binding) |
 | `revise-fragment` | Collect feedback (chat / Other); redraft Step **3**; re-open this gate — **do not** write yet |
 | `skip-internal-not-required` | **Do not** write unreleased files. Proceed to Step **7** with **`releaseNoteStatus: skipped`** — notify Squad Leader (parent) via terminal result (+ **`mission_control_refocus_parent_lane`** when a parent exists) |
 | `abort-capture` | Terminal **`aborted`** with `outputs.releaseNoteStatus: failed` |
 
 **Forbidden:** writing unreleased files before `approve-fragment`; inventing skip outside this gate’s **`skip-internal-not-required`** option; auto-write without this gate; treating skip-internal as **`failed`** (that hard-blocks dissolve).
+
+### Fragment approve = ship consent (binding)
+
+When the developer picks **`approve-fragment`** at Step **4**, that pick **also** authorizes for **this dispatch**:
+
+1. Hosting unreleased write (Step **5**),
+2. Spawn **`coding-session`** fragment PR (Step **6**), and
+3. **Checkpoint auto-advance** on the fragment ship lane through merge onto **`origin/main`** and post-merge cleanup — **no** separate developer gates for commit, push, PR open, merge, or cleanup on the clean path.
+
+**Single developer gate:** Step **4** only (plus revise / skip-internal / abort). **Forbidden:** treating Step **6** spawn wait or fragment PR ship as requiring a second developer approval round after **`approve-fragment`**; re-opening ship cut-point, post-create-pr, or **`pr-review`** disposition modals on the fragment child when [Release-note fragment ship profile](../coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding) applies.
 
 ### 5. Write unreleased fragment(s)
 
@@ -295,10 +305,11 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release not
      - `planningHandoffMode`: `sections-1-4-complete`
      - `promptOnly`: `false`
      - `upstreamSkill`: `capture-release-note`
+     - **`fragmentShipAutoAdvance`:** `true` (required — parent **`approve-fragment`** authorizes auto-advance)
      - **`hostingFragmentPath`:** absolute path from Step **5** (required — do **not** rely on prose alone)
      - **`hostingFragmentRelPath`:** repo-relative path under hosting (for example `docs/release-notes/unreleased/YYYY-MM-DD-….md`) — required for merge-proof checks
      - **`rdCenterFragmentPath`:** optional absolute R&D unreleased path when written in Step **5**
-   - **`initiatingPrompt`:** Single-concern fragment ship — stage **only** the paths in **`inputs.hostingFragmentPath`** / **`hostingFragmentRelPath`** (and **`rdCenterFragmentPath`** only when set). Create hosting worktree → commit → ship chain through merge onto **`origin/main`**. On terminal success, set **`outputs.mergeProofVerified: true`**, **`outputs.mergeProofPath`** (= **`hostingFragmentRelPath`**), and evidence (`git ls-tree origin/main -- <path>` or equivalent). **Forbidden:** expanding to product code; Squad Leader create-pr; filesystem-only “done”; dropping the fragment path because it appeared only in this prompt.
+   - **`initiatingPrompt`:** Single-concern fragment ship — run [Release-note fragment ship profile](../coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding). Stage **only** **`inputs.hostingFragmentPath`** / **`hostingFragmentRelPath`** (and **`rdCenterFragmentPath`** when set). Create hosting worktree → commit → push → PR → approval-gated merge → cleanup onto **`origin/main`**. On terminal success, set **`outputs.mergeProofVerified: true`**, **`outputs.mergeProofPath`** (= **`hostingFragmentRelPath`**), **`outputs.prState: merged`**, and evidence (`git ls-tree origin/main -- <path>` or equivalent). **Forbidden:** expanding to product code; Squad Leader create-pr; product-ship gates (deploy-walk, pre-pr-review, post-create-pr handoff, **`pr-review`** disposition); filesystem-only “done”; dropping the fragment path because it appeared only in this prompt.
 3. Set `outputs.fragmentShipStatus: pending` and **#external-wait** for the child **`mission_control_send_agent_result`**.
 4. On child terminal **`success`** with merge-proof fields (or clear merge evidence in summary/outputs): proceed to Step **7** merge-proof verification on **this** lane.
 5. On child **`partial`** / **`failure`** / **`aborted`** / **`abandoned`**: set `outputs.fragmentShipStatus: failed`; proceed to Step **7** with **`releaseNoteStatus: failed`** (do **not** claim success from the local write alone).
@@ -376,6 +387,7 @@ Call MCP **`mission_control_send_agent_result`** exactly once at skill terminal 
 | Anti-pattern | Correct action |
 |--------------|----------------|
 | Auto-write without approve gate | Step **4** USER_CHECKPOINT first |
+| Second developer gate after **`approve-fragment`** on fragment ship | Parent approve = ship consent; child runs fragment profile auto-advance |
 | Ad-hoc skip / close without notes outside the gate | Only **`skip-internal-not-required`** at Step **4** authorizes skip; terminal **`releaseNoteStatus: skipped`** notifies Squad Leader |
 | Treating skip-internal as `failed` | Use **`skipped`** so dissolve hard-block clears |
 | Second spawn after `releaseNoteStatus: success` or `skipped` | Leader once-per-dispatch — this skill does not re-open |
