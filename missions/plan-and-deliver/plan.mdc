@@ -837,7 +837,7 @@ Before calling MCP **`mission_control_propose_dispatch_resolution`** when the de
 
 ### Release-versions dissolve gate (binding)
 
-**Owner:** Squad Leader on this R&D delivery mission (also inherited by wrapper missions that cross-ref this section).
+**Owner:** Squad Leader on this R&D delivery mission (also inherited by wrapper missions that cross-ref this section). **Check-only** for fragment promotion — the leader verifies merge proof / skip; it does **not** run **`create-pr`**, fragment commit, or **`promote-center-submodule-pin`**.
 
 **Overlay source of truth:** Unfenced **`releaseVersions`** in the active hosting repo **`.cursor/rules/dot-sedea.mdc`**. On-value is exactly **`release-versions`**. Consumers **must not** redefine the key. Absent or any other value → treat as **off**.
 
@@ -847,9 +847,20 @@ Before calling MCP **`mission_control_propose_dispatch_resolution`** when the de
 |-------|---------|
 | `not-required` | Flag off **or** no commits landed — gate skipped |
 | `pending` | Spawned (or must spawn); waiting for terminal success or skipped |
-| `success` | Release-note skill wrote a fragment and reported **`releaseNoteStatus: success`** |
+| `success` | Capture reported **`releaseNoteStatus: success`** **and** leader verified **merge proof** (fragment path on `origin/main` / `git ls-files` proof) — **not** local filesystem write alone |
 | `skipped` | Developer chose **Internal functionality — release note is not required** on the capture-release-note approve gate — no fragment written; dissolve hard-block clears (once-per-dispatch) |
-| `failed` | Terminal non-success without structured skip; hard-block until retry succeeds |
+| `failed` | Terminal non-success without structured skip, **or** claimed success without merge proof; hard-block until retry succeeds |
+
+**Merge proof (binding — required to map child terminal → leader `success`):**
+
+Accept **any one** (Squad Leader **check-only** from **`HOSTING_ROOT`** after `git fetch origin main` when needed):
+
+| Proof | Verify |
+|-------|--------|
+| Path on **`origin/main`** | `git ls-tree -r --name-only origin/main -- docs/release-notes/unreleased/` lists the fragment path from child **`outputs.mergeProofPath`** / **`hostingFragmentPath`** (repo-relative) |
+| Tracked on integration tip | `git ls-files --error-unmatch <repo-relative-path>` against a tree matching **`origin/main`** |
+
+**Does not clear hard-block:** local `HOSTING_ROOT` working-tree file only; `??` porcelain; Relevant Links alone; child **`releaseNoteStatus: success`** without merge-proof fields / path-on-main evidence.
 
 **Commits landed (binding — detect without inventing host sync):**
 
@@ -875,8 +886,11 @@ Before calling MCP **`mission_control_propose_dispatch_resolution`** when the de
    - **`description`:** Per-dispatch release-note fragment for unreleased notes
    - **`inputs`:** minimal skill contract fields when the skill exists; otherwise empty object `{}`
 2. Set `releaseNoteStatus: pending` and **#external-wait** for child **`mission_control_send_agent_result`**.
-3. On child terminal with **`outputs.releaseNoteStatus: success`** → set `releaseNoteStatus: success` → continue existing ship / pre-resolution gates → may propose dissolve.
-4. On child terminal with **`outputs.releaseNoteStatus: skipped`** (developer chose **Internal functionality — release note is not required** on the capture-release-note approve gate; **`outputs.skipReason: internal-functionality-not-required`**) → set `releaseNoteStatus: skipped` → continue existing ship / pre-resolution gates → may propose dissolve. Acknowledge the skip in leader recap.
+3. On child terminal with **`outputs.releaseNoteStatus: success`**:
+   - **Verify merge proof** (table above) using child **`outputs.mergeProofPath`** / hosting fragment path.
+   - When proof holds → set `releaseNoteStatus: success` → continue existing ship / pre-resolution gates → may propose dissolve.
+   - When proof **fails** → set `releaseNoteStatus: failed`; **hard-block** — treat as incomplete promotion (do **not** clear on write-only success).
+4. On child terminal with **`outputs.releaseNoteStatus: skipped`** (developer chose **Internal functionality — release note is not required** on the capture-release-note approve gate; **`outputs.skipReason: internal-functionality-not-required`**) → set `releaseNoteStatus: skipped` → continue existing ship / pre-resolution gates → may propose dissolve. Acknowledge the skip in leader recap. **No merge proof required** for skip.
 5. On pending / fail / abort → set `releaseNoteStatus: failed` when terminal non-success **without** structured skip; **hard-block** — **do not** call **`mission_control_propose_dispatch_resolution`**.
 
 USER_CHECKPOINT — release-note skill pending or failed; run or retry only (no ad-hoc skip-and-resolve on the leader lane).
@@ -891,9 +905,11 @@ USER_CHECKPOINT — release-note skill pending or failed; run or retry only (no 
 **Forbidden:**
 
 - Calling **`mission_control_propose_dispatch_resolution`** while flag is on, commits landed, and `releaseNoteStatus` is not `success` or `skipped`.
+- Clearing hard-block on local filesystem write / child write-only **`success`** without merge proof.
 - Ad-hoc skip-and-resolve / “close without notes” options on the **leader** hard-block modal (developer skip is **only** via capture-release-note **`skip-internal-not-required`**).
 - Re-spawning after `releaseNoteStatus: success` or `skipped` (once-per-dispatch).
 - Soft-warn instead of hard-block when the gate applies.
+- Squad Leader **`create-pr`**, fragment commit/push, or **`promote-center-submodule-pin`** from §§1–7 / dissolve-gate procedure — fragment PR and pin are coding-session / ship-lane owned.
 
 **Skip (no spawn, no hard-block):** flag off **or** no commits landed → `releaseNoteStatus: not-required`; proceed with existing ship / pre-resolution gates only.
 
