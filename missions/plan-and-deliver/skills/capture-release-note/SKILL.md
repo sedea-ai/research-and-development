@@ -295,7 +295,10 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release not
      - `planningHandoffMode`: `sections-1-4-complete`
      - `promptOnly`: `false`
      - `upstreamSkill`: `capture-release-note`
-   - **`initiatingPrompt`:** Single-concern fragment ship — stage **only** the hosting fragment path from Step **5** (and matching R&D unreleased path only when that file was written and must ship in the same concern — default is **hosting path only**). Create hosting worktree → commit → ship chain through merge onto **`origin/main`**. On terminal success, set **`outputs.mergeProofVerified: true`**, **`outputs.mergeProofPath`** (repo-relative path), and evidence (`git ls-tree origin/main -- <path>` or equivalent). **Forbidden:** expanding to product code; Squad Leader create-pr; filesystem-only “done”.
+     - **`hostingFragmentPath`:** absolute path from Step **5** (required — do **not** rely on prose alone)
+     - **`hostingFragmentRelPath`:** repo-relative path under hosting (for example `docs/release-notes/unreleased/YYYY-MM-DD-….md`) — required for merge-proof checks
+     - **`rdCenterFragmentPath`:** optional absolute R&D unreleased path when written in Step **5**
+   - **`initiatingPrompt`:** Single-concern fragment ship — stage **only** the paths in **`inputs.hostingFragmentPath`** / **`hostingFragmentRelPath`** (and **`rdCenterFragmentPath`** only when set). Create hosting worktree → commit → ship chain through merge onto **`origin/main`**. On terminal success, set **`outputs.mergeProofVerified: true`**, **`outputs.mergeProofPath`** (= **`hostingFragmentRelPath`**), and evidence (`git ls-tree origin/main -- <path>` or equivalent). **Forbidden:** expanding to product code; Squad Leader create-pr; filesystem-only “done”; dropping the fragment path because it appeared only in this prompt.
 3. Set `outputs.fragmentShipStatus: pending` and **#external-wait** for the child **`mission_control_send_agent_result`**.
 4. On child terminal **`success`** with merge-proof fields (or clear merge evidence in summary/outputs): proceed to Step **7** merge-proof verification on **this** lane.
 5. On child **`partial`** / **`failure`** / **`aborted`** / **`abandoned`**: set `outputs.fragmentShipStatus: failed`; proceed to Step **7** with **`releaseNoteStatus: failed`** (do **not** claim success from the local write alone).
@@ -378,6 +381,7 @@ Call MCP **`mission_control_send_agent_result`** exactly once at skill terminal 
 | Second spawn after `releaseNoteStatus: success` or `skipped` | Leader once-per-dispatch — this skill does not re-open |
 | Write only R&D center, skip hosting | Hosting write is required on approve |
 | Terminal **`success`** after local write without merge proof | Step **6** fragment PR + Step **7** merge proof required |
+| Fragment path only in `initiatingPrompt` (no spawn `inputs`) | Pass **`hostingFragmentPath`** + **`hostingFragmentRelPath`** in Step **6** spawn **`inputs`** |
 | `gh pr create` / create-pr from capture lane | Spawn **`coding-session`** for fragment ship |
 | Skip Relevant Links after first hosting write | Step **5** item **4** — call **`mission_control_update_relevant_documents`** same turn |
 | Fail capture because Relevant Links MCP ack is transcript-only | Registration is best-effort for panel UX; fragment write + merge proof + **`releaseNoteStatus`** still govern dissolve |
