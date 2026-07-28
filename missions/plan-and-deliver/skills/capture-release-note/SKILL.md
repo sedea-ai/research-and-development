@@ -1,0 +1,402 @@
+---
+name: capture-release-note
+description: >-
+  Once-per-dispatch lane: generate a release-note fragment from dispatch commits,
+  get developer structured approval, write hosting docs/release-notes/unreleased/
+  (optional R&D-center unreleased), spawn coding-session to land a hosting
+  fragment PR onto origin/main, or skip when internal functionality needs no
+  note; terminal releaseNoteStatus success only with merge proof for the dissolve gate.
+designation:
+  allowed: >-
+    Generate release-note fragment; structured approve/revise/skip-internal; write
+    hosting (and optional R&D center) unreleased fragment; register fragment
+    path(s) in Mission Control Relevant Links after first write; spawn coding-session
+    for hosting fragment PR; verify merge proof; terminal releaseNoteStatus
+    (success with merge proof, or skipped) notifying Squad Leader
+  forbidden: >-
+    Dispatch resolution; ad-hoc skip outside approve-gate option; bump/publish
+    consolidation; overlay edits; re-spawn after success or skipped;
+    sedea-builtin-center skill body; filesystem-only success without merge proof;
+    Squad Leader create-pr / promote-center-submodule-pin from this skill
+inputs:
+  baseRef:
+    type: string
+    description: >-
+      Integration ref for commit range (hosting and optional R&D center). Default origin/main.
+    required: false
+    default: origin/main
+  hostingRoot:
+    type: string
+    description: >-
+      Absolute HOSTING_ROOT. When omitted, walk up from cwd until .sedea/centers/sedea/ exists.
+    required: false
+  writeRdCenterUnreleased:
+    type: boolean
+    description: >-
+      When true, also write the approved fragment under the R&D center
+      docs/release-notes/unreleased/ (CENTER_WORKTREE_ROOT preferred).
+    required: false
+    default: false
+  rdCenterRoot:
+    type: string
+    description: >-
+      Absolute path to research-and-development center checkout used when
+      writeRdCenterUnreleased is true (CENTER_WORKTREE_ROOT preferred).
+    required: false
+  dispatchTitle:
+    type: string
+    description: Optional human title for fragment heading and filename slug.
+    required: false
+laneRules:
+  - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
+  - ".sedea/centers/sedea/rules/4_mission.mdc"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/capture-release-note/SKILL.md"
+  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+warmUpRules:
+  - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
+  - ".sedea/centers/sedea/rules/4_mission.mdc"
+---
+
+# Capture release note
+
+**Spawn-only (binding).** Squad Leaders spawn this skill **once per dispatch** when the hosting overlay sets **`releaseVersions: release-versions`** and commits landed — see [`../plan.mdc`](../../plan.mdc) § *Release-versions dissolve gate*. Mission Control validates frontmatter **`inputs`** at spawn time. **Forbidden:** running this skill **inline** on the Squad Leader lane as a substitute for the once-per-dispatch child; inventing a second spawn after terminal **`success`**; landing or editing a skill body under **`.sedea/centers/sedea/skills/`** or **`sedea-builtin-center`**.
+
+**Owns:** generate → structured approve/revise **or** skip-internal → write unreleased fragment(s) + Relevant Links (when approved) → spawn **`coding-session`** to land a hosting fragment PR that merges the fragment onto **`origin/main`** → verify **merge proof** → terminal **`mission_control_send_agent_result`** with **`releaseNoteStatus`** (`success` with merge proof \| `skipped`) so the Squad Leader dissolve gate can clear. On skip-internal: no write, no fragment PR.
+
+**Out of scope:** overlay enablement; bump/sentinel consolidation; GitHub Release publish; Master Plan / phase planning; dispatch resolution; catch-up of pre-gap local `??` unreleased files; hosting submodule pin (ship lane after center merge — not this skill).
+
+## Warm-up manifest (spawned)
+
+Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up*. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. **No `alwaysApply` frontmatter flip.**
+
+### `bootstrapRules` — host-resolved (R&D layer)
+
+| Path | Purpose |
+|------|---------|
+| `.sedea/centers/research-and-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === research-and-development` |
+
+### `skillWarmUp` — frontmatter `warmUpRules`
+
+| Path | Purpose |
+|------|---------|
+| `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice / Checkpoint gate UX |
+| `.sedea/centers/sedea/rules/4_mission.mdc` | Spawn/result / dissolve-gate spawn contract |
+
+### `laneRules` — frontmatter `laneRules`
+
+| Path | Purpose |
+|------|---------|
+| `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice |
+| `.sedea/centers/sedea/rules/4_mission.mdc` | Mission spawn / terminal result |
+| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/capture-release-note/SKILL.md` | This skill procedure |
+| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+
+## Agent messaging (MCP)
+
+| Action | MCP tool |
+|--------|----------|
+| **This** spawned lane terminal (and terminal re-emits) | **`mission_control_send_agent_result`** |
+| Developer approve / revise | **`mission_control_present_structured_choice`** (or AskQuestion when available) |
+| Fragment PR ship (after approve + write) | **`mission_control_spawn_agent`** → **`coding-session/SKILL.md`** |
+| Optional parent refocus before terminal | **`mission_control_refocus_parent_lane`** |
+
+**Forbidden in MCP args:** host-resolved identity keys (`correlationId`, `dispatchId`, `slotId`, …).
+
+**Forbidden:** **`mission_control_propose_dispatch_resolution`** — only the Squad Leader closes the dispatch. **Forbidden:** this skill calling **`gh pr create`**, hosting **`create-pr`**, or **`promote-center-submodule-pin`** — fragment PR and pin are **`coding-session`** / ship-lane owned.
+
+## Inputs
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `baseRef` | no | Default `origin/main` — commit range base for hosting (± R&D center) |
+| `hostingRoot` | no | Absolute **`HOSTING_ROOT`**; resolve by walk-up when omitted |
+| `writeRdCenterUnreleased` | no | Default `false` — set `true` when this dispatch edited R&D center and an R&D unreleased write is desired |
+| `rdCenterRoot` | no | Absolute R&D center checkout for optional write / center commit collection |
+| `dispatchTitle` | no | Fragment H1 / filename slug hint |
+
+Lane identity supplies **`dispatchId`**, **`operationsDocsDirectory`**, and slot identity — do **not** invent dispatch scope from folder mtimes.
+
+## Execution diagram
+
+```mermaid
+flowchart TD
+  A[Validate spawn inputs] --> B[Resolve HOSTING_ROOT]
+  B --> C[Collect dispatch commits]
+  C --> D[Draft fragment markdown]
+  D --> E[USER_CHECKPOINT approve or revise]
+  E -->|revise| D
+  E -->|approve| F[Write hosting unreleased]
+  F --> R[Relevant Links register]
+  R --> G{writeRdCenterUnreleased?}
+  G -->|yes| H[Write R&D center unreleased]
+  G -->|no| S[Spawn coding-session fragment PR]
+  H --> R2[Register RD Relevant Links]
+  R2 --> S
+  S --> W[#external-wait fragment ship]
+  W --> M{Merge proof on origin/main?}
+  M -->|yes| I[Terminal success + merge proof]
+  M -->|no| J[Terminal non-success]
+  E -->|skip-internal| K[Terminal skipped notify parent]
+  E -->|abort| J
+```
+
+## Checkpoint turn UX (skill-local)
+
+Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`capture-release-note`**.
+
+Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md).
+
+**External-wait surfaces (binding):**
+
+| Surface | When |
+|---------|------|
+| Fragment PR ship child | After Step **6** spawn — wait for **`coding-session`** **`mission_control_send_agent_result`** before merge-proof check / terminal |
+
+Fragment approval remains a developer-input **USER_CHECKPOINT**, not external-wait.
+
+| Step | Checkpoint behavior | Gate |
+|------|---------------------|------|
+| **1** — Validate inputs / resolve roots | Auto-advance | exception: missing hosting root → `failure` |
+| **2** — Collect commits | Auto-advance | exception: no commits → `failure` (leader should not have spawned) |
+| **3** — Draft fragment | Auto-advance | — |
+| **4** — Approve / revise / skip-internal | **Gate** — USER_CHECKPOINT | approve → write; revise → redraft; skip-internal → Step **7** skipped terminal; abort → non-success |
+| **5** — Write unreleased path(s) + Relevant Links | Auto-advance after approve | exception: write failure → `failure`; Relevant Links MCP failure → log + continue (do not fail capture); **skip** when Step **4** chose skip-internal |
+| **6** — Spawn coding-session fragment PR + wait | Auto-advance spawn; child runs [Release-note fragment ship profile](../coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding) — **no** developer gate after parent **`approve-fragment`**; **#external-wait** for child result | exception: spawn failure / child non-success → `failure`; **skip** when Step **4** chose skip-internal |
+| **7** — Merge proof + terminal MCP result | Auto-advance | success only with merge proof (or skipped internal) — both notify Squad Leader |
+
+## Session orientation table (binding)
+
+**When required:** At the approve/revise **USER_CHECKPOINT** — render as the **first block** in `displayMarkdown`.
+
+| Field | Value |
+|-------|-------|
+| Plan | — (dissolve-gate skill; no PR plan anchor) |
+| Worktree | — |
+| Branch | — |
+| Dispatch | `<dispatchId>` from lane identity |
+| Fragment draft | `<absolute draft path or "(in recap)">` |
+| Hosting unreleased | `<HOSTING_ROOT>/docs/release-notes/unreleased/` |
+| R&D unreleased | `<rdCenterRoot>/docs/release-notes/unreleased/` or — |
+
+## Steps
+
+### 1. Validate inputs and resolve roots
+
+1. Read spawn `inputs` (may be `{}` — all fields optional with defaults).
+2. Resolve **`HOSTING_ROOT`**: use `inputs.hostingRoot` when absolute and contains `.sedea/centers/sedea/`; otherwise walk up from cwd until that path exists; on Mission Control prefer MCP **`sedea_get_hosting_root`**.
+3. Resolve **`baseRef`** = `inputs.baseRef` or `origin/main`.
+4. Record `outputs.writeRdCenterUnreleased` from input (default `false`).
+5. Refresh lane display when stale: title `RN-Capture release note`, description naming the dispatch.
+
+- **Next-step resolution:** Auto-advance to Step **2**.
+
+### 2. Collect dispatch commits
+
+From **`HOSTING_ROOT`** (and optionally **`rdCenterRoot`** when provided or when R&D center commits are clearly part of this dispatch):
+
+1. Prefer commits attributable to **this dispatch** when the lane or parent handoff names SHAs / worktree ranges.
+2. Otherwise collect `git -C <root> log --oneline <baseRef>..HEAD` for:
+   - hosting **`HOSTING_ROOT`** (and/or known hosting **`WORKTREE_ROOT`** for this dispatch when passed in initiating context), and
+   - R&D center checkout when `rdCenterRoot` is set or R&D center commits are clearly part of this dispatch.
+3. Build a working set of subjects + short SHAs. Exclude merge-noise and `release-notes:` sentinel commits when obvious.
+4. If the working set is **empty**, stop with terminal **`failure`** — `outputs.releaseNoteStatus: failed`, summary stating no commits to note (Squad Leader should have skipped spawn).
+
+- **Next-step resolution:** Auto-advance to Step **3**.
+
+### 3. Draft fragment markdown
+
+Author a markdown fragment:
+
+```markdown
+# <dispatchTitle or short dispatch id>
+
+- <notable change 1>
+- <notable change 2>
+```
+
+Rules:
+
+- Prefer operator-readable bullets (what changed / why it matters), not raw SHA dumps.
+- Include a trailing HTML comment with provenance when useful:
+  `<!-- dispatchId: <uuid> ; baseRef: <ref> ; generated: <ISO-date> -->`
+- Keep the draft in lane state / recap — **do not** write unreleased paths until Step **4** approves.
+
+- **Next-step resolution:** Auto-advance to Step **4**.
+
+### 4. Structured approve / revise / skip-internal
+
+USER_CHECKPOINT — approve, revise, or skip the release-note fragment before unreleased write. defaultOptionId: approve-fragment
+
+Call **`mission_control_present_structured_choice`** (`modalTitle`: *Release notes — approve fragment*).
+
+**`displayMarkdown` must include:**
+
+1. Session orientation table (binding)
+2. The full draft fragment (fenced markdown)
+3. Intended write paths (hosting required; R&D center when `writeRdCenterUnreleased`)
+
+**Required options** (mission-specific first, then Universal modal trailer):
+
+| Option id | Label |
+|-----------|--------|
+| `approve-fragment` | Approve — write unreleased fragment |
+| `revise-fragment` | Revise — I'll give feedback |
+| `skip-internal-not-required` | Internal functionality — release note is not required |
+| `abort-capture` | Abort release-note capture |
+| `more-details` | More details for option _ |
+| `have-question` | I have a question |
+| `introspect-incident` | Introspect and report an incident |
+| `other` | Other |
+
+| Choice | Action |
+|--------|--------|
+| `approve-fragment` | Proceed to Step **5** with the draft as approved text — also authorizes fragment PR ship auto-advance per [Fragment approve = ship consent (binding)](#fragment-approve--ship-consent-binding) |
+| `revise-fragment` | Collect feedback (chat / Other); redraft Step **3**; re-open this gate — **do not** write yet |
+| `skip-internal-not-required` | **Do not** write unreleased files. Proceed to Step **7** with **`releaseNoteStatus: skipped`** — notify Squad Leader (parent) via terminal result (+ **`mission_control_refocus_parent_lane`** when a parent exists) |
+| `abort-capture` | Terminal **`aborted`** with `outputs.releaseNoteStatus: failed` |
+
+**Forbidden:** writing unreleased files before `approve-fragment`; inventing skip outside this gate’s **`skip-internal-not-required`** option; auto-write without this gate; treating skip-internal as **`failed`** (that hard-blocks dissolve).
+
+### Fragment approve = ship consent (binding)
+
+When the developer picks **`approve-fragment`** at Step **4**, that pick **also** authorizes for **this dispatch**:
+
+1. Hosting unreleased write (Step **5**),
+2. Spawn **`coding-session`** fragment PR (Step **6**), and
+3. **Checkpoint auto-advance** on the fragment ship lane through merge onto **`origin/main`** and post-merge cleanup — **no** separate developer gates for commit, push, PR open, merge, or cleanup on the clean path.
+
+**Single developer gate:** Step **4** only (plus revise / skip-internal / abort). **Forbidden:** treating Step **6** spawn wait or fragment PR ship as requiring a second developer approval round after **`approve-fragment`**; re-opening ship cut-point, post-create-pr, or **`pr-review`** disposition modals on the fragment child when [Release-note fragment ship profile](../coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding) applies.
+
+### 5. Write unreleased fragment(s)
+
+**After** `approve-fragment`:
+
+1. Ensure directory **`HOSTING_ROOT/docs/release-notes/unreleased/`** exists.
+2. Choose a stable filename:
+   - Prefer `YYYY-MM-DD-<kebab-dispatch-title-or-short-id>.md`
+   - If the file exists, append `-2`, `-3`, … rather than overwrite.
+3. **Write** the approved markdown to that hosting path (primary clone **`HOSTING_ROOT`** — unreleased notes are hosting tracked docs under `docs/`, not `.sedea/operations/`).
+4. **Relevant Links (first write — binding):** On the **same turn** as the first successful hosting write for this skill run, call MCP **`mission_control_update_relevant_documents`** with the absolute hosting fragment path so Mission Control Relevant Links lists the new file. Prefer `{ path, kind: "other", label }` (label = fragment basename or short dispatch title). **Do not** call this before the write succeeds. Host dedupes — safe if the path was already registered.
+5. When `writeRdCenterUnreleased: true` and `rdCenterRoot` is set:
+   - Ensure **`rdCenterRoot/docs/release-notes/unreleased/`** exists.
+   - Write the same (or R&D-scoped) fragment with a matching filename under that directory.
+   - On that first successful R&D-center write, also call **`mission_control_update_relevant_documents`** for the absolute R&D fragment path (`kind: "other"`).
+6. Record absolute paths in `outputs.hostingFragmentPath` and optional `outputs.rdCenterFragmentPath`. Set `outputs.relevantDocumentsRegistered: true` when the hosting Relevant Links call was attempted after a successful write (even if the stdio MCP ack is transcript-only).
+
+**Forbidden:** writing under `WORKTREE_ROOT/.sedea/operations/`; inventing a second fragment after success on the same dispatch; skipping hosting write when approve succeeded; writing under **`.sedea/centers/sedea/`** or **`sedea-builtin-center`**; registering Relevant Links for a path that was not written this run; treating Relevant Links registration failure as a reason to skip the hosting write; treating Step **5** write alone as terminal **`releaseNoteStatus: success`** (merge proof is Step **7**).
+
+- **Next-step resolution:** Auto-advance to Step **6** (fragment PR handoff). **Do not** emit terminal success after write alone.
+
+### 6. Spawn coding-session for hosting fragment PR
+
+**After** Step **5** succeeds (hosting fragment file exists on **`HOSTING_ROOT`**):
+
+1. Record `outputs.hostingFragmentPath` and the **repo-relative** path under hosting (for example `docs/release-notes/unreleased/YYYY-MM-DD-….md`).
+2. Emit **`mission_control_spawn_agent`** **once** with:
+   - **`skillPath`:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`
+   - **`slug`:** `release-note-fragment` (dispatch-unique; **do not** open a second fragment ship after merge-proven success)
+   - **`name`:** `RN-Fragment PR ship` (rule **50** prefix shape)
+   - **`description`:** Land hosting fragment PR for the approved unreleased note onto `origin/main`
+   - **`inputs`:**
+     - `repoPath`: absolute **`HOSTING_ROOT`**
+     - `baseRef`: `origin/main` (or resolved hosting integration ref)
+     - `readyForImplementation`: `true`
+     - `planningHandoffApproved`: `true`
+     - `planningHandoffMode`: `sections-1-4-complete`
+     - `promptOnly`: `false`
+     - `upstreamSkill`: `capture-release-note`
+     - **`fragmentShipAutoAdvance`:** `true` (required — parent **`approve-fragment`** authorizes auto-advance)
+     - **`hostingFragmentPath`:** absolute path from Step **5** (required — do **not** rely on prose alone)
+     - **`hostingFragmentRelPath`:** repo-relative path under hosting (for example `docs/release-notes/unreleased/YYYY-MM-DD-….md`) — required for merge-proof checks
+     - **`rdCenterFragmentPath`:** optional absolute R&D unreleased path when written in Step **5**
+   - **`initiatingPrompt`:** Single-concern fragment ship — run [Release-note fragment ship profile](../coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding). Stage **only** **`inputs.hostingFragmentPath`** / **`hostingFragmentRelPath`** (and **`rdCenterFragmentPath`** when set). Create hosting worktree → commit → push → PR → approval-gated merge → cleanup onto **`origin/main`**. On terminal success, set **`outputs.mergeProofVerified: true`**, **`outputs.mergeProofPath`** (= **`hostingFragmentRelPath`**), **`outputs.prState: merged`**, and evidence (`git ls-tree origin/main -- <path>` or equivalent). **Forbidden:** expanding to product code; Squad Leader create-pr; product-ship gates (deploy-walk, pre-pr-review, post-create-pr handoff, **`pr-review`** disposition); filesystem-only “done”; dropping the fragment path because it appeared only in this prompt.
+3. Set `outputs.fragmentShipStatus: pending` and **#external-wait** for the child **`mission_control_send_agent_result`**.
+4. On child terminal **`success`** with merge-proof fields (or clear merge evidence in summary/outputs): proceed to Step **7** merge-proof verification on **this** lane.
+5. On child **`partial`** / **`failure`** / **`aborted`** / **`abandoned`**: set `outputs.fragmentShipStatus: failed`; proceed to Step **7** with **`releaseNoteStatus: failed`** (do **not** claim success from the local write alone).
+
+**Forbidden:** calling **`gh pr create`** or inline **`create-pr`** from this capture lane; treating local write + Relevant Links as done; skipping the spawn when approve + write succeeded; Squad Leader owning fragment PR create/merge.
+
+- **Next-step resolution:** After child result (or spawn failure), auto-advance to Step **7**. On the spawn turn under Checkpoint, emit the #external-wait resume surface per rule **2** when StreamFinal yields before the child returns.
+
+### 7. Merge proof + terminal result
+
+**Merge proof (binding — required for `releaseNoteStatus: success`):**
+
+Accept **any one** of:
+
+| Proof | How to verify (from **`HOSTING_ROOT`**) |
+|-------|----------------------------------------|
+| Path on **`origin/main`** | `git fetch origin main` then `git ls-tree -r --name-only origin/main -- docs/release-notes/unreleased/` contains the fragment basename / repo-relative path |
+| Tracked on integration tip | `git ls-files --error-unmatch <repo-relative-path>` after checkout/fetch of a tree that matches **`origin/main`** tip |
+
+**Does not count as merge proof:** file exists only on the primary clone working tree; `??` porcelain; Relevant Links registration alone; child **`releaseNoteStatus`** / write success without path-on-main evidence.
+
+1. When Step **4** chose **`skip-internal-not-required`:** skip merge proof; emit terminal **`skipped`** as below.
+2. Otherwise verify merge proof for `outputs.hostingFragmentPath` (repo-relative). Set `outputs.mergeProofVerified: true` and `outputs.mergeProofPath` on success; on failure set `outputs.mergeProofVerified: false` and **`releaseNoteStatus: failed`**.
+3. Call **`mission_control_refocus_parent_lane`** with a short reason when a resolvable parent exists (required after **`skip-internal-not-required`**; recommended after merge-proven success).
+4. Emit **exactly one** terminal **`mission_control_send_agent_result`**:
+
+| Field | Value on merge-proven happy path | Value on skip-internal |
+|-------|----------------------------------|------------------------|
+| `status` | `success` | `success` |
+| `summary` | 1–3 sentences naming **`releaseNoteStatus: success`**, hosting fragment path, **merge proof** (path on `origin/main`), and optional R&D path | 1–3 sentences naming **`releaseNoteStatus: skipped`**, reason **internal functionality — release note is not required**, and that no fragment was written — Squad Leader may clear dissolve hard-block |
+| `outputs.releaseNoteStatus` | `success` | `skipped` |
+| `outputs.skipReason` | omit | `internal-functionality-not-required` |
+| `outputs.releaseNoteWritten` | `true` | `false` |
+| `outputs.mergeProofVerified` | `true` | omit / `false` |
+| `outputs.mergeProofPath` | Repo-relative path proven on `origin/main` | omit |
+| `outputs.hostingFragmentPath` | Absolute path written | omit |
+| `outputs.rdCenterFragmentPath` | Absolute path when written; omit otherwise | omit |
+| `outputs.fragmentFilename` | Basename only | omit |
+| `outputs.relevantDocumentsRegistered` | `true` after Step **5** Relevant Links call for the hosting fragment | omit / `false` |
+| `outputs.fragmentShipStatus` | `merged` | omit |
+
+On abort / failure / write error / missing merge proof: `status` ∈ `aborted` \| `failure` \| `partial`; `outputs.releaseNoteStatus: failed`; include `errors[].message` when useful.
+
+**Name `releaseNoteStatus` and merge-proof outcome in `summary`** so the Squad Leader dissolve gate can clear hard-block only when proof (or skip) is present.
+
+## Completion (spawned)
+
+### Host protocol line
+
+Call MCP **`mission_control_send_agent_result`** exactly once at skill terminal (re-call after follow-up on the same lane if the developer continues after a prior terminal).
+
+### Outputs
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `releaseNoteStatus` | string | `success` \| `skipped` \| `failed` — leader maps to dissolve gate; **`success` requires merge proof** |
+| `skipReason` | string | Present when skipped — `internal-functionality-not-required` |
+| `releaseNoteWritten` | boolean | `true` after hosting write; `false` on skip-internal |
+| `mergeProofVerified` | boolean | `true` when fragment path proven on `origin/main` |
+| `mergeProofPath` | string | Repo-relative path proven on integration tip |
+| `fragmentShipStatus` | string | `pending` \| `merged` \| `failed` — coding-session fragment PR |
+| `hostingFragmentPath` | string | Absolute path under hosting unreleased |
+| `rdCenterFragmentPath` | string | Optional absolute R&D center unreleased path |
+| `fragmentFilename` | string | Basename |
+| `relevantDocumentsRegistered` | boolean | Hosting fragment registered via **`mission_control_update_relevant_documents`** after first write |
+| `baseRef` | string | Range base used |
+| `commitCount` | number | Commits considered in the draft |
+
+## Completion (inline)
+
+**Not supported.** This skill is spawn-only. If invoked inline by mistake: stop; tell the invoker to spawn `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/capture-release-note/SKILL.md` with slug `release-note` per the dissolve gate.
+
+## Anti-patterns (binding)
+
+| Anti-pattern | Correct action |
+|--------------|----------------|
+| Auto-write without approve gate | Step **4** USER_CHECKPOINT first |
+| Second developer gate after **`approve-fragment`** on fragment ship | Parent approve = ship consent; child runs fragment profile auto-advance |
+| Ad-hoc skip / close without notes outside the gate | Only **`skip-internal-not-required`** at Step **4** authorizes skip; terminal **`releaseNoteStatus: skipped`** notifies Squad Leader |
+| Treating skip-internal as `failed` | Use **`skipped`** so dissolve hard-block clears |
+| Second spawn after `releaseNoteStatus: success` or `skipped` | Leader once-per-dispatch — this skill does not re-open |
+| Write only R&D center, skip hosting | Hosting write is required on approve |
+| Terminal **`success`** after local write without merge proof | Step **6** fragment PR + Step **7** merge proof required |
+| Fragment path only in `initiatingPrompt` (no spawn `inputs`) | Pass **`hostingFragmentPath`** + **`hostingFragmentRelPath`** in Step **6** spawn **`inputs`** |
+| `gh pr create` / create-pr from capture lane | Spawn **`coding-session`** for fragment ship |
+| Skip Relevant Links after first hosting write | Step **5** item **4** — call **`mission_control_update_relevant_documents`** same turn |
+| Fail capture because Relevant Links MCP ack is transcript-only | Registration is best-effort for panel UX; fragment write + merge proof + **`releaseNoteStatus`** still govern dissolve |
+| Land skill under builtin-center / `.sedea/centers/sedea/skills/` | R&D plan-and-deliver path only |
+| Edit overlay / bump scripts here | Out of scope — later phases |
+| Prose-only idle at approve gate | Always MCP structured choice |
