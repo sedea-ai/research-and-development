@@ -86,7 +86,11 @@ For **`upsert-pr --repo`**, use **`$(basename "$HOSTING_ROOT")`** — the **host
 
 ### `pr-review.mjs`
 
-Run **`node .sedea/centers/sedea/scripts/pr-review.mjs`** with **`cd "$HOSTING_ROOT"`** (two-step **`PR_REVIEW_INPUT`** per [`pr-review/SKILL.md`](../missions/plan-and-deliver/skills/pr-review/SKILL.md)). Git / `gh` in **`pr-review`** Step 0 may use the **hosting repo worktree**; the script binary path must not assume `.sedea/` exists under the worktree root.
+Run **`.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/sedea/scripts/pr-review.mjs`** with **`cd "$HOSTING_ROOT"`** (two-step **`PR_REVIEW_INPUT`** per [`pr-review/SKILL.md`](../missions/plan-and-deliver/skills/pr-review/SKILL.md)). **Never** bare **`node`** for **`pr-review.mjs`** — the wrapper sources **`resolve-node.sh`**.
+
+**Forbidden fallbacks when the wrapper exits non-zero:** **`brew install node`** / other package-manager Node installs; **fnm** / **nvm** bootstrap to unblock agent scripts; borrowing Node from another application. **Stop and ask** the developer via structured choice — do not improvise a runtime.
+
+Git / `gh` in **`pr-review`** Step 0 may use the **hosting repo worktree**; the script binary path must not assume `.sedea/` exists under the worktree root.
 
 ### Forbidden pattern
 
@@ -324,7 +328,7 @@ Apply § *Hosting repo cwd for scripts (canonical)* for every script invocation 
 
 1. **Commit** (step 1). **Skip this step if `git status --short` is empty** — typical when the worktree is already committed after **`pre-pr-review`** **go**. Do not amend the previous commit and do not pass `--allow-empty`; just proceed to step 2.
 2. Push to remote.
-3. **PR comment reconciliation (`pr-review` → this cadence).** This step is **only** [`pr-review`](../missions/plan-and-deliver/skills/pr-review/SKILL.md) **Step 5 — GitHub only** (not Steps 1–4). When this coding session already ran that skill’s Steps 1–4 (per-comment dispositions in the Step 4 report) and **GitHub** reply / resolve / minimize / summary from Step 5 has **not** run yet, the **commit and push cadence is incomplete** until Step 5 runs — **same agent turn**, immediately after the push succeeds (so the summary can cite `git rev-parse --short HEAD` in the **worktree**). Execute from **`HOSTING_ROOT`**: `cd "$HOSTING_ROOT" && node .sedea/centers/sedea/scripts/pr-review.mjs` (two-step `PR_REVIEW_INPUT` per that skill). If thread IDs or PR identity are missing from context, re-run that skill’s **Step 1** script array for the same PR, then Step 5. If there was no `pr-review` triage in this chat, **skip step 3 entirely** — do not run the script.
+3. **PR comment reconciliation (`pr-review` → this cadence).** This step is **only** [`pr-review`](../missions/plan-and-deliver/skills/pr-review/SKILL.md) **Step 5 — GitHub only** (not Steps 1–4). When this coding session already ran that skill’s Steps 1–4 (per-comment dispositions in the Step 4 report) and **GitHub** reply / resolve / minimize / summary from Step 5 has **not** run yet, the **commit and push cadence is incomplete** until Step 5 runs — **same agent turn**, immediately after the push succeeds (so the summary can cite `git rev-parse --short HEAD` in the **worktree**). Execute from **`HOSTING_ROOT`**: `cd "$HOSTING_ROOT" && .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/sedea/scripts/pr-review.mjs` (two-step `PR_REVIEW_INPUT` per that skill). If thread IDs or PR identity are missing from context, re-run that skill’s **Step 1** script array for the same PR, then Step 5. If there was no `pr-review` triage in this chat, **skip step 3 entirely** — do not run the script.
 
    **Anti-patterns (agent failure):**
 
