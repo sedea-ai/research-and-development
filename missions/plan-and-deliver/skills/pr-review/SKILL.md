@@ -117,13 +117,19 @@ Script: `.sedea/centers/sedea/scripts/pr-review.mjs` (reads PAT from `GH_TOKEN`,
 **`pr-review.mjs`** and **`plan-state.mjs`** run from **`HOSTING_ROOT`** (hosting repo whose root contains **`.sedea/`**), not from a worktree’s `git rev-parse --show-toplevel` alone. Canonical contract: [`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`](../../../../rules/20_efficient-pr-shipping.mdc) § *Hosting repo cwd for scripts (canonical)* and [`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`](../../../../rules/31_dispatch-scope.mdc) § *Legacy CLI (`plan-state.mjs`) — hybrid only*.
 
 - **`WORKTREE_ROOT`** — hosting repo worktree where you edit code (`git` / `gh` in Step 0).
-- **`HOSTING_ROOT`** — walk up until **`.sedea/centers/sedea/`** or **`.sedea/`** exists; **`cd "$HOSTING_ROOT"`** before **`node …/plan-state.mjs`** or **`node …/pr-review.mjs`**.
+- **`HOSTING_ROOT`** — walk up until **`.sedea/centers/sedea/`** or **`.sedea/`** exists; **`cd "$HOSTING_ROOT"`** before **`node …/plan-state.mjs`** or **`.sedea/centers/sedea/scripts/run-sedea-node.sh …/pr-review.mjs`**.
+
+### Node launcher for `pr-review.mjs` (binding)
+
+Invoke **`pr-review.mjs`** through **`.sedea/centers/sedea/scripts/run-sedea-node.sh`** — **never** bare **`node`**. The wrapper sources **`resolve-node.sh`** (Electron-as-Node in Sedea agent shells).
+
+**Forbidden fallbacks when the wrapper exits non-zero:** **`brew install node`** / other package-manager Node installs; **fnm** / **nvm** bootstrap to unblock agent scripts; borrowing Node from another application (Codex.app, foreign Electron, etc.). **Stop and ask** the developer via structured choice — do not improvise a runtime.
 
 The script reads input from (in order): **`PR_REVIEW_INPUT`** (absolute path to a JSON file — keeps payloads **outside** the repo).
 
 ### Input file and script: **always two separate steps**
 
-The point is a **reviewable JSON payload** and a **stable allowlisted shell command** (`node .sedea/centers/sedea/scripts/pr-review.mjs` only) — **never** `printf … && node …` in one line.
+The point is a **reviewable JSON payload** and a **stable allowlisted shell command** (`.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/sedea/scripts/pr-review.mjs` only) — **never** `printf … && run-sedea-node.sh …` in one line.
 
 1. **First step — write the input file only**
  Create a temp path outside the repo, e.g. `PRR_INPUT=$(mktemp /tmp/cursor-pr-review-input.XXXXXX)` (six trailing `X`). Use the **Write** tool to write the JSON to that **absolute** path (or a **Shell** that **only** writes the file and exits — **no** `&&` to the script).
@@ -131,17 +137,17 @@ The point is a **reviewable JSON payload** and a **stable allowlisted shell comm
 2. **Second step — run the script only**
  A **separate** **Shell** invocation (from **`HOSTING_ROOT`**, not the worktree root alone):
 
- `cd "$HOSTING_ROOT" && PR_REVIEW_INPUT="<absolute-path-from-step-1>" node .sedea/centers/sedea/scripts/pr-review.mjs`
+ `cd "$HOSTING_ROOT" && PR_REVIEW_INPUT="<absolute-path-from-step-1>" .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/sedea/scripts/pr-review.mjs`
 
  No `echo`/`printf`/heredoc, no redirection, no `&&` chaining write + script on this line.
 
 **Never** chain writing and executing in one shell line, for example:
 
-`printf '…' > /tmp/foo.json && node .sedea/centers/sedea/scripts/pr-review.mjs`
+`printf '…' > /tmp/foo.json && .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/sedea/scripts/pr-review.mjs`
 
 That defeats the two-step workflow (re-approval noise, hides the clean script-only command). **Never** use a shell `for` loop that overwrites the input file and calls the script each iteration — put the full sequence in **one** JSON payload (single object or **array** of commands) and run the script **once**.
 
-After success, `rm -f` the temp input file (optional). To invoke end-to-end: **Write** JSON to the temp path, then **Shell** the `cd … && PR_REVIEW_INPUT=… node …` line **once**.
+After success, `rm -f` the temp input file (optional). To invoke end-to-end: **Write** JSON to the temp path, then **Shell** the `cd … && PR_REVIEW_INPUT=… run-sedea-node.sh …/pr-review.mjs` line **once**.
 
 Input format — **one object** (single command) or a **JSON array** of command objects executed in order:
 
@@ -177,7 +183,7 @@ When this skill is active, **`pr-review.mjs` is the only permitted GitHub interf
 **First-action invariant:** If invoker context, user context, or an open gate references **`pr-review`**, the first GitHub-touching shell in that turn must be the Step 1 collect array:
 
 ```bash
-cd "$HOSTING_ROOT" && PR_REVIEW_INPUT="<absolute-path>" node .sedea/centers/sedea/scripts/pr-review.mjs
+cd "$HOSTING_ROOT" && PR_REVIEW_INPUT="<absolute-path>" .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/sedea/scripts/pr-review.mjs
 ```
 
 Run **Step 1b** (`gh pr checks`) immediately after Step 1 on the same turn. Checking PR status during an open **`pr-review`** cycle is **not** exempt from this invariant unless the active pick is **`merged-pr-proceed`** or **`check-pr-status`** on **`coding-session`** (merge metadata only).
@@ -478,7 +484,7 @@ If all comments were **Skipped (no follow-up)** with **no** code edits **and** *
 
 - **Skipped-only triage** — Step 3 marked every comment **Skipped (no follow-up)** with **no** code edits: run **GitHub only** immediately (no commit/push).
 
-**GitHub only** (two-step `PR_REVIEW_INPUT` + `node .sedea/centers/sedea/scripts/pr-review.mjs` per § *Input file and script* — never chain write + script):
+**GitHub only** (two-step `PR_REVIEW_INPUT` + `.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/sedea/scripts/pr-review.mjs` per § *Input file and script* — never chain write + script):
 
 1. **Reply + resolve** each inline thread using approved dispositions from Step 4 — **Must fix**, **Should fix**, **Skipped (no follow-up)**, or **Skipped → follow-up** (same paraphrase + `(target: …)` as Step 3a) plus short reasoning, then resolve the thread.
 
