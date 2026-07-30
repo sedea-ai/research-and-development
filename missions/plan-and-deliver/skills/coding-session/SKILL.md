@@ -654,9 +654,10 @@ When this run anchors Phase 2 to a Plan Board **`.plan.md`** under **`.sedea/ope
 Otherwise:
 
 1. Resolve the plan’s **absolute** path. If you cannot, **stop** and ask for a path or `plan-state` linkage.
-2. From the **hosting repo root**:
+2. From **`HOSTING_ROOT`**:
  ```bash
- node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-ws-completeness.mjs --file "<absolute-plan-path>"
+ cd "$HOSTING_ROOT"
+ .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-ws-completeness.mjs --file "<absolute-plan-path>"
  ```
  - Exit **0** (`OK` / `SKIP_NOT_PER_PR`) → `planCompleteness: complete` for the worktree-open gate.
  - Exit **1** (`INCOMPLETE`) → `planCompleteness: incomplete` — **do not** create worktrees yet; route to the worktree-open gate (pr-plan spawn handoff vs generic incomplete).
@@ -913,12 +914,13 @@ Run only **after** [Pre-worktree validation](#pre-worktree-validation-plan-compl
  - **Non-zero:** parse failure JSON when present; set **`outputs.bootstrapStatus: failed`**, **`outputs.bootstrapFailureReason`** from **`message`**; stop with structured retry — exit **10** dirty primary (developer resolves on **`HOSTING_ROOT`**); exit **11** warm-primary (**no `full` fallback** on center path); exit **12** overlay missing / mode not allowed.
  - If `baseRef` input is supplied, it must be a remote integration ref such as `origin/main`; do not accept a local-only ref for worktree creation.
 
-2. **Record the session on the plan** (see [Sidecar state](#sidecar-state)). From the **hosting repo root**:
+2. **Record the session on the plan** (see [Sidecar state](#sidecar-state)). From **`HOSTING_ROOT`**:
  ```bash
- node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs set-worktrees \
+ cd "$HOSTING_ROOT"
+ .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs set-worktrees \
  --slug <plan-slug> \
  --json '[{"repo":"<repo-basename>","path":"<absolute-worktree-path>"}]'
- node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs set-session \
+ .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs set-session \
  --slug <plan-slug> \
  --focus <absolute-worktree-path>
  ```
@@ -1034,7 +1036,7 @@ Post-merge **worktree removal**, **`HOSTING_ROOT` `git pull origin main`**, and 
 | **Forbidden** | Proactive **AskQuestion** or chat offers to run full **`plan-reconcile`** archive + cleanup as routine post-merge wrap-up before After deploy |
 | **Forbidden** | Destructive git cleanup outside [Post-merge workspace cleanup](#post-merge-workspace-cleanup) (authorized apply) or **`plan-reconcile`** §5 fallback |
 | **When to detect** | After **`prState: merged`** (post-create-pr, **`check-pr-status`**, or developer return) before After deploy walk |
-| **How** | From **`HOSTING_ROOT`**: `node …/plan-state.mjs detect-stale-workspaces --slug <slug> --json` |
+| **How** | From **`HOSTING_ROOT`**: `.sedea/centers/sedea/scripts/run-sedea-node.sh …/plan-state.mjs detect-stale-workspaces --slug <slug> --json` |
 | **If empty** | One line: no stale worktree paths on disk — proceed to [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff) when merge confirmed |
 | **If stale** | Short recap (path, worktree name, **`mergedPr`**) then route to [Post-merge workspace cleanup](#post-merge-workspace-cleanup) — **not** remove-worktree options on this detect-only pass |
 | **After deploy / archive** | [Plan-reconcile handoff (inline)](#plan-reconcile-handoff-inline) for archive when deploy verification **`done`** — §5 cleanup skips paths already cleaned |
@@ -1908,7 +1910,7 @@ When **`mergedPr: false`** (open PRs in sidecar) or remote head still exists, **
 ```bash
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   detect-stale-workspaces --slug <slug> --json
 ```
 
@@ -1966,7 +1968,7 @@ Use **`--ownership-path b`** and **`--dispatch-worktree-context`** instead of **
 ```bash
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   prune-sessions --path "$WORKTREE_ROOT"
 ```
 

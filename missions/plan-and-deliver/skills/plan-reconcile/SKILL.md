@@ -252,7 +252,7 @@ Detail: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shippin
 
 ## Script CLI (hosting repo)
 
-All **`plan-state.mjs`** invocations run from **`HOSTING_ROOT`** (the hosting repo whose root contains **`.sedea/`**). Use a **direct `node` command** with the runtime in [`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`](../../../../rules/31_dispatch-scope.mdc) § *Legacy CLI (`plan-state.mjs`) — hybrid only* and rule **20** § *Hosting repo cwd for scripts (canonical)*.
+All **`plan-state.mjs`** invocations run from **`HOSTING_ROOT`** (the hosting repo whose root contains **`.sedea/`**). Invoke through **`.sedea/centers/sedea/scripts/run-sedea-node.sh`** — **never** bare **`node`** — per rule **20** § *Node launcher (`plan-state.mjs` / `plan-ws-completeness.mjs`)* and § *Hosting repo cwd for scripts (canonical)*; retain [`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`](../../../../rules/31_dispatch-scope.mdc) § *Legacy CLI (`plan-state.mjs`) — hybrid only* for hybrid-runtime context where still accurate.
 
 On Mission Control agent lanes, resolve plans via spawn **`inputs.targetPlanPath`** / **`targetPlanSlug`** or **`plan-state.mjs resolve --cwd "$WORKTREE_ROOT"`** — do **not** construct **`.sedea/operations/.../...`** or **`joint/plans`** paths. See rule **31** § *Dispatch scope (binding)* and § *Plans and docs paths*.
 
@@ -260,7 +260,7 @@ On Mission Control agent lanes, resolve plans via spawn **`inputs.targetPlanPath
 # HOSTING_ROOT: walk up until .sedea/centers/sedea/ exists
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   <subcommand> …
 ```
 
@@ -273,7 +273,7 @@ Plans and sidecars live under **`.sedea/operations/…/plans/`** on the dispatch
 ```bash
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   reconcile --dry-run
 ```
 
@@ -294,7 +294,7 @@ Only **`approve-reconcile-mutations`** authorizes:
 ```bash
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   reconcile
 ```
 
@@ -305,7 +305,7 @@ If the developer skips PR-tracked reconcile, do not run non-dry-run `reconcile`;
 ```bash
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   list-candidates --json
 ```
 
@@ -381,7 +381,7 @@ For each slug the user picked that is **not** in the **`postponed:`** set from s
 ```bash
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   archive \
   --slug <slug> \
   --signal "<signal-text>"
@@ -414,7 +414,7 @@ On non-zero exit, stop and surface the error.
 ```bash
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   detect-stale-workspaces [--slug <slug>] --json
 ```
 

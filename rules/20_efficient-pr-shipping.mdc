@@ -59,7 +59,7 @@ R&D automation scripts **`plan-state.mjs`** and **`plan-ws-completeness.mjs`** l
 
 ### Resolve `HOSTING_ROOT`
 
-Before any `node …/plan-state.mjs` or `node …/pr-review.mjs` invocation:
+Before any **`plan-state.mjs`**, **`plan-ws-completeness.mjs`**, or **`pr-review.mjs`** invocation through **`.sedea/centers/sedea/scripts/run-sedea-node.sh`** (never bare **`node`**):
 
 1. Start from the hosting repo worktree or primary hosting repo cwd.
 2. Walk **up** parent directories until **`.sedea/centers/sedea/`** exists (preferred) or at minimum **`.sedea/`** at the hosting repo root.
@@ -70,6 +70,12 @@ When the agent already knows the Mission Control primary hosting repo path, set 
 
 5. If no ancestor contains **`.sedea/`**, **stop** — use **AskQuestion** once for the hosting repo root (absolute path). Do not run **`plan-state.mjs`**, **`plan-ws-completeness.mjs`**, or **`pr-review.mjs`** from a worktree path alone.
 
+### Node launcher (`plan-state.mjs` / `plan-ws-completeness.mjs`)
+
+Invoke **`plan-state.mjs`** and **`plan-ws-completeness.mjs`** through **`.sedea/centers/sedea/scripts/run-sedea-node.sh`** — **never** bare **`node`**. The wrapper sources **`resolve-node.sh`** (Electron-as-Node in Sedea agent shells).
+
+**Forbidden fallbacks when the wrapper exits non-zero:** **`brew install node`** / other package-manager Node installs; **fnm** / **nvm** bootstrap to unblock agent governance scripts; borrowing Node from another application (Codex.app, foreign Electron, etc.). **Stop and ask** the developer via structured choice — do not improvise a runtime.
+
 ### Worktree context for `resolve --cwd`
 
 When linking a plan to a worktree, pass the **worktree** path to **`resolve --cwd`** while the shell **`cwd`** is **`HOSTING_ROOT`**:
@@ -78,7 +84,7 @@ When linking a plan to a worktree, pass the **worktree** path to **`resolve --cw
 WORKTREE_ROOT="$(pwd)"   # after cd into the hosting repo worktree
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   resolve --cwd "$WORKTREE_ROOT"
 ```
 
@@ -92,11 +98,11 @@ Run **`.sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/sedea/scrip
 
 Git / `gh` in **`pr-review`** Step 0 may use the **hosting repo worktree**; the script binary path must not assume `.sedea/` exists under the worktree root.
 
-### Forbidden pattern
+### Forbidden pattern (anti-example — do not copy)
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel)"   # worktree — often wrong for Sedea scripts
-node "$ROOT/.sedea/centers/.../plan-state.mjs" ...
+node "$ROOT/.sedea/centers/.../plan-state.mjs" ...   # forbidden: bare node + wrong root
 ```
 
 Use **`HOSTING_ROOT`** plus a repo-relative script path from the hosting repo, or an absolute path to the script file under **`HOSTING_ROOT`**.
@@ -347,7 +353,7 @@ Apply § *Hosting repo cwd for scripts (canonical)* for every script invocation 
    cd "$HOSTING_ROOT"
    
    # Which plan owns this worktree? (exit 2 = none; skip silently)
-   node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+   .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   resolve --cwd "$WORKTREE_ROOT"
    # → prints "<slug>\t<planPath>" on exit 0.
 
@@ -357,7 +363,7 @@ Apply § *Hosting repo cwd for scripts (canonical)* for every script invocation 
    # → prints a number on stdout, or nothing (first push, a PR-creating agent not yet invoked).
 
    # If both resolved: upsert into sidecar prs[] (idempotent).
-   node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+   .sedea/centers/sedea/scripts/run-sedea-node.sh .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   upsert-pr \
      --slug <slug-from-resolve> \
      --repo "$(basename "$HOSTING_ROOT")" \
