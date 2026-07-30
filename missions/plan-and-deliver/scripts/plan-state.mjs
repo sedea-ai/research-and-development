@@ -16,6 +16,12 @@ import { parseDocument, Document, YAMLMap, YAMLSeq, isMap, isSeq } from 'yaml';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Keep in sync with extensions/sedea-dispatch-storage/src/workspaceBoundOperationsScope.ts
+ * and extensions/sedea-hub/src/host/plans/operationsScopeSegments.ts.
+ */
+export const WORKSPACE_BOUND_OPERATIONS_SCOPE = 'user';
+
 /** Repo root containing `.sedea/` (hosting repo). */
 let SEDEA_REPO_ROOT = null;
 /** Absolute plan directories (all operations scopes; non-joint scopes before joint). */
@@ -96,7 +102,6 @@ function spawnGitOutput(cwd, args) {
 
 async function listOperationsScopeSegments(repoRoot) {
   const ops = path.join(repoRoot, '.sedea', 'operations');
-  const targetScope = '8f4a2c1e-6b3d-4a9f-8e1c-2d5f7a9b0c4d';
   let entries;
   try {
     entries = await fs.readdir(ops, { withFileTypes: true });
@@ -104,12 +109,26 @@ async function listOperationsScopeSegments(repoRoot) {
     return [];
   }
   const scopes = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
-  const preferred = scopes.includes(targetScope) ? [targetScope] : [];
+  const target = WORKSPACE_BOUND_OPERATIONS_SCOPE;
+  const preferred = scopes.includes(target) ? [target] : [];
   const remainder = scopes
-    .filter((scope) => scope !== targetScope && scope !== 'joint')
+    .filter((scope) => scope !== target && scope !== 'joint')
     .sort((a, b) => a.localeCompare(b));
   const joint = scopes.includes('joint') ? ['joint'] : [];
   return [...preferred, ...remainder, ...joint];
+}
+
+/** Default write root for new plan sidecars: `.sedea/operations/user/plans/`. */
+async function resolveWorkspaceBoundPlansDir(repoRoot) {
+  const plansDir = path.join(
+    repoRoot,
+    '.sedea',
+    'operations',
+    WORKSPACE_BOUND_OPERATIONS_SCOPE,
+    'plans',
+  );
+  await fs.mkdir(plansDir, { recursive: true });
+  return plansDir;
 }
 
 async function buildPlanDirs(repoRoot) {
@@ -433,6 +452,8 @@ function pathCovers(candidate, cwd) {
 async function cmdSetWorktrees(flags) {
   const slug = requireString(flags, 'slug');
   const json = requireString(flags, 'json');
+  await ensureSedeaContext();
+  await resolveWorkspaceBoundPlansDir(SEDEA_REPO_ROOT);
   const plan = await findPlanBySlug(slug);
   if (!plan) die(`set-worktrees: no plan with slug "${slug}"`);
 
@@ -478,6 +499,8 @@ async function cmdSetSession(flags) {
   const slug = requireString(flags, 'slug');
   const focus = requireString(flags, 'focus');
   if (!path.isAbsolute(focus)) die(`set-session: --focus must be absolute (got ${focus})`);
+  await ensureSedeaContext();
+  await resolveWorkspaceBoundPlansDir(SEDEA_REPO_ROOT);
   const plan = await findPlanBySlug(slug);
   if (!plan) die(`set-session: no plan with slug "${slug}"`);
 

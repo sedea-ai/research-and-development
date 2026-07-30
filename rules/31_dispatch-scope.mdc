@@ -108,7 +108,7 @@ Sedea binds operations **plans/docs** to one **workspace-bound scope segment** u
 | `docs/` | Scope-level operational docs |
 | `dispatch/<epochMs>/` | **Abandoned legacy** filesystem bundles — product must not depend on them |
 
-Legacy installs may still have `user`, `joint`, or per-user UUID scope folders — migrate with the customer script below.
+Legacy installs may still have per-user UUID scope folders or `joint/` — **`user/`** is the workspace-bound write root; read union keeps legacy trees discoverable until explicit deprecation. Optional customer migration consolidates UUID → `user/` (see below).
 
 ---
 
@@ -132,7 +132,7 @@ node .sedea/centers/sedea/scripts/migrate-operations-bundle-layout.mjs
 | `--force` | Override worktree preflight (discouraged) |
 | `--hosting-root PATH` | Hosting repo root (default: walk up from `$PWD`) |
 
-The script: preflights `git worktree list`, merges legacy scope trees (`user`, `joint`, other UUID segments) into the workspace-bound scope, rewrites in-file path strings under `.sedea/operations/`, and prints a JSON summary. Re-run is idempotent.
+The script: preflights `git worktree list`, merges legacy scope trees (UUID segments, `joint`) into workspace-bound **`user/`**, rewrites in-file path strings under `.sedea/operations/`, and prints a JSON summary. Re-run is idempotent. Post-ship **`user/`** is the canonical target — not a legacy source segment.
 
 **After migration:** commit `.sedea/operations/` in the operations git repo if applicable; reopen dispatches via Mission Control using **`dispatchId`** + MCP / DB binding (not path segment construction).
 
