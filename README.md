@@ -1,4 +1,4 @@
-# Research & Development — Sedea Governance Center
+# Software Development — Sedea Governance Center
 
 This repository is a **Sedea Governance Center** for **Sedea-governed hosting repos**. It defines how agents and developers plan, implement, ship, and verify software under **Sedea Governance** — the rules, missions, and skills pinned from `.sedea/centers/research-and-development/` in hosting workspaces.
 
