@@ -14,7 +14,7 @@ description: >-
  when the developer asks to scaffold a plan via **new-plan** (standalone) or expand
  a parent list item **N** (indexed-child) from a numbered dual-title list.
 designation:
-  allowed: Ignite plan stubs from parent decomposition; Plan Board sidecar rows
+  allowed: Ignite plan stubs from parent decomposition; operations plan sidecar rows
   forbidden: Application implementation; worktree ship; inline product code edits
 inputs:
   mode:
@@ -398,7 +398,7 @@ isProject: false
 ### 2. `<slug>.state.yaml`
 
 ```yaml
-# Sidecar for Plan Board (runtime). Plan: <slug>.plan.md
+# Sidecar for operations plan runtime. Plan: <slug>.plan.md
 parent: <resolved-parent-slug-or-null>
 worktrees: []
 prs: []
