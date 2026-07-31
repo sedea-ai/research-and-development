@@ -1,4 +1,4 @@
-# Checkpoint skill calibration — software-development center
+# Checkpoint skill calibration — Software Development center
 
 Derived index of **Checkpoint trust** turn behavior for **software-development** plan-and-deliver skills and mission `plan.mdc` protocol surfaces. Authoritative sources remain each skill's `## Checkpoint turn UX (skill-local)` table and each mission `plan.mdc`.
 
@@ -11,7 +11,7 @@ Derived index of **Checkpoint trust** turn behavior for **software-development**
 
 **Rollout status (2026-06-28):** Documents **shipped** R&D skill Checkpoint turn UX tables and aligned R&D mission `plan.mdc` markers. Skills without a local table are **pending calibration**. Host/platform governance and per-center split reconciled after [#764](https://github.com/sedea-ai/app/pull/764) / [#765](https://github.com/sedea-ai/app/pull/765) — see [host governance](../../sedea/docs/checkpoint-ask-auto-advance-matrix.md) § Reconcile note.
 
-**No cross-skill inheritance (binding):** This doc is a **derived** cross-ref for software-development only — prefer skill and plan sources.
+**No cross-skill inheritance (binding):** This doc is a **derived** cross-ref for R&D only — prefer skill and plan sources.
 
 ---
 
