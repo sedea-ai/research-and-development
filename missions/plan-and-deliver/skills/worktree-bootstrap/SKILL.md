@@ -71,7 +71,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole Software Development `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
 
 ### `skillWarmUp` — frontmatter `warmUpRules`
 
