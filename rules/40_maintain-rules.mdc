@@ -1,7 +1,7 @@
 ---
 description: >-
   Routing only: when to edit hosting-repo .cursor/rules vs software-development center rules.
-  Loaded as an R&D always-apply rule; procedures target .cursor/rules on the hosting repo.
+  Loaded as a Software Development always-apply rule; procedures target .cursor/rules on the hosting repo.
 alwaysApply: true
 ---
 

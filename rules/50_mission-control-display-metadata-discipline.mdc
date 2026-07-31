@@ -6,7 +6,7 @@ description: >-
 alwaysApply: false
 ---
 
-# Mission Control display metadata discipline (R&D)
+# Mission Control display metadata discipline (Software Development)
 
 **On-demand rule.** Mission Control warm-up loads [`.sedea/centers/software-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole software-development `alwaysApply: true` bootstrap. Read **this file** when you need child lane display refresh and Squad Leader dispatch scope — not on every dispatch warm-up.
 
@@ -27,7 +27,7 @@ Mission Control persists **dispatch-level** and **per-lane (slot)** display labe
 
 ## Spawn discipline (parents)
 
-When calling MCP **`mission_control_spawn_agent`** on **plan-and-deliver** or other R&D spawn paths:
+When calling MCP **`mission_control_spawn_agent`** on **plan-and-deliver** or other Software Development spawn paths:
 
 1. Set **`name`** to a short, topic-specific label (not generic placeholders like "Child agent" alone).
 2. Include **`description`** (and optional spawn metadata the host maps to initial slot copy) so the Agents strip is readable before the child runs.

@@ -1,6 +1,6 @@
 ---
 description: >-
-  Sole R&D alwaysApply bootstrap — plan-and-deliver routing summary, lane warm-up
+  Sole Software Development alwaysApply bootstrap — plan-and-deliver routing summary, lane warm-up
   manifest contract, and on-demand links to numbered software-development center rules.
 globs: "**/*"
 alwaysApply: true
@@ -14,7 +14,7 @@ Sedea platform bootstrap and numbered Sedea rules load per **`.sedea/centers/sed
 
 ---
 
-## Research-and-development center
+## Software Development center
 
 The **software-development** center owns **plan and deliver** delivery process, PR shipping conventions, planning-target resolution, and Software Development Mission Control display discipline.
 
@@ -28,12 +28,12 @@ Built-in **`sedea`** center lives at **`.sedea/centers/sedea/`** — see Sedea b
 
 ---
 
-## Lane warm-up manifest (R&D dispatch)
+## Lane warm-up manifest (Software Development dispatch)
 
 Normative field semantics: [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md). software-development authoring notes: [`.sedea/centers/software-development/docs/development-process.md`](../docs/development-process.md) § *Lane warm-up manifest contract*. Spawn/reload bindings: [`.sedea/centers/sedea/rules/4_mission.mdc`](.sedea/centers/sedea/rules/4_mission.mdc) § *Lane warm-up manifest (spawn and reload)*.
 
 ```text
-effectiveWarmUp = dedupe( sedeaBootstrapRules → rdBootstrapRules → laneRules → skillWarmUp )
+effectiveWarmUp = dedupe( sedeaBootstrapRules → softwareDevelopmentBootstrapRules → laneRules → skillWarmUp )
 ```
 
 | Layer | Owner | Content |
@@ -64,13 +64,13 @@ Spawned lanes without the AskQuestion tool **must** call **`mission_control_pres
 
 ## Checkpoint step continuation (binding)
 
-This file is the **sole software-development alwaysApply warm-up bind** — plan-and-deliver routing summary, lane warm-up manifest contract, and on-demand links to numbered R&D rules. It is **not** a mission protocol with executable ship steps. Under **`trustLevel: checkpoint`**, step-continuation UX for worktrees, ship chain, and planning gates lives in invoker skills and numbered R&D rules **10**–**60** (plus Sedea rules via platform bootstrap). **Do not** add literal `USER_CHECKPOINT` markers here for happy-path warm-up, lane-manifest reads, or on-demand rule hops — that would fight skill auto-advance.
+This file is the **sole software-development alwaysApply warm-up bind** — plan-and-deliver routing summary, lane warm-up manifest contract, and on-demand links to numbered Software Development rules. It is **not** a mission protocol with executable ship steps. Under **`trustLevel: checkpoint`**, step-continuation UX for worktrees, ship chain, and planning gates lives in invoker skills and numbered Software Development rules **10**–**60** (plus Sedea rules via platform bootstrap). **Do not** add literal `USER_CHECKPOINT` markers here for happy-path warm-up, lane-manifest reads, or on-demand rule hops — that would fight skill auto-advance.
 
 | Surface | Designation | Owner |
 |---------|-------------|--------|
 | Warm-up apply (software-development bootstrap + laneRules + skillWarmUp) | **auto-advance** | Host merge; this file as Software Development `bootstrapRules` |
 | Lane warm-up manifest / merge-order reads | **auto-advance** | This § *Lane warm-up manifest* |
-| On-demand numbered R&D rule loads (`10`–`60`) | **auto-advance** | Lane manifest / skill `Read` — no USER_CHECKPOINT in bootstrap |
+| On-demand numbered Software Development rule loads (`10`–`60`) | **auto-advance** | Lane manifest / skill `Read` — no USER_CHECKPOINT in bootstrap |
 | Skill helper interface hop | **auto-advance** | This § *Skill helper interfaces* — execution owned by named skill |
 | Turn completion (trust-keyed) | **baseline-governs** (reference) | Sedea rule **2** (Checkpoint binary + non-Checkpoint every-turn); summary table above |
 | No idle handoff | **baseline-governs** (reference) | Sedea rules **1**–**2**; Forbidden catalog below |
@@ -81,7 +81,7 @@ This file is the **sole software-development alwaysApply warm-up bind** — plan
 
 ---
 
-## On-demand R&D rules (read when the lane manifest or skill requires)
+## On-demand Software Development rules (read when the lane manifest or skill requires)
 
 Load these **explicitly** when **`laneRules`**, **`skillWarmUp`**, spawn handover, or the active skill directs a `Read` — not assumed from this bootstrap alone.
 
