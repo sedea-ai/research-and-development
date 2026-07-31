@@ -119,7 +119,7 @@ After **Write**, **StrReplace**, or equivalent that **creates or materially edit
 
 | Situation | Prefer |
 |-----------|--------|
-| Plan Board `.plan.md` / sidecar pair (plan body) | `kind: plan` |
+| Operations plan `.plan.md` / sidecar pair (plan body) | `kind: plan` |
 | PRD / ad-hoc PRD under ops docs | `kind: prd` |
 | Brainstorm report, misc ops docs | `kind: other` (or omit — host may infer) |
 
