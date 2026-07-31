@@ -29,7 +29,7 @@ inputs:
     required: true
   centerSlug:
     type: string
-    description: Center slug; quick-fix uses research-and-development.
+    description: Center slug; quick-fix uses software-development.
     required: true
   complexityConfirmed:
     type: boolean
@@ -37,21 +37,21 @@ inputs:
     required: true
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
-  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
-  - ".sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/rules/30_planning-target-resolution.mdc"
+  - ".sedea/centers/software-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
 warmUpRules:
-  - ".sedea/centers/research-and-development/missions/quick-fix/plan.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/research-and-development/docs/development-process.md"
-  - ".sedea/centers/research-and-development/rules/10_plan-naming-convention.mdc"
+  - ".sedea/centers/software-development/missions/quick-fix/plan.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/docs/development-process.md"
+  - ".sedea/centers/software-development/rules/10_plan-naming-convention.mdc"
 ---
 
 # Quick Fix Plan
 
 **Normative mode:** **Spawned only** on **`quick-fix`** — child lane owns minimal parent scaffold, inline **`new-plan`**, inline **`pr-plan`**, and **`coding-session`** spawn via **`pr-plan`** §5d. Does **not** run **`master-planner`**, **`pr-breakdown`**, **`delivery-phases`**, or **`phase-planner`**.
 
-**Procedure authority:** [`.sedea/centers/research-and-development/missions/quick-fix/plan.mdc`](.sedea/centers/research-and-development/missions/quick-fix/plan.mdc) §4 — execute that section on **this** lane.
+**Procedure authority:** [`.sedea/centers/software-development/missions/quick-fix/plan.mdc`](.sedea/centers/software-development/missions/quick-fix/plan.mdc) §4 — execute that section on **this** lane.
 
 ## Warm-up manifest (spawned)
 
@@ -63,25 +63,25 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap |
 
 ### `skillWarmUp` — frontmatter `warmUpRules`
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/missions/quick-fix/plan.mdc` | Mission protocol §§3–5 |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, inline **`new-plan`** / **`pr-plan`** |
-| `.sedea/centers/research-and-development/docs/development-process.md` | Cadence |
-| `.sedea/centers/research-and-development/rules/10_plan-naming-convention.mdc` | Plan naming |
+| `.sedea/centers/software-development/missions/quick-fix/plan.mdc` | Mission protocol §§3–5 |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, inline **`new-plan`** / **`pr-plan`** |
+| `.sedea/centers/software-development/docs/development-process.md` | Cadence |
+| `.sedea/centers/software-development/rules/10_plan-naming-convention.mdc` | Plan naming |
 
 ### `laneRules` — frontmatter `laneRules`
 
 | Path | Purpose |
 |------|---------|
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice |
-| `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Planning target resolution |
-| `.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md` | This skill |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Inline execution contracts |
+| `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Planning target resolution |
+| `.sedea/centers/software-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md` | This skill |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Inline execution contracts |
 
 ## Agent messaging (MCP)
 
@@ -102,17 +102,17 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 **Invokers:** **`quick-fix`** Squad Leader §3 only. **`skillPath`** for **`mission_control_spawn_agent`**:
 
-`.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`
+`.sedea/centers/software-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`
 
-**Inline on this lane (not separate spawns):** [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md), [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md`](.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md) — per **`quick-fix/plan.mdc`** §4 steps 3–5.
+**Inline on this lane (not separate spawns):** [`.sedea/centers/software-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`](.sedea/centers/software-development/missions/plan-and-deliver/skills/new-plan/SKILL.md), [`.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md`](.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md) — per **`quick-fix/plan.mdc`** §4 steps 3–5.
 
 Run **`../plan-and-deliver/skills/README.md`** § *Universal spawn preflight* before emit.
 
 ## Checkpoint turn UX (skill-local)
 
-### R&D center edit destination gate (binding)
+### software-development center edit destination gate (binding)
 
-When this skill would write under **`.sedea/centers/research-and-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *R&D center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
+When this skill would write under **`.sedea/centers/software-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *software-development center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
 
 
 Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`quick-fix-plan`**; invoker mission **`quick-fix`** documents Squad Leader gates — see **`quick-fix/plan.mdc`** §§1–3 and §8 for intake, child-failure, and dispatch-resolution markers.
@@ -150,7 +150,7 @@ USER_CHECKPOINT — provide missing quick-fix planning inputs on this lane.
 
 ### Inline handoff — **quick-fix-plan** → **`new-plan`**
 
-Run **`new-plan`** **inline on this lane** — **do not** emit **`mission_control_spawn_agent`** for **`new-plan`**. Load [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`](../../plan-and-deliver/skills/new-plan/SKILL.md), construct inline context from the table below, follow that skill's indexed-child steps, and merge stub paths before inline **`pr-plan`**.
+Run **`new-plan`** **inline on this lane** — **do not** emit **`mission_control_spawn_agent`** for **`new-plan`**. Load [`.sedea/centers/software-development/missions/plan-and-deliver/skills/new-plan/SKILL.md`](../../plan-and-deliver/skills/new-plan/SKILL.md), construct inline context from the table below, follow that skill's indexed-child steps, and merge stub paths before inline **`pr-plan`**.
 
 | Inline context field | Value |
 |----------------------|--------|
@@ -166,7 +166,7 @@ Run **`new-plan`** **inline on this lane** — **do not** emit **`mission_contro
 
 ### Inline handoff — **quick-fix-plan** → **`pr-plan`**
 
-Run **`pr-plan`** **inline on this lane** — **do not** emit **`mission_control_spawn_agent`** for **`pr-plan`**. Load [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md`](../../plan-and-deliver/skills/pr-plan/SKILL.md), construct inline context from the table below, follow that skill's steps through §5e, and merge **`## Completion (inline)`** fields into this skill's terminal **`outputs`**.
+Run **`pr-plan`** **inline on this lane** — **do not** emit **`mission_control_spawn_agent`** for **`pr-plan`**. Load [`.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md`](../../plan-and-deliver/skills/pr-plan/SKILL.md), construct inline context from the table below, follow that skill's steps through §5e, and merge **`## Completion (inline)`** fields into this skill's terminal **`outputs`**.
 
 | Inline context field | Value |
 |----------------------|--------|

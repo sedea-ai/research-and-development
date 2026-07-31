@@ -1,6 +1,6 @@
 # Software Development — Sedea Governance Center
 
-This repository is a **Sedea Governance Center** for **Sedea-governed hosting repos**. It defines how agents and developers plan, implement, ship, and verify software under **Sedea Governance** — the rules, missions, and skills pinned from `.sedea/centers/research-and-development/` in hosting workspaces.
+This repository is a **Sedea Governance Center** for **Sedea-governed hosting repos**. It defines how agents and developers plan, implement, ship, and verify software under **Sedea Governance** — the rules, missions, and skills pinned from `.sedea/centers/software-development/` in hosting workspaces.
 
 ## Purpose
 
@@ -13,7 +13,7 @@ Govern end-to-end delivery from idea to production using a **depth-first iterati
 | **Upstream (sedea-centers org)** | `git@github.com:sedea-centers/software-development.git` |
 | **HTTPS** | `https://github.com/sedea-centers/software-development` |
 
-Wave 2 retargets the GitHub repo name to **`software-development`** while **`centerSlug`** and hosting checkout paths remain **`research-and-development`** until Wave 3 (see center rename PRD on the active dispatch).
+Wave 2 retargeted the GitHub repo name to **`software-development`**. Wave 3 aligns **`centerSlug`** and hosting checkout paths with **`.sedea/centers/software-development/`**.
 
 ## Missions
 

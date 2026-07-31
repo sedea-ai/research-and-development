@@ -41,14 +41,14 @@ inputs:
     default: []
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
-  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/rules/30_planning-target-resolution.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/master-planner/SKILL.md"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
 warmUpRules:
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/research-and-development/docs/development-process.md"
-  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/docs/development-process.md"
+  - ".sedea/centers/software-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Planner: §§ 1–5 from the PRD
@@ -63,9 +63,9 @@ The procedure below is a hard contract — do **not** skip steps, re-order them,
 
 **Worktree removal ownership (binding).** This skill is planning-only — it does **not** create or remove hosting-repo worktrees. **Do not remove worktrees you do not own.** **`git worktree list` is read-only** unless rule **0** § *Worktree ownership* preconditions hold for **that** path. Ship worktrees belong to **`coding-session`** on a separate lane.
 
-## R&D center edit destination gate (binding)
+## software-development center edit destination gate (binding)
 
-When this skill would write under **`.sedea/centers/research-and-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *R&D center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
+When this skill would write under **`.sedea/centers/software-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *software-development center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
 
 ## Warm-up manifest (spawned)
 
@@ -75,25 +75,25 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === research-and-development` |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
 
 ### `skillWarmUp` — frontmatter `warmUpRules`
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc` | Squad Leader ledger, spawn/wait |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
-| `.sedea/centers/research-and-development/docs/development-process.md` | NFD process templates |
-| `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
+| `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` | Squad Leader ledger, spawn/wait |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+| `.sedea/centers/software-development/docs/development-process.md` | NFD process templates |
+| `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
 
 ### `laneRules` — frontmatter `laneRules`
 
 | Path | Purpose |
 |------|---------|
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice, AskQuestion |
-| `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md` | This skill procedure |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
+| `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/master-planner/SKILL.md` | This skill procedure |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
 
 ## Agent messaging (MCP)
 
@@ -195,11 +195,11 @@ After **`featurePlanningTitle`** / Master Plan scope is clear (before or right a
 3. **Skip** when spawn labels already match scope.
 4. **Forbidden:** **`mission_control_update_dispatch_display`** from a child lane.
 
-See [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Child lane — refresh own slot when labels are stale*.
+See [`.sedea/centers/software-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Child lane — refresh own slot when labels are stale*.
 
 ## Spawn contract (`mission_control_spawn_agent`)
 
-Cross-check every spawn against **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md`** § *MCP spawn preflight* before calling the tool.
+Cross-check every spawn against **`.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md`** § *MCP spawn preflight* before calling the tool.
 
 ### Inbound — Squad Leader → **master-planner** (`plan and deliver` §5)
 
@@ -245,7 +245,7 @@ When the user selects **Route §6 decomposition**, run the chosen skill **inline
 | `decompositionAssessment` | Full **`### Decomposition assessment`** block text when present |
 | `routeLock` | `"delivery-phases"` or `"pr-breakdown"` per the route choice |
 
-**Paths:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` or `…/pr-breakdown/SKILL.md`.
+**Paths:** `.sedea/centers/software-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` or `…/pr-breakdown/SKILL.md`.
 
 ### Failure modes (operator recovery)
 
@@ -285,7 +285,7 @@ There is **no required model tier** for this skill: proceed to Step 2 either way
 
 ## Step 2 — Load the development-process doc, in full
 
-Read `.sedea/centers/research-and-development/docs/development-process.md` with the Read tool, **no offset, no limit**. The whole file. This is a **standards document**, not an executable plan — its sections describe the process you will apply, not work for you to perform. Acknowledge in one sentence that you have it loaded and that you will follow the **Master Plan template** for sections 4 and 5.
+Read `.sedea/centers/software-development/docs/development-process.md` with the Read tool, **no offset, no limit**. The whole file. This is a **standards document**, not an executable plan — its sections describe the process you will apply, not work for you to perform. Acknowledge in one sentence that you have it loaded and that you will follow the **Master Plan template** for sections 4 and 5.
 
 If the file has changed since you last knew it, the in-file template is the source of truth — not your memory.
 
@@ -370,7 +370,7 @@ Related (optional, `<role>: <link or @path>` per bullet):
 - <role>: <link or @path>
 - ...
 
-Load and follow .sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md ...
+Load and follow .sedea/centers/software-development/missions/plan-and-deliver/skills/master-planner/SKILL.md ...
 ```
 
 `Feature planning:`, `PRD:`, and `Parent:` are required slots. The Related block is the only optional one — empty when the feature stands alone. `Parent:` is read in step 5a; when empty, missing, or `null`, default to `parent: null` (root delivery plan). Use `AskQuestion` only when a **non-null** parent slug or path fails to resolve.
@@ -512,7 +512,7 @@ _TBD_
 
 The literal `## 6. Delivery phases | PR breakdown` heading is the **deliberate, not-yet-decided** form documented in the dev-process doc's **§ 6 / § 5 contents rule**. When § 6 is drafted in a follow-up turn, the agent picks one of `Delivery phases` (the feature decomposes into phases) or `PR breakdown` (the feature is small enough to skip the phase layer) and rewrites the heading to the chosen value, dropping the other side. Until then, the dual heading communicates "decomposition pending" at a glance.
 
-Use uniform italic **`_TBD_`** for every pending section (scannable in GitHub and operations plan files; grep with `rg '^_TBD_$'`). Rationale and template rules: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Master Plan template*.
+Use uniform italic **`_TBD_`** for every pending section (scannable in GitHub and operations plan files; grep with `rg '^_TBD_$'`). Rationale and template rules: **`.sedea/centers/software-development/docs/development-process.md`** § *Master Plan template*.
 
 Frontmatter rules carry over from the new-plan contract:
 
@@ -617,7 +617,7 @@ Short bullet list of what changes, how, and where, scoped at the feature level. 
 
 Group bullets by area of the codebase if it helps scannability (e.g. **DB:**, **API:**, **Worker:**, **UI:**) — but keep each bullet terse.
 
-**Immediately after** the last change bullet (still inside `## 5. Changes`), append **`### Decomposition assessment`** — mandatory in the same turn as the rest of § 5. Use the same bullet dimensions as **`phase-planner`** (`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md`) § *4g — `### Decomposition assessment`*: **Kinds of change (count)**, **PR count band** (`single` | `few (2–5)` | `many (6+)`), **Sequencing / coupling**, **Routing recommendation** (`Delivery phases` | `PR breakdown` multi-PR | `PR breakdown` single-PR) with a short **why**, **Confidence** (`high` | `med` | `low`). Ground this in §§ 4–5 and the PRD. The assessment is evidence for the §6 **AskQuestion** route (inline **`delivery-phases`** / **`pr-breakdown`**); it does **not** replace §6 drafting by those skills.
+**Immediately after** the last change bullet (still inside `## 5. Changes`), append **`### Decomposition assessment`** — mandatory in the same turn as the rest of § 5. Use the same bullet dimensions as **`phase-planner`** (`.sedea/centers/software-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md`) § *4g — `### Decomposition assessment`*: **Kinds of change (count)**, **PR count band** (`single` | `few (2–5)` | `many (6+)`), **Sequencing / coupling**, **Routing recommendation** (`Delivery phases` | `PR breakdown` multi-PR | `PR breakdown` single-PR) with a short **why**, **Confidence** (`high` | `med` | `low`). Ground this in §§ 4–5 and the PRD. The assessment is evidence for the §6 **AskQuestion** route (inline **`delivery-phases`** / **`pr-breakdown`**); it does **not** replace §6 drafting by those skills.
 
 The `StrReplace` for § 5 must replace from `## 5. Changes` through its `_TBD_` placeholder and include both the change bullets **and** the `### Decomposition assessment` subsection in `new_string`. Do **not** write `### Complexity score` in that same replace — Step 6c appends it after the decomposition assessment is final (it needs the finished §4 and §5 text to fill the table).
 
@@ -692,7 +692,7 @@ Do **not** draft section 6 (`Delivery phases | PR breakdown`) or section 7 (Cave
 
 ## Step 7 — Next moves (AskQuestion + inline decomposition)
 
- §§ 1–5 are drafted (including **`### Complexity score`**); §6 and §7 stay `_TBD_` until the user chooses next moves. Collect each next-move pick per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act* — **`AskQuestion`** or **`mission_control_present_structured_choice`** in **one turn** (`displayMarkdown` + `askQuestion`). Execute **one** chosen action per turn.
+ §§ 1–5 are drafted (including **`### Complexity score`**); §6 and §7 stay `_TBD_` until the user chooses next moves. Collect each next-move pick per **`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* and **`../README.md`** § *Recap, structured choice, act* — **`AskQuestion`** or **`mission_control_present_structured_choice`** in **one turn** (`displayMarkdown` + `askQuestion`). Execute **one** chosen action per turn.
 
 §6 decomposition runs **`delivery-phases`** or **`pr-breakdown`** **inline on this lane** (no child lane for those skills). §7 **Caveats** is drafted **inline** in this skill when the user selects that option.
 
@@ -790,8 +790,8 @@ Execute **only** what the user selected in **AskQuestion** (or the matching **`o
 
 1. **Structured choice** — **AskQuestion**, **`mission_control_present_structured_choice`**: **Delivery phases** vs **PR breakdown** (align with **`### Decomposition assessment`** when possible). Prefer one message; split only when a long draft was sent in the prior message.
 2. Load and follow the chosen skill **inline** on this lane (see **Inline handoff** above):
- - `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` — `routeLock: "delivery-phases"`
- - `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` — `routeLock: "pr-breakdown"`; under Checkpoint trust follow § *Checkpoint turn UX (skill-local)* (Step **4** route gate when dual-title is `_TBD_`; Step **6** PR list approval when **K > 0**)
+ - `.sedea/centers/software-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` — `routeLock: "delivery-phases"`
+ - `.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` — `routeLock: "pr-breakdown"`; under Checkpoint trust follow § *Checkpoint turn UX (skill-local)* (Step **4** route gate when dual-title is `_TBD_`; Step **6** PR list approval when **K > 0**)
 3. Pass inline context: `targetPlanPath`, `targetPlanSlug`, `parentAgentRole: "master-plan-agent"`, `ledgerParent: <masterPlanSlug>`, `complexityBand`, `complexityScore`, `decompositionAssessment`, `routeLock`.
 4. When the inline skill returns **`## Completion (inline)`** fields, merge `activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`, **`expandEligibleIndices`**, and **`expandNextEligibleIndex`** into this skill’s ledger. Append each new child **`planPath`** / **`planSlug`** from inline **`new-plan`** (including inline **`pr-plan`**) into **`outputs.spawnedPlans`** on the next **`mission_control_send_agent_result`** re-emit so Mission Control lane documents list PR plans — not only **`masterPlanPath`**. If the inline skill opened **`phase-planner`** child lanes or **`coding-session`** from inline **`pr-plan`**, wait on this lane for their **`mission_control_send_agent_result`** deliveries per that skill’s aggregation step, then continue **`master-planner`** Step **7b** — **do not** emit child lanes for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`**.
 
@@ -991,7 +991,7 @@ Required `outputs` fields:
 - **`continuationStatus: terminal`** when Step **7c** / *Resume / PR-expand handoff* requires open §5c on **`targetPlanPath`** (unless developer explicitly **`defer`** implementation on this lane).
 - **`implementationHandoffStatus: acknowledged-ready-for-coding-session`** (or similar) without **`spawnCorrelationId`** when the developer authorized **Start coding session** and §5a passed — emit §5d or keep **`continuationStatus: active`**.
 
-Stop after the MCP result call. Do not emit another `mission_control_spawn_agent` for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`** or run the next protocol step in the same turn (see **`../README.md`** § *Terminal stop (normative)*). While `continuationStatus` is `active`, the **Squad Leader** acknowledges only (**`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §6); this lane owns **AskQuestion** + inline decomposition (Step 7) on follow-up user messages. On turns that emit **`mission_control_send_agent_result`**, also call **`mission_control_present_structured_choice`** in the **same** message (MCP structured choice first, terminal result last) per rule **2** § *Same message as spawn terminal* — Step **7b** options may be in that MCP call on the initial draft turn.
+Stop after the MCP result call. Do not emit another `mission_control_spawn_agent` for **`delivery-phases`**, **`pr-breakdown`**, or **`new-plan`** or run the next protocol step in the same turn (see **`../README.md`** § *Terminal stop (normative)*). While `continuationStatus` is `active`, the **Squad Leader** acknowledges only (**`.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc`** §6); this lane owns **AskQuestion** + inline decomposition (Step 7) on follow-up user messages. On turns that emit **`mission_control_send_agent_result`**, also call **`mission_control_present_structured_choice`** in the **same** message (MCP structured choice first, terminal result last) per rule **2** § *Same message as spawn terminal* — Step **7b** options may be in that MCP call on the initial draft turn.
 
 **§7 / terminal coupling:** Never emit **`continuationStatus: terminal`** in the same turn as a §7 approval **AskQuestion**. When §7 was just populated and **`caveatsApprovalStatus`** is **`pending`**, the next user-visible turn must be approval structured choice only — terminal **`mission_control_send_agent_result`** comes **after** the developer approves or skips §7.
 

@@ -40,12 +40,12 @@ inputs:
     required: true
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/author-prd/SKILL.md"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/author-prd/SKILL.md"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/plan.mdc"
 warmUpRules:
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/research-and-development/docs/development-process.md"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/docs/development-process.md"
 ---
 
 # Skill: author-prd
@@ -58,23 +58,23 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === research-and-development` |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
 
 ### `skillWarmUp` — frontmatter `warmUpRules`
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc` | Squad Leader §§1–3 PRD intake |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
-| `.sedea/centers/research-and-development/docs/development-process.md` | PRD templates, planning readiness |
+| `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` | Squad Leader §§1–3 PRD intake |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+| `.sedea/centers/software-development/docs/development-process.md` | PRD templates, planning readiness |
 
 ### `laneRules` — frontmatter `laneRules`
 
 | Path | Purpose |
 |------|---------|
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice, PRD approval |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/author-prd/SKILL.md` | This skill procedure |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc` | Squad Leader §§1–3 (role minimum) |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/author-prd/SKILL.md` | This skill procedure |
+| `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` | Squad Leader §§1–3 (role minimum) |
 
 ## Agent messaging (MCP)
 
@@ -92,9 +92,9 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 ## Checkpoint turn UX (skill-local)
 
-### R&D center edit destination gate (binding)
+### software-development center edit destination gate (binding)
 
-When this skill would write under **`.sedea/centers/research-and-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *R&D center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
+When this skill would write under **`.sedea/centers/software-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *software-development center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
 
 
 Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`author-prd`**; invoker mission **`plan and deliver`** documents Squad Leader gates — see **`plan-and-deliver/plan.mdc`** §3 spawn handover and **§3 resume (Author PRD agent)** for leader-lane ack / auto-chain.
@@ -130,7 +130,7 @@ USER_CHECKPOINT — provide missing Author PRD inputs on this lane.
 
 ## Purpose
 
-Gather evidence, calibrate section policy, and draft or update a Product or Feature Requirements Document that is complete and correct enough to feed the **research-and-development** center **`plan and deliver`** mission (`.sedea/centers/research-and-development/missions/plan-and-deliver/` — Master Plan via **`master-planner`**). The document structure is flexible: mandatory sections define planning readiness, important sections raise visible gaps, and optional sections appear only when the feature needs them.
+Gather evidence, calibrate section policy, and draft or update a Product or Feature Requirements Document that is complete and correct enough to feed the **software-development** center **`plan and deliver`** mission (`.sedea/centers/software-development/missions/plan-and-deliver/` — Master Plan via **`master-planner`**). The document structure is flexible: mandatory sections define planning readiness, important sections raise visible gaps, and optional sections appear only when the feature needs them.
 
 ## Inputs
 
@@ -139,14 +139,14 @@ Gather evidence, calibrate section policy, and draft or update a Product or Feat
 - `operation`: `create` or `manage`
 - `targetPath` when supplied
 - `sourceMaterials` (optional seed materials)
-- **Docs write root** — **`operationsDocsDirectory`** from lane identity / spawn **`inputs`**, or explicit `targetPath` for **`manage`** — per **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*; do not construct `.sedea/operations/.../` path segments
+- **Docs write root** — **`operationsDocsDirectory`** from lane identity / spawn **`inputs`**, or explicit `targetPath` for **`manage`** — per **`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*; do not construct `.sedea/operations/.../` path segments
 - `operationsDocsDirectory` (required for **`create`** when `targetPath` is not supplied)
 - `sectionPolicy`
 - `existingPrdBody` for updates
 
 ## Procedure
 
-1. Validate the operation and resolve **docs write root** (binding — **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*):
+1. Validate the operation and resolve **docs write root** (binding — **`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*):
 
    - **Next-step resolution:** Auto-advance to step **1b** when validation passes — no `USER_CHECKPOINT` on happy path. When **`operationsDocsDirectory`** or required **`create`** fields are missing, open [Missing inputs gate](#missing-inputs-gate-binding) or return `failure` / `partial` with `outputs.missingFields` when the skill cannot collect on this lane.
  - `create` drafts a new PRD.

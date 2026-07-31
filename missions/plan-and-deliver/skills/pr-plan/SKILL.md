@@ -62,14 +62,14 @@ inputs:
     default: false
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
-  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/rules/30_planning-target-resolution.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
 warmUpRules:
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/research-and-development/docs/development-process.md"
-  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/plan.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/docs/development-process.md"
+  - ".sedea/centers/software-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # PR plan: §§ 1–4 from the parent plan
@@ -92,25 +92,25 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === research-and-development` |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
 
 ### `skillWarmUp` — frontmatter `warmUpRules`
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc` | Squad Leader ledger, spawn/wait |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
-| `.sedea/centers/research-and-development/docs/development-process.md` | NFD process templates |
-| `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
+| `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` | Squad Leader ledger, spawn/wait |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+| `.sedea/centers/software-development/docs/development-process.md` | NFD process templates |
+| `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
 
 ### `laneRules` — frontmatter `laneRules`
 
 | Path | Purpose |
 |------|---------|
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice, AskQuestion |
-| `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md` | This skill procedure |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
+| `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md` | This skill procedure |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
 
 ## Agent messaging (MCP)
 
@@ -211,7 +211,7 @@ Normative protocol: **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notif
 | Worktrees, implementation, ship chain | Out of scope — spawn only | Owns (spawned-lane default) |
 | Start **`coding-session`** | Step **5d** after **AskQuestion** **Start coding session** (§5c) when §5a passes | Spawned child lane with `planningHandoffMode` + `planningHandoffApproved`; layer 2 **auto-authorizes** when §§1–4 drafted (or plan complete) — no second worktree-open modal |
 
-**Signals (canonical):** **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Planning readiness vs ship* and § *Agent checklist (planning vs ship — do not conflate)* — `readyForImplementation` on this lane does **not** authorize code edits, worktrees, commit/push, or §8 `phase` past `not-started`.
+**Signals (canonical):** **`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`** § *Planning readiness vs ship* and § *Agent checklist (planning vs ship — do not conflate)* — `readyForImplementation` on this lane does **not** authorize code edits, worktrees, commit/push, or §8 `phase` past `not-started`.
 
 **Detached entry still valid:** The developer may still start **`coding-session`** via a new Mission Control session, natural language, or snapshot per **development-process.md** § *Start implementation (`coding-session` entry)* — without a **`pr-plan`** spawn.
 
@@ -225,9 +225,9 @@ The **developer** picks the next move per **30_planning-target-resolution** § *
 
 ## Checkpoint turn UX (skill-local)
 
-### R&D center edit destination gate (binding)
+### software-development center edit destination gate (binding)
 
-When this skill would write under **`.sedea/centers/research-and-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *R&D center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
+When this skill would write under **`.sedea/centers/software-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *software-development center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
 
 
 Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`pr-plan`**; other planning skills document their own markers.
@@ -312,7 +312,7 @@ If `parentPlanPath` / `parentPlanSlug` inputs were supplied, they must match the
 
 ## Step 2 — Load the development-process doc
 
-Read `.sedea/centers/research-and-development/docs/development-process.md` with the Read tool, **no offset, no limit** (hosting repo root). Acknowledge: *"Loaded development-process.md; will follow § 3 per-PR template + § 6/§ 5 contents rule."*
+Read `.sedea/centers/software-development/docs/development-process.md` with the Read tool, **no offset, no limit** (hosting repo root). Acknowledge: *"Loaded development-process.md; will follow § 3 per-PR template + § 6/§ 5 contents rule."*
 
 Re-read every invocation; do not rely on session memory.
 
@@ -507,7 +507,7 @@ Set `readyForImplementation: false` when any of those checks fail. Add each miss
 | **Planning handoff** | This skill → `outputs.readyForImplementation` | §§ 1–4 drafted, capstone todo, parent link (§5a). §§ 5–8 may stay `_TBD_`. |
 | **Worktree gate** | **`coding-session`** § *Auto-authorize implementation (pr-plan spawn)* when §5d passes `planningHandoffApproved` | Per-PR body may keep §§ 5–8 `_TBD_`; child lane opens worktree and implements without a second approval modal. Detached entry without spawn still uses the worktree-open gate. |
 
-`readyForImplementation: true` does **not** bypass **`plan-ws-completeness.mjs`** or authorize worktrees on **this** lane. The Squad Leader §8 ship ledger must keep `phase: not-started` until **`coding-session`** reports `developerApprovedImplementation: true` (**`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §7–§8). After §5d spawn, **`INCOMPLETE`** + **`EXPECTED_SECTIONS_5_8_TBD`** is **expected** — the child **auto-authorizes** worktrees when §§1–4 are drafted (no second modal). Detached **`coding-session`** still uses the worktree-open gate.
+`readyForImplementation: true` does **not** bypass **`plan-ws-completeness.mjs`** or authorize worktrees on **this** lane. The Squad Leader §8 ship ledger must keep `phase: not-started` until **`coding-session`** reports `developerApprovedImplementation: true` (**`.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc`** §7–§8). After §5d spawn, **`INCOMPLETE`** + **`EXPECTED_SECTIONS_5_8_TBD`** is **expected** — the child **auto-authorizes** worktrees when §§1–4 are drafted (no second modal). Detached **`coding-session`** still uses the worktree-open gate.
 
 However:
 
@@ -626,12 +626,12 @@ Run only when the developer chose **`start-coding-session`** and §5a readiness 
 3. **Emit exactly one** child-spawn line (valid JSON on the same line; new UUID per spawn):
 
  - Cross-check **`../README.md`** § *Universal spawn preflight* (including display-metadata rows **8–10**).
- - `skillPath`: `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`
+ - `skillPath`: `.sedea/centers/software-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`
  - `name`: `PR{parentIndex}-{semantic title}` when **`parentIndex`** is known — semantic title from §1 single concern or **`targetPlanSlug`**; otherwise `PR-{semantic title}` — **not** generic "Coding session" alone (≤64 chars; truncate semantic title if needed). Prefix per [rule **50**](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Lane title prefix conventions*
  - `slug`: `coding-session-<targetPlanSlug>` (unique per dispatch)
  - `description`: one-line implementation scope (for example *Worktree and implementation for PR N …*)
  - `inputs`: `targetPlanPath`, `targetPlanSlug`, `readyForImplementation`, `planningHandoffApproved: true` (only when `readyForImplementation: true`), `planningHandoffMode: "sections-1-4-complete"` (required when `readyForImplementation: true`), `repoPath`, `ledgerParent`, `upstreamSkill: "pr-plan"` (or **`"debug-and-fix"`** when this lane’s invoker / seed is **`upstreamSkill: debug-and-fix`** — see **Reuse worktree ownership** below); include `parentPlanPath`, `parentPlanSlug`, `parentIndex` when known
- - Optional `warmUpRules`: merge **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** if not already loaded from skill frontmatter
+ - Optional `warmUpRules`: merge **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** if not already loaded from skill frontmatter
  - **Reuse worktree ownership (binding — debug / inherited handoff):** When this lane received an absolute existing hosting-repo **`worktreePath`** (and usually **`worktreeName`**) from an upstream debug or similar seed — especially **`inputs.upstreamSkill === "debug-and-fix"`** or debug handover in **`initiatingPrompt`** — **and** that path already exists on disk, §5d **must** forward ownership onto the **`coding-session`** spawn, not only path/name:
    - `worktreePath` / `worktreeName` — exact absolute path and branch name from the seed
    - `worktreeOwnership: "inherited"`

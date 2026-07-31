@@ -1,6 +1,6 @@
-# Checkpoint skill calibration — R&D center
+# Checkpoint skill calibration — software-development center
 
-Derived index of **Checkpoint trust** turn behavior for **research-and-development** plan-and-deliver skills and mission `plan.mdc` protocol surfaces. Authoritative sources remain each skill's `## Checkpoint turn UX (skill-local)` table and each mission `plan.mdc`.
+Derived index of **Checkpoint trust** turn behavior for **software-development** plan-and-deliver skills and mission `plan.mdc` protocol surfaces. Authoritative sources remain each skill's `## Checkpoint turn UX (skill-local)` table and each mission `plan.mdc`.
 
 **Related:**
 
@@ -11,7 +11,7 @@ Derived index of **Checkpoint trust** turn behavior for **research-and-developme
 
 **Rollout status (2026-06-28):** Documents **shipped** R&D skill Checkpoint turn UX tables and aligned R&D mission `plan.mdc` markers. Skills without a local table are **pending calibration**. Host/platform governance and per-center split reconciled after [#764](https://github.com/sedea-ai/app/pull/764) / [#765](https://github.com/sedea-ai/app/pull/765) — see [host governance](../../sedea/docs/checkpoint-ask-auto-advance-matrix.md) § Reconcile note.
 
-**No cross-skill inheritance (binding):** This doc is a **derived** cross-ref for R&D only — prefer skill and plan sources.
+**No cross-skill inheritance (binding):** This doc is a **derived** cross-ref for software-development only — prefer skill and plan sources.
 
 ---
 
@@ -117,7 +117,7 @@ Aligned warm-up tables and protocol **USER_CHECKPOINT** markers. Host merge for 
 
 ## Cross-ref index — R&D skills with Checkpoint turn UX tables
 
-| # | Skill path (under `.sedea/centers/research-and-development/`) | Calibrated |
+| # | Skill path (under `.sedea/centers/software-development/`) | Calibrated |
 |---|----------------------------------------------------------------|------------|
 | 1 | `missions/plan-and-deliver/skills/master-planner/SKILL.md` | yes |
 | 2 | `missions/plan-and-deliver/skills/new-plan/SKILL.md` | yes |
@@ -156,9 +156,9 @@ Aligned warm-up tables and protocol **USER_CHECKPOINT** markers. Host merge for 
 **Verification (R&D scope):**
 
 ```bash
-find .sedea/centers/research-and-development -path '*/skills/*/SKILL.md' \
+find .sedea/centers/software-development -path '*/skills/*/SKILL.md' \
   -exec rg -l 'Checkpoint turn UX \(skill-local\)' {} \;
-rg -l 'Checkpoint trust \(binding\)' .sedea/centers/research-and-development/**/plan.mdc
+rg -l 'Checkpoint trust \(binding\)' .sedea/centers/software-development/**/plan.mdc
 ```
 
 ---

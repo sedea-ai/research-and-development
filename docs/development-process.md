@@ -35,9 +35,9 @@ Single catalogue of **what we use** in this process. Later sections still spell 
 
 This center does **not** ship **`missions/<missionSlug>/rules/*.mdc`** for **`plan-and-deliver`** or **`prd`**. That is **intentional**, not incomplete setup. Sedea treats mission rules as **optional** (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Rules* — absence is normal).
 
-R&D delivery agents are governed by:
+software-development delivery agents are governed by:
 
-- **Center rules** — `.sedea/centers/research-and-development/rules/`
+- **Center rules** — `.sedea/centers/software-development/rules/`
 - **Mission plans** — `missions/<missionSlug>/plan.mdc`
 - **Skills** — `missions/<missionSlug>/skills/` and the **Protocol branches** table below
 
@@ -46,21 +46,21 @@ R&D delivery agents are governed by:
 | Layer | R&D dispatch path |
 |-------|-------------------|
 | **Sedea `bootstrapRules`** | **`.sedea/centers/sedea/rules/bootstrap.mdc`** (sole Sedea `alwaysApply: true` bootstrap) |
-| **R&D `bootstrapRules`** | **`.sedea/centers/research-and-development/rules/bootstrap.mdc`** — sole R&D `alwaysApply: true` bootstrap (≤10 KB); documented in skill warm-up manifest **`bootstrapRules`** tables and **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md`** § *Definitive `bootstrapRules`* |
+| **Software Development `bootstrapRules`** | **`.sedea/centers/software-development/rules/bootstrap.mdc`** — sole software-development `alwaysApply: true` bootstrap (≤10 KB); documented in skill warm-up manifest **`bootstrapRules`** tables and **`.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md`** § *Definitive `bootstrapRules`* |
 | **`laneRules`** | Role minimums in **`skills/README.md`** § *Definitive `laneRules`* and skill frontmatter |
 | **`skillWarmUp`** | Skill frontmatter **`warmUpRules`** + optional spawn **`warmUpRules`** |
 
 Do not flip numbered R&D rule **`alwaysApply`** frontmatter until the host R&D resolver and parity gate ship (reduce-alwaysapply-governance-load PRD §5.4 phase 6 sequencing). Sedea center **`alwaysApply`** flip is governed separately (PRD §5.3).
 
-**Audits and gap reports** must **not** flag missing mission-level rule files under this center. To change **this center's** process or rules, use **`improve center rules`** on **`research-and-development`** (`center-maintenance` on the **sedea** center). For **Sedea platform** governance (hosting layout, git gate, Safeguard), use **`improve center rules`** on **`sedea`**. To change **repo** agent guidance in a hosting repo, use **`.cursor/rules/*.mdc`** per **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`** and per-PR plan **§ 5. Repo rules impact**.
+**Audits and gap reports** must **not** flag missing mission-level rule files under this center. To change **this center's** process or rules, use **`improve center rules`** on **`software-development`** (`center-maintenance` on the **sedea** center). For **Sedea platform** governance (hosting layout, git gate, Safeguard), use **`improve center rules`** on **`sedea`**. To change **repo** agent guidance in a hosting repo, use **`.cursor/rules/*.mdc`** per **`.sedea/centers/software-development/rules/40_maintain-rules.mdc`** and per-PR plan **§ 5. Repo rules impact**.
 
 ### Center submodule git (two repositories)
 
-Non-built-in centers (including **`research-and-development`**) are **separate git repositories** submodule-pinned in the hosting repo. Agents must treat **center-repo git** and **hosting-repo gitlink promotion** as two steps — not one.
+Non-built-in centers (including **`software-development`**) are **separate git repositories** submodule-pinned in the hosting repo. Agents must treat **center-repo git** and **hosting-repo gitlink promotion** as two steps — not one.
 
 | Repository | What ships | Typical mission / skill |
 |------------|------------|-------------------------|
-| **Center repo** (e.g. `.sedea/centers/research-and-development/`) | Changes under center **`rules/`**, **`docs/`**, **`missions/`**, **`skills/`**, **`center.yaml`** | **`improve center rules`** / **`improve mission`** on **sedea** — **`center-maintenance`** / **`mission-maintenance`**; commit/push/PR in the **center** repo |
+| **Center repo** (e.g. `.sedea/centers/software-development/`) | Changes under center **`rules/`**, **`docs/`**, **`missions/`**, **`skills/`**, **`center.yaml`** | **`improve center rules`** / **`improve mission`** on **sedea** — **`center-maintenance`** / **`mission-maintenance`**; commit/push/PR in the **center** repo |
 | **Hosting repo** (gitlink on **`main`**) | Submodule pointer after the center **`defaultBranch`** advances | **Mandatory:** run [`.sedea/centers/sedea/skills/promote-center-submodule-pin/SKILL.md`](.sedea/centers/sedea/skills/promote-center-submodule-pin/SKILL.md) **inline** — **direct** after center merge, or **cleanup-hint** only when post-merge **`worktree-cleanup.sh`** reports drift (`nextAction: promote-pin-required` with **`centerPinDriftPaths`**; host background when **`autoPromoteSubmodulePins: true`**) per [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Pin promotion routing* |
 
 **After center merge (binding):** When a center-repo PR merges and the hosting repo should adopt the new revision, agents **must** run **promote-center-submodule-pin** **inline** on the hosting-repo lane. Entry routing: [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Pin promotion routing* — **direct** invoke with **`centerSlug`**, or **cleanup-hint** only when post-merge **`worktree-cleanup.sh`** reports drift (`nextAction: promote-pin-required` with **`centerPinDriftPaths`**; Mission Control host background chain when **`autoPromoteSubmodulePins: true`** on **`.cursor/rules/dot-sedea.mdc`**). Skill procedure: center **`worktree-setup.sh`** from **`HOSTING_ROOT`** → **`sedea_add_worktree_folder`** → commit gitlink in **`WORKTREE_ROOT`** → PR → merge → **`sedea_remove_worktree_folder`** → center **`worktree-cleanup.sh`**. Pin the center **`defaultBranch`** tip only (from **`.sedea/centers/centers.yaml`**) — never a feature-branch SHA. **Forbidden:** Git Data API pin-only commits without a worktree; staging or committing gitlinks on **`HOSTING_ROOT`** checked-out **`main`**. See [`.sedea/centers/sedea/skills/promote-center-submodule-pin/SKILL.md`](.sedea/centers/sedea/skills/promote-center-submodule-pin/SKILL.md); [`.sedea/centers/sedea/rules/3_center.mdc`](.sedea/centers/sedea/rules/3_center.mdc) § *Git repo semantics*; [`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`](.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc) § *Submodule pin promotion (skill-owned)*.
@@ -71,7 +71,7 @@ Built-in **`sedea`** center is **not** submodule-pinned; this subsection does no
 
 ### Git governance (worktree-only)
 
-Implementation and ship use **git worktrees** only — not **`git checkout -b`** on the primary hosting clone. Each coding-ready PR maps to **one worktree**; the **worktree name** is the `--worktree-name` on center **`worktree-setup.sh`** (same string as the `-b` ref the script creates). Naming: **`.sedea/centers/research-and-development/rules/10_plan-naming-convention.mdc`** and **`.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc`**. Setup, attach, commit/push, and post-merge cleanup: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** and **`.sedea/centers/sedea/rules/0_hosting-repo.mdc`**, **6**, **7**. **Attach order:** center **`worktree-setup.sh`** → **`sedea_add_worktree_folder`** → edits; **`sedea_remove_worktree_folder`** → center **`worktree-cleanup.sh`**.
+Implementation and ship use **git worktrees** only — not **`git checkout -b`** on the primary hosting clone. Each coding-ready PR maps to **one worktree**; the **worktree name** is the `--worktree-name` on center **`worktree-setup.sh`** (same string as the `-b` ref the script creates). Naming: **`.sedea/centers/software-development/rules/10_plan-naming-convention.mdc`** and **`.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc`**. Setup, attach, commit/push, and post-merge cleanup: **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** and **`.sedea/centers/sedea/rules/0_hosting-repo.mdc`**, **6**, **7**. **Attach order:** center **`worktree-setup.sh`** → **`sedea_add_worktree_folder`** → edits; **`sedea_remove_worktree_folder`** → center **`worktree-cleanup.sh`**.
 
 **Worktree removal ownership (binding).** Agents **must not** remove, detach, or prune worktrees they do not own. A worktree name and a path on **`git worktree list`** are **not** permission to remove that path.
 
@@ -79,22 +79,22 @@ Implementation and ship use **git worktrees** only — not **`git checkout -b`**
 |------|--------|
 | **`.sedea/centers/sedea/rules/0_hosting-repo.mdc`** § *Worktree ownership* | Four preconditions before **`sedea_remove_worktree_folder`** / **`git worktree remove`** |
 | **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`** § *Post-merge worktree cleanup* | Consent + **this pass’s** path only |
-| **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Worktree removal ownership (binding)* | R&D ship lanes (**`coding-session`**, **`plan-reconcile`** §5) |
+| **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** § *Worktree removal ownership (binding)* | R&D ship lanes (**`coding-session`**, **`plan-reconcile`** §5) |
 
 **Forbidden:** **`git worktree remove`**, **`git worktree prune`**, or **`sedea_remove_worktree_folder`** on worktrees created by another developer, dispatch, agent lane, or prior session; repo-wide “cleanup” from **`git worktree list`**; **`git worktree remove`** on **`HOSTING_ROOT`**; hand-deleting worktree directories while still mounted in Sedea. **`git worktree list` is read-only** when ownership is unclear — stop and use structured choice. Post-merge cleanup removes **only** **this pass’s** **`WORKTREE_ROOT`** after merge consent (see **`coding-session/SKILL.md`** § *Post-merge workspace cleanup*).
 
-**`center.yaml` `skillEntries` sync (manifest hygiene).** Mission Control discovers skills on disk; **`skillEntries`** in **`.sedea/centers/research-and-development/center.yaml`** is for audits and maintenance. When you **add, rename, or remove** a `SKILL.md` under any mission `skills/` tree, update that mission's `skillEntries` list in the same change. From the **hosting repo root**:
+**`center.yaml` `skillEntries` sync (manifest hygiene).** Mission Control discovers skills on disk; **`skillEntries`** in **`.sedea/centers/software-development/center.yaml`** is for audits and maintenance. When you **add, rename, or remove** a `SKILL.md` under any mission `skills/` tree, update that mission's `skillEntries` list in the same change. From the **hosting repo root**:
 
 ```bash
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
+node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
 ```
 
-Exit **0** when manifest and disk match, warm-up parity passes, nullable-parent spawn wire lint passes (planner **`mission_control_spawn_agent`** examples must use **`"parent":"null"`** when **`inputs.parent.type`** is **`string`** — JSON **`null`** fails), and plan-change notify emit/receive governance lint passes; **1** prints mismatch or lint errors. Plan-and-deliver authors also see **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md`** § *Adding or removing a skill*.
+Exit **0** when manifest and disk match, warm-up parity passes, nullable-parent spawn wire lint passes (planner **`mission_control_spawn_agent`** examples must use **`"parent":"null"`** when **`inputs.parent.type`** is **`string`** — JSON **`null`** fails), and plan-change notify emit/receive governance lint passes; **1** prints mismatch or lint errors. Plan-and-deliver authors also see **`.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md`** § *Adding or removing a skill*.
 
 **Lane warm-up parity (`verify-lane-warmup-parity.mjs`).** After changing definitive **`laneRules`** tables or skill **`warmUpRules`**, run from the hosting repo root:
 
 ```bash
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-lane-warmup-parity.mjs --bootstrap full
+node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-lane-warmup-parity.mjs --bootstrap full
 ```
 
 Exit **0** when every **plan and deliver** lane role's manifest **`effectiveWarmUp`** covers today's legacy baseline (**sedea `alwaysApply` scan ∪ skill `warmUpRules`**). **`--bootstrap slim`** is the **§5.3 `alwaysApply` flip merge gate** (single bootstrap rule only). Hosting-repo CI: **`./scripts/verify-center-governance.sh`** (runs skill manifest + parity **full** + parity **slim** + warm-up/parity integration tests).
@@ -106,7 +106,7 @@ Exit **0** when every **plan and deliver** lane role's manifest **`effectiveWarm
 | **`GH_SUBMODULE_CHECKOUT_TOKEN`** | GitHub Actions secret on the hosting repo | PAT with **`contents:read`** on **`sedea-ai/app`** and **`sedea-centers/software-development`**. Required because the default **`GITHUB_TOKEN`** cannot read private submodule repos during **`actions/checkout`**. |
 | **`HOSTING_ROOT`** | Local / integration test env (optional) | Absolute path to the hosting repo root. **`verify-center-governance-integration.test.mjs`** defaults to the hosting root inferred from the script path when unset; set explicitly when running tests from a non-standard cwd. |
 
-**Local pre-PR check:** from the hosting repo root, **`./scripts/verify-center-governance.sh`** runs **`npm ci`** in **`missions/plan-and-deliver/scripts/`** then the same three verify steps as CI. No extra env vars are required for a standard clone with populated **`.sedea/centers/research-and-development`** submodule.
+**Local pre-PR check:** from the hosting repo root, **`./scripts/verify-center-governance.sh`** runs **`npm ci`** in **`missions/plan-and-deliver/scripts/`** then the same three verify steps as CI. No extra env vars are required for a standard clone with populated **`.sedea/centers/software-development`** submodule.
 
 **§5.6 operational sunset (L1–L5).** Before the legacy H8 directory-scan fallback is turned off in production, all gates in **`.sedea/centers/sedea/docs/lane-manifest-contract.md`** § *Legacy fallback operational sunset (PRD §5.6 L1–L5)* must pass. L2 is partially machine-enforced today via parity **`--bootstrap full`** in CI; L1/L3–L5 remain operator/host milestones documented in that section.
 
@@ -115,8 +115,8 @@ Exit **0** when every **plan and deliver** lane role's manifest **`effectiveWarm
 **Warm-up/parity integration tests.** **`./scripts/verify-center-governance.sh`** runs these as its third step (after **`npm ci`** in **`missions/plan-and-deliver/scripts/`**). To run only the integration suite locally:
 
 ```bash
-npm ci --prefix .sedea/centers/research-and-development/missions/plan-and-deliver/scripts
-HOSTING_ROOT="$(pwd)" node --test .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-center-governance-integration.test.mjs
+npm ci --prefix .sedea/centers/software-development/missions/plan-and-deliver/scripts
+HOSTING_ROOT="$(pwd)" node --test .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-center-governance-integration.test.mjs
 ```
 
 Asserts **`verify-skill-manifest.mjs`** exit **0**, parity **`--bootstrap full`** exit **0**, and parity **`--bootstrap slim`** exit **0** (§5.3 merge gate). The skill-manifest OK line includes **`notify emit/receive governance lint passed`**.
@@ -136,7 +136,7 @@ Asserts **`verify-skill-manifest.mjs`** exit **0**, parity **`--bootstrap full`*
 
 ### PRD routing (canonical)
 
-Every **`plan and deliver`** dispatch runs **`author-prd`** before **`master-planner`**. Squad Leader procedure: **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §§1–3.
+Every **`plan and deliver`** dispatch runs **`author-prd`** before **`master-planner`**. Squad Leader procedure: **`.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc`** §§1–3.
 
 ```mermaid
 flowchart TD
@@ -169,12 +169,12 @@ Operational documents (PRDs, brainstorm reports, ad-hoc PRDs, triage reports) ar
 
 - **`.sedea/operations/<workspace-bound-scope>/docs/`** via host-supplied **`operationsDocsDirectory`** from lane identity or spawn **`inputs`**.
 
-Resolution order is normative in **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*. **Forbidden:** per-dispatch bundle `docs/` paths and **`bundleDirectory`** as a docs write input.
+Resolution order is normative in **`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*. **Forbidden:** per-dispatch bundle `docs/` paths and **`bundleDirectory`** as a docs write input.
 
 **Do not use**
 
 - Skipping **`author-prd`** because a PRD `@path` was pasted in the opening message — §2 may set **`operation: manage`**, but §3 still runs for approval and gap closure.
-- Legacy **`joint/docs/`** for new PRD writes — **forbidden**; use **`author-prd`** **`create`** mode writes under **`operationsDocsDirectory`** per Mission Control handover — see **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*.
+- Legacy **`joint/docs/`** for new PRD writes — **forbidden**; use **`author-prd`** **`create`** mode writes under **`operationsDocsDirectory`** per Mission Control handover — see **`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`** § *Docs write root resolution*.
 
 **Handoff phrase examples**
 
@@ -184,11 +184,11 @@ Resolution order is normative in **`.sedea/centers/research-and-development/rule
 | “Plan and deliver — small auth tweak for SSO” | **`plan and deliver`** → §2 intake (description + sources) → §3 **`author-prd`** |
 | “This Confluence link won’t load” | **`plan and deliver`** §2 **AskQuestion** (paste, different path, or switch **`create`**) |
 
-**Referenced skills:** **`author-prd`** (plan-and-deliver §3); **`ad-hoc-prd`** (**`debug-and-fix`**, **`single-phase`**); **`brainstorm-research`** (optional pre-intake on all four R&D delivery missions).
+**Referenced skills:** **`author-prd`** (plan-and-deliver §3); **`ad-hoc-prd`** (**`debug-and-fix`**, **`single-phase`**); **`brainstorm-research`** (optional pre-intake on all four software-development delivery missions).
 
 ### Brainstorm research (optional pre-intake)
 
-Every R&D delivery mission (**`plan-and-deliver`**, **`single-phase`**, **`quick-fix`**, **`debug-and-fix`**) offers **`brainstorm-first`** alongside direct intake at §2 step 0 (or §2 step 1 for **`quick-fix`**). Canonical skill: **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/brainstorm-research/SKILL.md`**.
+Every software-development delivery mission (**`plan-and-deliver`**, **`single-phase`**, **`quick-fix`**, **`debug-and-fix`**) offers **`brainstorm-first`** alongside direct intake at §2 step 0 (or §2 step 1 for **`quick-fix`**). Canonical skill: **`.sedea/centers/software-development/missions/plan-and-deliver/skills/brainstorm-research/SKILL.md`**.
 
 | Intake option | Behavior |
 | --- | --- |
@@ -255,13 +255,13 @@ Normative field semantics: [`.sedea/centers/sedea/rules/8_plan-board-contract.md
 | **`kind` frontmatter** | **`plan`** or omit for new delivery plans — **do not** create **`top_level_topic`** or files under **`plans/roadmap-topics/`** |
 | **Title / todos** | Frontmatter **`name`**, **`overview`**, **`todos[]`** — todo **`status`** uses British **`cancelled`**; plan lifecycle uses American **`canceled`** in sidecar |
 
-**Intake alignment:** [`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`](../rules/30_planning-target-resolution.mdc) § *Root delivery plans only* forbids roadmap-topic expand paths in planning snapshots. [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../rules/50_mission-control-display-metadata-discipline.mdc) § *Null-parent dispatch labels* forbids Hub-topic wording in dispatch chrome.
+**Intake alignment:** [`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`](../rules/30_planning-target-resolution.mdc) § *Root delivery plans only* forbids roadmap-topic expand paths in planning snapshots. [`.sedea/centers/software-development/rules/50_mission-control-display-metadata-discipline.mdc`](../rules/50_mission-control-display-metadata-discipline.mdc) § *Null-parent dispatch labels* forbids Hub-topic wording in dispatch chrome.
 
 **Operations write location:** Plan and sidecar edits target the **main hosting clone** only — see [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Operations persistence (main hosting root only)*.
 
 ### GitHub issue dispatch closure
 
-When a delivery dispatch binds a **GitHub issue URL** (Hub intake note or URL in the opening message), the Squad Leader must update that issue at **`mission_control_propose_dispatch_resolution`** so the issue does not linger. Normative contract: [`.sedea/centers/research-and-development/rules/60_github-issue-dispatch-closure.mdc`](../rules/60_github-issue-dispatch-closure.mdc) — bind at §1/§2 intake; apply status map immediately **before** each resolution proposal (**`resolved`** → comment + close; **`partial`** / **`abandoned`** / **`aborted`** → comment, leave open).
+When a delivery dispatch binds a **GitHub issue URL** (Hub intake note or URL in the opening message), the Squad Leader must update that issue at **`mission_control_propose_dispatch_resolution`** so the issue does not linger. Normative contract: [`.sedea/centers/software-development/rules/60_github-issue-dispatch-closure.mdc`](../rules/60_github-issue-dispatch-closure.mdc) — bind at §1/§2 intake; apply status map immediately **before** each resolution proposal (**`resolved`** → comment + close; **`partial`** / **`abandoned`** / **`aborted`** → comment, leave open).
 
 ### Agent UX pitfalls (easy mis-runs)
 
@@ -272,18 +272,18 @@ When a delivery dispatch binds a **GitHub issue URL** (Hub intake note or URL in
 | **`pr-review`** as its own Mission Control dispatch | **Stop** — inline on active **`coding-session`** only (**`pr-review/SKILL.md`** § *Standalone dispatch*) |
 | **Commit and push cadence** step 3 | Rule **20** step 3 = **`pr-review` Step 5 — GitHub only** after push when Steps 1–4 already ran — not a second full triage |
 | **High complexity** Master Plan (score **> 20**) | Recommend **Route §6 → Delivery phases** on the **master-planner** lane (do not withhold §6); each phase plan gets **`phase-planner`** without numeric gate; Squad Leader never runs **`delivery-phases`** / **`pr-breakdown`** |
-| Worktree name / PR / chat titles | **`.sedea/centers/research-and-development/rules/10_plan-naming-convention.mdc`** — benefit verbs only; never the forbidden busy-work prefix |
+| Worktree name / PR / chat titles | **`.sedea/centers/software-development/rules/10_plan-naming-convention.mdc`** — benefit verbs only; never the forbidden busy-work prefix |
 | Squad Leader collects **title only**, spawns **`author-prd`**, child invents scope | Complete **`plan.mdc`** §2 intake on Squad Leader; §3 handoff includes **`prdDescription`** + **`sourceMaterials`** |
 | Spawn **`master-planner`** from **`new-plan`** or run **`pr-plan`** on a standalone child without **`new-plan-agent`** | **`master-planner`** = Squad Leader §5 **spawn only**; **`pr-plan`** = **inline** under **`new-plan`** — **`skills/README.md`** § *Normative execution mode* |
 | Leader **AskQuestion** after Author PRD child approve (seed review / confirm spawn) | **Forbidden** — auto-chain §4→§5 on same leader turn; PRD approval stays on **Author PRD** child lane (**`plan.mdc`** §3 resume) |
 | Author PRD resolve-only modal without **Approve PRD** / **Revise PRD** | **Forbidden** — open-item resolution and approval co-present on the same modal (**`author-prd`** step 10; **`ad-hoc-prd`** step 5) |
-| **Child lane** calls **`mission_control_update_dispatch_display`** | **Forbidden** — dispatch chrome is Squad Leader scope only; child refreshes **own** slot via **`mission_control_update_lane_display`** — [`.sedea/centers/sedea/rules/9_display-metadata-authority.mdc`](.sedea/centers/sedea/rules/9_display-metadata-authority.mdc); [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../rules/50_mission-control-display-metadata-discipline.mdc) |
+| **Child lane** calls **`mission_control_update_dispatch_display`** | **Forbidden** — dispatch chrome is Squad Leader scope only; child refreshes **own** slot via **`mission_control_update_lane_display`** — [`.sedea/centers/sedea/rules/9_display-metadata-authority.mdc`](.sedea/centers/sedea/rules/9_display-metadata-authority.mdc); [`.sedea/centers/software-development/rules/50_mission-control-display-metadata-discipline.mdc`](../rules/50_mission-control-display-metadata-discipline.mdc) |
 | **Squad Leader** renames a **child** agent tab via dispatch MCP or prose | **Forbidden** — leader uses **`mission_control_update_dispatch_display`** for dispatch title/hover; child lane self-service via lane MCP — rule **9** § *Forbidden* |
-| **Chat-only** tab rename ("call it X in the UI") with no MCP on owning lane | **Stop** — durable labels persist through governed MCP; see [`.sedea/centers/research-and-development/docs/mission-control-display-metadata-host-spec.md`](mission-control-display-metadata-host-spec.md) § *Stale tab title recovery* |
+| **Chat-only** tab rename ("call it X in the UI") with no MCP on owning lane | **Stop** — durable labels persist through governed MCP; see [`.sedea/centers/software-development/docs/mission-control-display-metadata-host-spec.md`](mission-control-display-metadata-host-spec.md) § *Stale tab title recovery* |
 | Tab title stale after reload | **Orientation** — re-read spawn context; owning lane runs correct MCP per role — not Alignment Safeguard; rule **50** + host-spec doc § *Stale tab title recovery* |
 | Prose-only “add this to Relevant Links” / register warm-up or every read path | **Stop** — call **`mission_control_update_relevant_documents`** for **authored/material edits only**; see **`missions/plan-and-deliver/skills/README.md`** § *Relevant Links — post-write registration*; rule **50** § *Relevant Links (documents)* |
 
-**Host spec (additive fields):** [`.sedea/centers/research-and-development/docs/mission-control-display-metadata-host-spec.md`](mission-control-display-metadata-host-spec.md) — bundle field names, max lengths, hosting-repo implementation pointers. Authority table remains [`.sedea/centers/sedea/rules/9_display-metadata-authority.mdc`](.sedea/centers/sedea/rules/9_display-metadata-authority.mdc) only.
+**Host spec (additive fields):** [`.sedea/centers/software-development/docs/mission-control-display-metadata-host-spec.md`](mission-control-display-metadata-host-spec.md) — bundle field names, max lengths, hosting-repo implementation pointers. Authority table remains [`.sedea/centers/sedea/rules/9_display-metadata-authority.mdc`](.sedea/centers/sedea/rules/9_display-metadata-authority.mdc) only.
 
 ### Agent glossary — step and section labels
 
@@ -315,32 +315,32 @@ Labels reuse numbers and § symbols across documents. **Read the owning doc** be
 
 - **GitHub** — Pull requests, diffs, and PR description fields (e.g. “Notes for the reviewer”). **A PR-creating agent** fills the body from the prompt **a coding agent** supplies.
 - **Plan board** — Where **developers** open and review planning-mode `.plan.md` files in the plans folder `.sedea/operations/**/plans/**`).
-- **Path placeholders (`...`)** — In this document and R&D governance, `` `...` `` inside path examples (e.g. `.sedea/operations/.../plans/`) denotes **omitted segments**, not a folder named `...`. Substitute the **bundle-relative** segment or a handover-supplied absolute path — never literal **`joint`**. See **`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`** § *Path placeholders in documentation*.
+- **Path placeholders (`...`)** — In this document and software-development governance, `` `...` `` inside path examples (e.g. `.sedea/operations/.../plans/`) denotes **omitted segments**, not a folder named `...`. Substitute the **bundle-relative** segment or a handover-supplied absolute path — never literal **`joint`**. See **`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`** § *Path placeholders in documentation*.
 - **`.plan.md` files** — Standalone plan files at each hierarchy level (Master Plan, phase plans, PR plans); canonical location is under `.sedea/operations/**/plans/**`.
 - **PRD** — Product (or feature) Requirements Document — the prime input for the one-shot **Master Plan** (mode #1). Every **`plan and deliver`** dispatch authors or validates PRD via **`author-prd`** (§§1–3) before **`master-planner`** — see § *PRD routing (canonical)*.
 - **Git worktree** — Isolated worktree used by the **`coding-session`** protocol branch when spinning up a coding agent.
-- **Protocol** — The **plan and deliver** mission (`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`, command phrase *plan and deliver*) — protocol branches and skills under `missions/plan-and-deliver/skills/` implement this document's cadence.
+- **Protocol** — The **plan and deliver** mission (`.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc`, command phrase *plan and deliver*) — protocol branches and skills under `missions/plan-and-deliver/skills/` implement this document's cadence.
 
 ### Protocol branches
 
 | Branch | Path | Role in this process |
 | --- | --- | --- |
-| `author-prd` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/author-prd/SKILL.md` | Squad Leader §3 child lane: gather evidence, draft or update a flexible PRD, developer approval — mandatory before **`master-planner`** on every **`plan and deliver`** dispatch. **`create`** writes under **`operationsDocsDirectory`** (`.sedea/operations/.../docs/`). |
-| `ad-hoc-prd` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md` | Minimal fix-scope PRD for **`single-phase`** (§3) and **`debug-and-fix`** (post-fix §5c) — **not** **`plan and deliver`** (which uses **`author-prd`** §3). Does **not** spawn **`master-planner`**; **`single-phase`** Squad Leader auto-chains §4 seed → §5 **`master-planner`** after terminal PRD approval. |
-| `quick-fix-plan` | `.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md` | **`quick-fix`** §3 spawn target — minimal parent scaffold plus inline **`new-plan`** + **`pr-plan`** on one child lane (single PR, complexity **≤ 6**). |
-| `master-planner` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md` | PRD → **Master Plan** (mode #1). Drafts §§ 1–5 in the initial turn, including **`### Decomposition assessment`** and **`### Complexity score (plan-scope signal)`** under § 5. **High** complexity (overall score > 20) recommends **Route §6 → Delivery phases** — not withholding §6 — to split into lower-complexity phase plans via **`phase-planner`**. Follow-up moves use **AskQuestion** per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* — run **`delivery-phases`** or **`pr-breakdown`** **inline** on the master-master-planner lane, draft §7 Caveats inline, or revise sections. **Operations git** (`.sedea/operations/` plan files) is **user-managed** — agents never solicit commit/push/PR via modal **`options`** (rule **6** § Operations repository). |
-| `delivery-phases` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` | Decompose a focused **Master Plan** or **Phase plan** into delivery phases (mode #2). **Primary (`plan and deliver`):** **`master-planner`** or **`phase-planner`** runs this skill **inline** — see **`skills/README.md`** § *Normative execution mode*. **Secondary:** protocol-branch dispatch may spawn a child lane (`## Completion (spawned)`). Runs **`new-plan`** **inline** per approved row. |
-| `pr-breakdown` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` | Decompose a focused **Master Plan** or **Phase plan** into PRs (mode #3 set-level). **Primary (`plan and deliver`):** **`master-planner`** or **`phase-planner`** runs this skill **inline** — see **`skills/README.md`** § *Normative execution mode*. **Secondary:** protocol-branch dispatch may spawn a child lane. Runs **`new-plan`** **inline** (then inline **`pr-plan`**) per approved row. |
-| `phase-planner` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md` | Populate a focused **phase plan** stub: drafts §§ 1–4 plus **`### Decomposition assessment`**. Runs **`delivery-phases`** / **`pr-breakdown`** **inline** on the phase-planner lane after route approval. |
-| `pr-plan` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md` | Populate §§ 1–4 on the **planning** lane; §§ 5–8 default **`_TBD_`**. **Primary (`plan and deliver`):** **`new-plan`** runs this skill **inline** under **`master-planner`** or **`phase-planner`** — see **`skills/README.md`** § *Normative execution mode* (**`pr-plan`** inline-only on this mission). **Secondary:** other missions (e.g. **`quick-fix`** via **`quick-fix-plan`**) run **`pr-plan`** inline on their planning child lane. **AskQuestion** **Start coding session** → spawn **`coding-session`** via **`mission_control_spawn_agent`** (§5d). See skill § *Handoff to coding-session*. |
-| `new-plan` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/new-plan/SKILL.md` | Scaffold a new `.plan.md` + sidecar; parent linkage. **Primary (`plan and deliver`):** **`delivery-phases`** / **`pr-breakdown`** run this skill **inline** under **`master-planner`** or **`phase-planner`**. **Secondary:** protocol-branch or mission dispatch (e.g. **`quick-fix-plan`**) may use spawned mode per that mission's `plan.mdc`. Runs **`pr-plan`** **inline**; spawns **`phase-planner`** when the child is a phase plan. |
-| `coding-session` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md` | **Separate** lane from **`pr-plan`**: center **`worktree-setup.sh`**, sidecar, attach, map setup **`bootstrapStatus`** before implementation, then **implements** §§ 5–8 on that lane (default after **`pr-plan`** spawn; **auto-authorize** when §§1–4 drafted) or **prompt-only** external handoff. Ship chain (**`pre-pr-review`**, inline **`create-pr`**, inline **`pr-review`**, inline **`deploy-walk`**, inline **`plan-reconcile`**). |
-| `worktree-bootstrap` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/worktree-bootstrap/SKILL.md` | **Deprecated (read-only).** Normative bootstrap is center **`worktree-setup.sh`** on **`coding-session`**. Exception-only **inline** retry when setup failed — not spawn-by-default. See **`skills/README.md`** § *Worktree-bootstrap skill drain gate*. |
-| `pre-pr-review` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md` | Fresh spawned pre-PR reviewer lane. Reviews committed implementation diff against a PR plan or free-form scope, checks per-PR template + repo rules + quality (§7 **Before deploy** only for deploy checklist — **After deploy** is post-merge). Returns **proposed** non-blocker items in `outputs.proposedFollowUps` when anchored to **`plan`** (does **not** edit the plan file). The active **`coding-session`** agent presents proposals to the developer; approved bullets are appended to `## Follow-ups` before **`create-pr`** when the developer chooses that path. Reports go/no-go. |
-| `create-pr` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/create-pr/SKILL.md` | **Inline** on the active **`coding-session`** lane after **`pre-pr-review`** returns `go` and Create-PR gate approval. **Only** path that may run **`gh pr create`** (per rule **20**). Builds reviewer-complete PR description; opens GitHub PR when authorized. Post-merge **`deploy-walk`** and **`plan-reconcile`** are owned by **`coding-session`** — not a separate child lane. |
-| `pr-review` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-review/SKILL.md` | Triage PR review comments; feeds **Code review follow-ups** on the PR plan. |
-| `deploy-walk` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/deploy-walk/SKILL.md` | **Inline** on the active **`coding-session`** lane. Walk a PR plan's `## N. Deploy test plan` section step by step. **Agent-executable** steps run **without approval**; **manual** steps present for the developer. Detached dispatch redirects to **`coding-session`**. Does **not** auto-run **`plan-reconcile`**. |
-| `plan-reconcile` | `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md` | **Inline** on the active **`coding-session`** lane. Plan reconcile / archive, follow-ups triage, post-ship workspace cleanup. Detached dispatch redirects to **`coding-session`**. |
+| `author-prd` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/author-prd/SKILL.md` | Squad Leader §3 child lane: gather evidence, draft or update a flexible PRD, developer approval — mandatory before **`master-planner`** on every **`plan and deliver`** dispatch. **`create`** writes under **`operationsDocsDirectory`** (`.sedea/operations/.../docs/`). |
+| `ad-hoc-prd` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md` | Minimal fix-scope PRD for **`single-phase`** (§3) and **`debug-and-fix`** (post-fix §5c) — **not** **`plan and deliver`** (which uses **`author-prd`** §3). Does **not** spawn **`master-planner`**; **`single-phase`** Squad Leader auto-chains §4 seed → §5 **`master-planner`** after terminal PRD approval. |
+| `quick-fix-plan` | `.sedea/centers/software-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md` | **`quick-fix`** §3 spawn target — minimal parent scaffold plus inline **`new-plan`** + **`pr-plan`** on one child lane (single PR, complexity **≤ 6**). |
+| `master-planner` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/master-planner/SKILL.md` | PRD → **Master Plan** (mode #1). Drafts §§ 1–5 in the initial turn, including **`### Decomposition assessment`** and **`### Complexity score (plan-scope signal)`** under § 5. **High** complexity (overall score > 20) recommends **Route §6 → Delivery phases** — not withholding §6 — to split into lower-complexity phase plans via **`phase-planner`**. Follow-up moves use **AskQuestion** per **`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* — run **`delivery-phases`** or **`pr-breakdown`** **inline** on the master-master-planner lane, draft §7 Caveats inline, or revise sections. **Operations git** (`.sedea/operations/` plan files) is **user-managed** — agents never solicit commit/push/PR via modal **`options`** (rule **6** § Operations repository). |
+| `delivery-phases` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/delivery-phases/SKILL.md` | Decompose a focused **Master Plan** or **Phase plan** into delivery phases (mode #2). **Primary (`plan and deliver`):** **`master-planner`** or **`phase-planner`** runs this skill **inline** — see **`skills/README.md`** § *Normative execution mode*. **Secondary:** protocol-branch dispatch may spawn a child lane (`## Completion (spawned)`). Runs **`new-plan`** **inline** per approved row. |
+| `pr-breakdown` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` | Decompose a focused **Master Plan** or **Phase plan** into PRs (mode #3 set-level). **Primary (`plan and deliver`):** **`master-planner`** or **`phase-planner`** runs this skill **inline** — see **`skills/README.md`** § *Normative execution mode*. **Secondary:** protocol-branch dispatch may spawn a child lane. Runs **`new-plan`** **inline** (then inline **`pr-plan`**) per approved row. |
+| `phase-planner` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md` | Populate a focused **phase plan** stub: drafts §§ 1–4 plus **`### Decomposition assessment`**. Runs **`delivery-phases`** / **`pr-breakdown`** **inline** on the phase-planner lane after route approval. |
+| `pr-plan` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md` | Populate §§ 1–4 on the **planning** lane; §§ 5–8 default **`_TBD_`**. **Primary (`plan and deliver`):** **`new-plan`** runs this skill **inline** under **`master-planner`** or **`phase-planner`** — see **`skills/README.md`** § *Normative execution mode* (**`pr-plan`** inline-only on this mission). **Secondary:** other missions (e.g. **`quick-fix`** via **`quick-fix-plan`**) run **`pr-plan`** inline on their planning child lane. **AskQuestion** **Start coding session** → spawn **`coding-session`** via **`mission_control_spawn_agent`** (§5d). See skill § *Handoff to coding-session*. |
+| `new-plan` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/new-plan/SKILL.md` | Scaffold a new `.plan.md` + sidecar; parent linkage. **Primary (`plan and deliver`):** **`delivery-phases`** / **`pr-breakdown`** run this skill **inline** under **`master-planner`** or **`phase-planner`**. **Secondary:** protocol-branch or mission dispatch (e.g. **`quick-fix-plan`**) may use spawned mode per that mission's `plan.mdc`. Runs **`pr-plan`** **inline**; spawns **`phase-planner`** when the child is a phase plan. |
+| `coding-session` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/coding-session/SKILL.md` | **Separate** lane from **`pr-plan`**: center **`worktree-setup.sh`**, sidecar, attach, map setup **`bootstrapStatus`** before implementation, then **implements** §§ 5–8 on that lane (default after **`pr-plan`** spawn; **auto-authorize** when §§1–4 drafted) or **prompt-only** external handoff. Ship chain (**`pre-pr-review`**, inline **`create-pr`**, inline **`pr-review`**, inline **`deploy-walk`**, inline **`plan-reconcile`**). |
+| `worktree-bootstrap` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/worktree-bootstrap/SKILL.md` | **Deprecated (read-only).** Normative bootstrap is center **`worktree-setup.sh`** on **`coding-session`**. Exception-only **inline** retry when setup failed — not spawn-by-default. See **`skills/README.md`** § *Worktree-bootstrap skill drain gate*. |
+| `pre-pr-review` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md` | Fresh spawned pre-PR reviewer lane. Reviews committed implementation diff against a PR plan or free-form scope, checks per-PR template + repo rules + quality (§7 **Before deploy** only for deploy checklist — **After deploy** is post-merge). Returns **proposed** non-blocker items in `outputs.proposedFollowUps` when anchored to **`plan`** (does **not** edit the plan file). The active **`coding-session`** agent presents proposals to the developer; approved bullets are appended to `## Follow-ups` before **`create-pr`** when the developer chooses that path. Reports go/no-go. |
+| `create-pr` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/create-pr/SKILL.md` | **Inline** on the active **`coding-session`** lane after **`pre-pr-review`** returns `go` and Create-PR gate approval. **Only** path that may run **`gh pr create`** (per rule **20**). Builds reviewer-complete PR description; opens GitHub PR when authorized. Post-merge **`deploy-walk`** and **`plan-reconcile`** are owned by **`coding-session`** — not a separate child lane. |
+| `pr-review` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-review/SKILL.md` | Triage PR review comments; feeds **Code review follow-ups** on the PR plan. |
+| `deploy-walk` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/deploy-walk/SKILL.md` | **Inline** on the active **`coding-session`** lane. Walk a PR plan's `## N. Deploy test plan` section step by step. **Agent-executable** steps run **without approval**; **manual** steps present for the developer. Detached dispatch redirects to **`coding-session`**. Does **not** auto-run **`plan-reconcile`**. |
+| `plan-reconcile` | `.sedea/centers/software-development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md` | **Inline** on the active **`coding-session`** lane. Plan reconcile / archive, follow-ups triage, post-ship workspace cleanup. Detached dispatch redirects to **`coding-session`**. |
 
 ### Diagram and feedback channels
 
@@ -365,7 +365,7 @@ Per Strategy principle #2, planning happens in three modes, applied top-down: **
 - **PR list** (mode #3 set-level § 3) — a numbered list whose item lines (the PR slug or short title, bolded) follow the short-bullet rule, but whose **Single concern** sub-bullet inherits the per-PR § 1 sentence verbatim and is therefore full prose, not 2–5 words.
 - **Reasoning** (mode #3 per-PR) — **a coding agent** (implementation + **fresh pre-PR reviewer agent session**) + **a reviewer agent**-facing; full sentences so the PR description carries faithful rationale.
 - **Deploy test plan** (mode #3 per-PR) — each step must be unambiguous for the on-call.
-- **Repo rules impact** (mode #3 per-PR § 5) — short bullets for **`.cursor/rules/*.mdc`** in the repo that receives the PR (hosting repo or hosting repo worktree); see **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`**. **Not** Sedea center rules under **`.sedea/centers/`** — R&D center changes use **`improve center rules`** on **`research-and-development`**; Sedea platform center rules use **`sedea`**. The `_None — …_` line is still short-bullet form.
+- **Repo rules impact** (mode #3 per-PR § 5) — short bullets for **`.cursor/rules/*.mdc`** in the repo that receives the PR (hosting repo or hosting repo worktree); see **`.sedea/centers/software-development/rules/40_maintain-rules.mdc`**. **Not** Sedea center rules under **`.sedea/centers/`** — software-development center changes use **`improve center rules`** on **`software-development`**; Sedea platform center rules use **`sedea`**. The `_None — …_` line is still short-bullet form.
 - **Caveats** (mode #3 per-PR only) — **a coding agent** (implementation + **fresh pre-PR reviewer agent session**) + **a reviewer agent**-facing; full sentences so the PR description carries the concern faithfully. *In modes #1 and #2 Caveats is read by the developer during plan review and follows the short-bullet rule like the other planning bullets — short, scannable, sufficient.*
 
 Each section says inline whether it follows the short-bullet rule or opts out.
@@ -437,7 +437,7 @@ Every plan ends in a **dual-title section** — § 6 in the Master Plan, § 5 in
 
 A short **optional intro paragraph** (one or two sentences) is allowed immediately under the heading and before the entries — useful when the decomposition needs a one-line framing the reader can't infer from the entries alone (e.g. "phases run in two parallel tracks"). Skip it when the entries speak for themselves; an empty intro is preferred over filler.
 
-A non-PR-ready plan thus *only* lists short summaries pointing at child plans — never inlines a child's body. To break a child entry out into its own plan file, the developer picks list index **N** via **AskQuestion** per **30_planning-target-resolution** § *Sedea input channel*; the agent runs the **`new-plan`** protocol branch (**Development tools** § *Protocol branches*) with the parent plan resolved from chat context per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`**. **N** is the ordered-list index from the parent's numbered list of children — `Delivery phases` body when the heading is `Delivery phases`, or the `### PR list` sub-section when the heading is `PR breakdown`. **`new-plan`** seeds the child plan's name from the bolded item title on item **N**'s line (indexed-child mode). **Indexed-child stub:** the child file uses a **generic** scaffold (`## Overview`, `## Phasing`, `## Out of scope`) until **`phase-planner`** or **`pr-plan`** replaces the body with the Phase plan or per-PR template — that two-step split is intentional.
+A non-PR-ready plan thus *only* lists short summaries pointing at child plans — never inlines a child's body. To break a child entry out into its own plan file, the developer picks list index **N** via **AskQuestion** per **30_planning-target-resolution** § *Sedea input channel*; the agent runs the **`new-plan`** protocol branch (**Development tools** § *Protocol branches*) with the parent plan resolved from chat context per **`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`**. **N** is the ordered-list index from the parent's numbered list of children — `Delivery phases` body when the heading is `Delivery phases`, or the `### PR list` sub-section when the heading is `PR breakdown`. **`new-plan`** seeds the child plan's name from the bolded item title on item **N**'s line (indexed-child mode). **Indexed-child stub:** the child file uses a **generic** scaffold (`## Overview`, `## Phasing`, `## Out of scope`) until **`phase-planner`** or **`pr-plan`** replaces the body with the Phase plan or per-PR template — that two-step split is intentional.
 
 #### Depth-first plan-tree traversal (indexed spawn)
 
@@ -456,7 +456,7 @@ A non-PR-ready plan thus *only* lists short summaries pointing at child plans �
 - **Parallel stage** (comma-separated PRs in one stage label): all PRs in that stage may become eligible **together** once the **prior stage** is fully ship-complete (every PR in the prior stage meets the ship-complete bar above).
 - **Single PR** (`### Sequencing` notes one PR): only item **1** exists; no sibling gate.
 
-**List approval vs expand.** Structured choice on **`delivery-phases`** / **`pr-breakdown`** separates **approve list** (wording + order + sequencing) from **expand eligible row(s)** (run **`new-plan`** only for indices that pass the gate). On **`pr-breakdown`** inline under **`master-planner`** or **`phase-planner`**, **`approve-list`** may **auto-expand PR index 1** in the **same** act-after-select turn when depth-first eligible — then inline **`new-plan`** → inline **`pr-plan`** (§§1–4, verbatim **Single concern** from the list row). PR **2+** and re-expand still use **`expand-eligible`**. **`delivery-phases`** unchanged (approve list does not auto-expand). See those skills §6 and **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Depth-first expansion eligibility*.
+**List approval vs expand.** Structured choice on **`delivery-phases`** / **`pr-breakdown`** separates **approve list** (wording + order + sequencing) from **expand eligible row(s)** (run **`new-plan`** only for indices that pass the gate). On **`pr-breakdown`** inline under **`master-planner`** or **`phase-planner`**, **`approve-list`** may **auto-expand PR index 1** in the **same** act-after-select turn when depth-first eligible — then inline **`new-plan`** → inline **`pr-plan`** (§§1–4, verbatim **Single concern** from the list row). PR **2+** and re-expand still use **`expand-eligible`**. **`delivery-phases`** unchanged (approve list does not auto-expand). See those skills §6 and **`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`** § *Depth-first expansion eligibility*.
 
 **Upstream notification (spawn chain).** When a **`coding-session`** child finishes **plan-reconcile** with the PR **merged**, **main** fast-forwarded, and the target plan **archived** (`shipPhase: done`, `rowStatus: closed`), the child terminal **`mission_control_send_agent_result`** must set **`outputs.prShipComplete: true`** and include **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from spawn inputs. Mission Control delivers that result to the **parent lane** (`pr-plan` → inline **`new-plan`** → **`pr-breakdown`** / **`phase-planner`** → **`master-planner`**). Each parent **re-emits an updated** terminal result (same `correlationId`) after merging child ship status so upstream agents can run **`expand-eligible`** / **`expand-next-eligible`** without waiting for manual **Ship recap** on the Squad Leader lane. When every PR under a phase is **`prShipComplete`**, **`phase-planner`** sets **`outputs.phaseShipComplete: true`** for **`delivery-phases`** / **`master-planner`**. Contract detail: **`missions/plan-and-deliver/skills/README.md`** § *Upstream ship-complete notification*.
 
@@ -482,10 +482,10 @@ The set-level content fills the PR-ready plan's dual-title section (Master Plan 
 
 #### PR sizing — test cases and kinds of changes
 
-**Canonical source (center sync contract).** This subsection is the **authoritative** definition of PR sizing for the **research-and-development** center. When buckets, kinds-of-change rules, or test-case counting change, edit **here first**, then align:
+**Canonical source (center sync contract).** This subsection is the **authoritative** definition of PR sizing for the **software-development** center. When buckets, kinds-of-change rules, or test-case counting change, edit **here first**, then align:
 
-- **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *Keep PRs small and focused* (ship-lane summary)
-- **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`** § *Step 5a — Infer PR boundaries from the parent plan* (operational application)
+- **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** § *Keep PRs small and focused* (ship-lane summary)
+- **`.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md`** § *Step 5a — Infer PR boundaries from the parent plan* (operational application)
 - **`master-planner`** / **`phase-planner`** § *Decomposition assessment* (routing bands `single` | `few (2–5)` | `many (6+)` only — sizing metrics reference this subsection)
 
 Do **not** change thresholds (**≤ 10** / **11–20** / **21+**) or the kinds-vs-lines rule in a single downstream file alone.
@@ -524,7 +524,7 @@ Each PR's standalone plan file has these sections only — sections 1–7 are re
 4. **Reasoning.** Why this PR makes the choices it does, in two parts. The bullet-length rule does **not** apply here — items are full sentences, since each entry needs to make the reasoning unambiguous for **a reviewer agent** (via the PR description), for **a coding agent** relaying to **a PR-creating agent**, and for **a coding agent** in a **fresh pre-PR reviewer agent session**.
  - **Why this approach.** The design decisions made in this PR and *why each was made*. Capture the *because* for every non-obvious choice — naming, layering, where logic is placed, what is reused vs introduced, what is kept backwards-compatible.
  - **Considered & rejected.** Alternatives that were considered but not taken, each with the reason it was rejected. This gives **a reviewer agent** maximum signal and the same signal to **a coding agent** in a **fresh pre-PR reviewer agent session**: capturing "we considered X and rejected it because Y" short-circuits "did you think about X?" comments and lets **a reviewer agent** give actionable feedback on the chosen path.
-5. **Repo rules impact.** Short bullet list for **a coding agent** — which **`.cursor/rules/*.mdc`** files in the **hosting repo** (the repo that receives this PR) should be **added or updated** after the code change lands, and **one line each** on *what* guidance to add or adjust (new boundary, deployment constraint, error-handling pattern, layout rule, …). Follows the short-bullet rule; paths are relative to that repo's root. When this PR does not warrant any rule change, write a single bullet: `_None — no repo rule updates required for this PR._` This section is **plan-first** for long-lived agent guidance (see **`.sedea/centers/research-and-development/rules/40_maintain-rules.mdc`**); it is **not** required to duplicate the GitHub PR description body unless **a coding agent** chooses to surface it under "Notes for the reviewer".
+5. **Repo rules impact.** Short bullet list for **a coding agent** — which **`.cursor/rules/*.mdc`** files in the **hosting repo** (the repo that receives this PR) should be **added or updated** after the code change lands, and **one line each** on *what* guidance to add or adjust (new boundary, deployment constraint, error-handling pattern, layout rule, …). Follows the short-bullet rule; paths are relative to that repo's root. When this PR does not warrant any rule change, write a single bullet: `_None — no repo rule updates required for this PR._` This section is **plan-first** for long-lived agent guidance (see **`.sedea/centers/software-development/rules/40_maintain-rules.mdc`**); it is **not** required to duplicate the GitHub PR description body unless **a coding agent** chooses to surface it under "Notes for the reviewer".
 
  **Align hosting-repo rules before commit and push.** The §5 list is not only planning intent — it is the **coding checklist against the hosting-repo diff**. Before asking for review or running rule **20** § *Commit and push cadence*, **a coding agent** reconciles every §5 bullet with the worktree diff: bullets that call for **update** / **extend** / **add** a named **`.cursor/rules/*.mdc`** file must have the corresponding edit **in the same PR** (preferred) or an explicit follow-up commit in the same worktree before merge; bullets that say **no file edit** / **verify only** / **skip unless …** are satisfied by confirming the code obeys the existing rule (no `.mdc` change). If a rule edit is genuinely deferred, **revise §5 in the plan** in the same window so a **fresh pre-PR reviewer agent session** and **reviewer-agents** do not see plan ↔ repo drift. **Executable ship step:** [plan-and-deliver `coding-session/SKILL.md` § *Repo rules reconciliation (binding)*](../missions/plan-and-deliver/skills/coding-session/SKILL.md#repo-rules-reconciliation-binding) (pre-PR); post-review **`.mdc`** edits via [Post-review repo rules handoff](../missions/plan-and-deliver/skills/coding-session/SKILL.md#post-review-repo-rules-handoff) when inline **`pr-review`** assigns **Rule-update required**.
 6. **Tests to write.** Check this repo's specific rule for writing tests if exists. If the rule does not exist write: *No testing rules exist for this repo.*
@@ -593,7 +593,7 @@ Sections 1, 2, 3, 4, 6, 7, and 8 (when present) flow into the PR description tha
 |----------|------------|
 | Protocol branch names, templates, and the **hosting repo development loop** | This document — **Development tools** § *Protocol branches* and **Cadence** below |
 | Happy-path **skill order** (planning → ship) | **Cadence reference** diagram (matches **`plan-and-deliver/plan.mdc`** *Cadence reference*) |
-| **Mission Control `plan and deliver` dispatch** — who spawns whom, §§1–8 protocol, §8 ship ledger, `mission_control_propose_dispatch_resolution` gates | **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** — *Squad operations* and §8 (not duplicated here) |
+| **Mission Control `plan and deliver` dispatch** — who spawns whom, §§1–8 protocol, §8 ship ledger, `mission_control_propose_dispatch_resolution` gates | **`.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc`** — *Squad operations* and §8 (not duplicated here) |
 
 The large loop diagram below includes planning, **ship chain**, feedback, and plan updates. It is **not** the Squad Leader spawn map. Detached ship lanes, Mission Control §8 host sync, and leader-lane recap: **`plan.mdc`** §8 (*Mission Control host sync*, *Leader-lane ship recap*) and **Loop stages** § *Leader-lane ship recap* below.
 
@@ -727,7 +727,7 @@ The triage decision is the human-in-the-loop part of the cycle — there is no r
 
 #### Next Phase Decomposition
 
-Pick up the next phase to ship from the active plan's dual-title section (Master Plan § 6 or, recursively, a phase plan's § 5). The **section's heading** is the decomposition decision: `Delivery phases` means the body is a **short numbered list** of child phases; `PR breakdown` means "skip mode #2 and go straight to mode #3 here" — the body's `### PR list` sub-section is itself a **short numbered list** of child PRs. The two heading variants share the same numbered-list shape. Expanding list item **N** uses **`new-plan`** (indexed child) after the developer picks **N** per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* (**N** is the parent plan list index).
+Pick up the next phase to ship from the active plan's dual-title section (Master Plan § 6 or, recursively, a phase plan's § 5). The **section's heading** is the decomposition decision: `Delivery phases` means the body is a **short numbered list** of child phases; `PR breakdown` means "skip mode #2 and go straight to mode #3 here" — the body's `### PR list` sub-section is itself a **short numbered list** of child PRs. The two heading variants share the same numbered-list shape. Expanding list item **N** uses **`new-plan`** (indexed child) after the developer picks **N** per **`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`** § *Sedea input channel* (**N** is the parent plan list index).
 
 #### PRs Breakdown
 
@@ -735,7 +735,7 @@ For a plan decided to be PR-ready (its dual-title section is titled `PR breakdow
 
 #### Planning readiness vs worktree completeness
 
-**Canonical (do not duplicate here):** [`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`](../rules/30_planning-target-resolution.mdc) § *Planning readiness vs ship* (three signals + agent checklist), § *PR-plan completeness before coding-session* (script + snapshot ordering), and § *§8 ship ledger and inline `pr-review`* (leader recap after inline **`pr-review`**).
+**Canonical (do not duplicate here):** [`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`](../rules/30_planning-target-resolution.mdc) § *Planning readiness vs ship* (three signals + agent checklist), § *PR-plan completeness before coding-session* (script + snapshot ordering), and § *§8 ship ledger and inline `pr-review`* (leader recap after inline **`pr-review`**).
 
 Two independent gates apply before a worktree opens: layer 1 **`readyForImplementation`** + **`planningHandoffApproved`** from **`pr-plan`** §5c **Start coding session**, then layer 2 **`developerApprovedImplementation`** from **`coding-session`**. On **`pr-plan`** §5d spawn, when **`plan-ws-completeness.mjs`** reports **`OK`** (full plan) or **`INCOMPLETE`** + **`EXPECTED_SECTIONS_5_8_TBD`** (§§1–4 drafted), the child **auto-authorizes** worktrees — no second approval modal; §§5–8 fill during implementation on that lane. Detached **`coding-session`** entry still uses the worktree-open gate. Neither layer alone advances Squad Leader §8 past `not-started` — **`plan-and-deliver/plan.mdc`** §7–§8.
 
@@ -761,11 +761,11 @@ After **`pr-plan`** handoff (or an approved per-PR plan), implementation runs on
 | **After `pr-plan` spawn** (§5d **`mission_control_spawn_agent`**) | Child lane opened by host | **Same lane implements** the PR plan in the worktree after layer 2 — not paste-prompt-elsewhere. Spawn `inputs` carry `targetPlanPath`, `repoPath`, `readyForImplementation`, `planningHandoffMode: sections-1-4-complete`; §§5–8 may stay `_TBD_` until the child fills them. Worktree-open gate uses **Continue — fill §§5–8 while implementing** (expected `INCOMPLETE` from `plan-ws-completeness.mjs`) |
 | **After `pr-plan` without spawn** (defer / revise only) | Detached session when developer starts later | Same as natural-language row; `readyForImplementation` is a hint only |
 | **Re-use a prior session prompt** | Detached / coding-agent | Two-phase prompt from an earlier **`coding-session`** run; worktree name and sidecar `worktrees` must still match |
-| **Planning snapshot** | Detached | Snapshot with `targetPlanPath` from Mission Control, repo paths per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`** |
+| **Planning snapshot** | Detached | Snapshot with `targetPlanPath` from Mission Control, repo paths per **`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`** |
 
 **Do not** — see rule **30** § *Agent checklist (planning vs ship — do not conflate)*.
 
-**Canonical skill:** `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`
+**Canonical skill:** `.sedea/centers/software-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`
 **Squad Leader §8:** host sync from ship child terminals updates the leader dispatch automatically — no manual recap. See **`plan.mdc`** §8 *Mission Control host sync*.
 
 #### Coding Session
@@ -805,7 +805,7 @@ Spawned from **`coding-session`** after developer implementation approval, **com
 
 ##### create-pr
 
-**Inline** on the active **`coding-session`** lane when pre-PR review is clean **go** (auto path) or exceptional Create-PR gate approves. Builds reviewer-complete PR description; opens GitHub PR when authorized. Planning and other lanes must **not** run **`gh pr create`**. Post-PR lifecycle (merge checks, auto post-merge cleanup, After-deploy **`deploy-walk`**, **`plan-reconcile`**) is owned by **`coding-session`**. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/create-pr/SKILL.md`**.
+**Inline** on the active **`coding-session`** lane when pre-PR review is clean **go** (auto path) or exceptional Create-PR gate approves. Builds reviewer-complete PR description; opens GitHub PR when authorized. Planning and other lanes must **not** run **`gh pr create`**. Post-PR lifecycle (merge checks, auto post-merge cleanup, After-deploy **`deploy-walk`**, **`plan-reconcile`**) is owned by **`coding-session`**. See **`.sedea/centers/software-development/missions/plan-and-deliver/skills/create-pr/SKILL.md`**.
 
 ##### pr-review
 
@@ -830,7 +830,7 @@ Step-by-step walk of the PR plan **`## 7. Deploy test plan`** — **inline** on 
 
 ##### plan-reconcile
 
-Archive candidates, follow-ups triage, merge/deploy gates. Often developer-triggered after merge; separate from deploy-walk completion. **Post-ship workspace cleanup** (`sedea_remove_worktree_folder` → center **`worktree-cleanup.sh`** with ownership attestation — pull/submodule/remove/ref-drop inside the script) is owned primarily by **`coding-session/SKILL.md`** § *Post-merge workspace cleanup*; **`plan-reconcile/SKILL.md`** §5 is idempotent fallback. **`coding-session`** runs **`plan-state.mjs detect-stale-workspaces`** and routes to reconcile when cleanup was skipped. See **`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md`**.
+Archive candidates, follow-ups triage, merge/deploy gates. Often developer-triggered after merge; separate from deploy-walk completion. **Post-ship workspace cleanup** (`sedea_remove_worktree_folder` → center **`worktree-cleanup.sh`** with ownership attestation — pull/submodule/remove/ref-drop inside the script) is owned primarily by **`coding-session/SKILL.md`** § *Post-merge workspace cleanup*; **`plan-reconcile/SKILL.md`** §5 is idempotent fallback. **`coding-session`** runs **`plan-state.mjs detect-stale-workspaces`** and routes to reconcile when cleanup was skipped. See **`.sedea/centers/software-development/missions/plan-and-deliver/skills/plan-reconcile/SKILL.md`**.
 
 ##### Leader-lane §8 host sync (detached lanes)
 
@@ -847,7 +847,7 @@ On a **`plan and deliver`** Mission Control dispatch, the Squad Leader **§8** s
 
 ##### §8 troubleshooting (stale ledger or blocked dispatch close)
 
-Full checklist and *Pre-resolution checklist* live in **`.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`** §8 *§8 troubleshooting (when the ledger looks wrong)*. Short version:
+Full checklist and *Pre-resolution checklist* live in **`.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc`** §8 *§8 troubleshooting (when the ledger looks wrong)*. Short version:
 
 | If… | Then… |
 |-----|--------|
@@ -885,7 +885,7 @@ A bullet may eventually graduate from the target's `## Follow-ups` to:
 1. **Changes** — a feature-level addition picked up in the next PR breakdown.
 2. **Delivery phases | PR breakdown** — a new entry that becomes its own phase or PR.
 3. **Caveats** — a risk or constraint the next coding agent must respect.
-4. **A new child plan** scaffolded via **`new-plan`** — **indexed-child** (list item **N** under a parent, then **`phase-planner`** or **`pr-plan`** on the child path) or **standalone** (free-standing plan with `parent: null`), per **`.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`**.
+4. **A new child plan** scaffolded via **`new-plan`** — **indexed-child** (list item **N** under a parent, then **`phase-planner`** or **`pr-plan`** on the child path) or **standalone** (free-standing plan with `parent: null`), per **`.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`**.
 
 (Section numbers shift between templates: Master Plan uses § 5 / § 6 / § 7, Phase plan uses § 4 / § 5 / § 6 — names stay the same.)
 
@@ -906,7 +906,7 @@ The diagram above describes the per-feature shape and deliberately does not draw
 | Developer says **plan reconcile** on active **`coding-session`** | **Yes** (inline) |
 | Detached **`plan-reconcile`** dispatch | **Stop** — redirect to **`coding-session`** |
 
-Ship cadence detail: **`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`** § *deploy-walk vs plan-reconcile (not chained)*. Skill procedure: **`plan-reconcile/SKILL.md`** § *When this skill runs*.
+Ship cadence detail: **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** § *deploy-walk vs plan-reconcile (not chained)*. Skill procedure: **`plan-reconcile/SKILL.md`** § *When this skill runs*.
 
 ## Plan metadata backfill (`backfill-prs-from-body`)
 
@@ -923,9 +923,9 @@ The subcommand **only** backfills **`shippedPrs`** — it does not archive, repa
 ```bash
 cd "$HOSTING_ROOT"
 
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+node .sedea/centers/software-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   backfill-prs-from-body --slug <slug> --dry-run
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/plan-state.mjs \
+node .sedea/centers/software-development/missions/plan-and-deliver/scripts/plan-state.mjs \
   backfill-prs-from-body --all --dry-run
 ```
 

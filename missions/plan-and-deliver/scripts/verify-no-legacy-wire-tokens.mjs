@@ -8,7 +8,7 @@
  *
  * Run from hosting repo root:
  *
- *   node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-no-legacy-wire-tokens.mjs
+ *   node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-no-legacy-wire-tokens.mjs
  *
  * Exit 0 when no forbidden literals remain; exit 1 and list paths otherwise.
  */

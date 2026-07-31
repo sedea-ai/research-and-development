@@ -58,13 +58,13 @@ inputs:
     required: false
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
-  - ".sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md"
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
 warmUpRules:
-  - ".sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc"
-  - ".sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc"
+  - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
+  - ".sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc"
+  - ".sedea/centers/software-development/rules/30_planning-target-resolution.mdc"
 ---
 
 # Pre-PR Review
@@ -87,24 +87,24 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === research-and-development` |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
 
 ### `skillWarmUp` — frontmatter `warmUpRules`
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
-| `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc` | Review-before-PR, worktree ownership |
-| `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` | Plan anchor validation (spawn-only) |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+| `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc` | Review-before-PR, worktree ownership |
+| `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Plan anchor validation (spawn-only) |
 
 ### `laneRules` — frontmatter `laneRules`
 
 | Path | Purpose |
 |------|---------|
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice when this lane must surface a pick |
-| `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc` | Ship lane context |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md` | This skill procedure |
-| `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight |
+| `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc` | Ship lane context |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md` | This skill procedure |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight |
 
 **Who runs this:** a fresh **pre-PR reviewer agent** lane spawned by **`coding-session`** after developer implementation approval, **commit**, and inline **Before deploy** **`deploy-walk`** (or documented skip). The reviewer must have no carry-over from the coding agent that changed the worktree.
 
@@ -137,7 +137,7 @@ Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-p
 
 **Parent yield gate:** After this child spawns (or while the parent awaits terminal result), **`coding-session`** must close the wait turn with a next-step resume modal per **`coding-session/SKILL.md`** § [Yield gate (Checkpoint — binding)](../coding-session/SKILL.md#yield-gate-checkpoint--binding). This skill’s Step **8** auto-emit does **not** waive that parent Yield obligation.
 
-**Real-dispatch test loop (binding):** After merge, run one full **`pre-pr-review`** spawn on a Checkpoint dispatch through Step **8** — verify Steps **1–7** auto-advance and Step **8** **always** auto-emits terminal + parent refocus (including **`no-go`**) without a modal; the **`coding-session`** parent receives the bubble-up and owns next-step gates before the parent phase advances the next ship-chain skill PR — per **Phase 2 — R&D center audit** § *Single-concern strategy*.
+**Real-dispatch test loop (binding):** After merge, run one full **`pre-pr-review`** spawn on a Checkpoint dispatch through Step **8** — verify Steps **1–7** auto-advance and Step **8** **always** auto-emits terminal + parent refocus (including **`no-go`**) without a modal; the **`coding-session`** parent receives the bubble-up and owns next-step gates before the parent phase advances the next ship-chain skill PR — per **Phase 2 — software-development center audit** § *Single-concern strategy*.
 
 Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md).
 
@@ -179,7 +179,7 @@ Give developers a **consistent state snapshot** during pre-PR review so they can
 | Deploy scope | Before deploy complete · skipped · — |
 | Review | in progress · `go` · `no-go` when reporting |
 
-**Population rules:** Same contract as [`.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`](../coding-session/SKILL.md) § *Session orientation table (binding)* — use spawn `inputs` and review outputs; never invent paths.
+**Population rules:** Same contract as [`.sedea/centers/software-development/missions/plan-and-deliver/skills/coding-session/SKILL.md`](../coding-session/SKILL.md) § *Session orientation table (binding)* — use spawn `inputs` and review outputs; never invent paths.
 
 **Mandatory gates (this skill):** None at Step **8** under Checkpoint — the reviewer lane always auto-handbacks; **`coding-session`** owns developer gates for **`no-go`**, flags, and actionable handback (see [Step 8 — Report and result](#step-8--report-and-result)).
 
@@ -207,7 +207,7 @@ After **`targetPlanSlug`** or free-form scope is validated (end of Step 1):
 3. **Skip** when spawn labels already match scope.
 4. **Forbidden:** **`mission_control_update_dispatch_display`** from a child lane.
 
-See [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Child lane — refresh own slot when labels are stale*.
+See [`.sedea/centers/software-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Child lane — refresh own slot when labels are stale*.
 
 - **Next-step resolution:** Auto-advance to Step **2** after display refresh or skip — no `USER_CHECKPOINT` on this step.
 
@@ -219,7 +219,7 @@ Confirm this is a fresh reviewer lane. Do not reuse context from the coding agen
 
 ## Step 3 — Load standards and rules
 
-Read `.sedea/centers/research-and-development/docs/development-process.md` in full, or at minimum the per-PR template, strategy, cadence, and Pre-PR reviewer sections.
+Read `.sedea/centers/software-development/docs/development-process.md` in full, or at minimum the per-PR template, strategy, cadence, and Pre-PR reviewer sections.
 
 Read every path from `projectRules`. If a rule path is missing, report it as `partial` unless the rule is clearly irrelevant to the diff.
 
@@ -245,7 +245,7 @@ git status --short
 git status --short --ignore-submodules=dirty
 ```
 
-If `git status --short` is non-empty, continue against the committed diff but evaluate dirty-tree degradation using `git status --short --ignore-submodules=dirty` (aligns with `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc` submodule-only drift guidance). Only non-submodule local edits should be flagged as not part of the reviewed cut point.
+If `git status --short` is non-empty, continue against the committed diff but evaluate dirty-tree degradation using `git status --short --ignore-submodules=dirty` (aligns with `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc` submodule-only drift guidance). Only non-submodule local edits should be flagged as not part of the reviewed cut point.
 
 If there are zero commits ahead and no diff, stop with `failure`: there is nothing to review.
 

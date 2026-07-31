@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Plan Board sidecar writer for R&D plan-and-deliver (lifecycle + archive fields).
+// Plan Board sidecar writer for software-development plan-and-deliver (lifecycle + archive fields).
 // Normative contract: `.sedea/centers/sedea/rules/8_plan-board-contract.mdc`
 // Invoked by: coding-session skill, plan-reconcile, efficient-pr-shipping commit-and-push cadence, hosting repo automation.
 // Design contract: Sedea `.sedea/operations/` plan union across dispatch-scoped plan directories.

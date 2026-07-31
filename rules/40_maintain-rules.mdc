@@ -1,6 +1,6 @@
 ---
 description: >-
-  Routing only: when to edit hosting-repo .cursor/rules vs R&D center rules.
+  Routing only: when to edit hosting-repo .cursor/rules vs software-development center rules.
   Loaded as an R&D always-apply rule; procedures target .cursor/rules on the hosting repo.
 alwaysApply: true
 ---
@@ -9,9 +9,9 @@ alwaysApply: true
 
 ## How this rule is loaded
 
-This file lives under **`.sedea/centers/research-and-development/rules/`** and is **`alwaysApply: true`** on every **research-and-development** dispatch so agents see the routing table below. It does **not** author Sedea center governance under **`.sedea/centers/<centerSlug>/`**.
+This file lives under **`.sedea/centers/software-development/rules/`** and is **`alwaysApply: true`** on every **software-development** dispatch so agents see the routing table below. It does **not** author Sedea center governance under **`.sedea/centers/<centerSlug>/`**.
 
-**Apply the procedures in this document only** when the task changes **hosting-repo** navigation or codebase conventions in **`.cursor/rules/*.mdc`** on the repo that ships code (the active **hosting repo** or a **hosting repo worktree**). For R&D delivery process, edit **`.sedea/centers/research-and-development/rules/*.mdc`** and mission assets via **`improve center rules`** / **`improve mission`** — not via this file’s edit loop alone.
+**Apply the procedures in this document only** when the task changes **hosting-repo** navigation or codebase conventions in **`.cursor/rules/*.mdc`** on the repo that ships code (the active **hosting repo** or a **hosting repo worktree**). For software-development delivery process, edit **`.sedea/centers/software-development/rules/*.mdc`** and mission assets via **`improve center rules`** / **`improve mission`** — not via this file’s edit loop alone.
 
 ## Scope
 
@@ -22,10 +22,10 @@ This rule applies to **domain-specific Cursor rules** under **`.cursor/rules/*.m
 | You need to change… | Edit here | Mission / phrase |
 |---------------------|---------|------------------|
 | Hosting repo **codebase navigation** (modules, APIs, conventions) | **`.cursor/rules/*.mdc`** in the repo that ships the code | Per-PR plan **`## 5. Repo rules impact`**; this rule |
-| **R&D center** delivery process (`plan and deliver`, PR shipping, planning targets) | **`.sedea/centers/research-and-development/rules/*.mdc`** and mission skills/plans | **`improve center rules`** on **sedea** — **`center-maintenance`** mission; include **`research-and-development`** (or target **`centerSlug`**) in the opening message |
+| **software-development center** delivery process (`plan and deliver`, PR shipping, planning targets) | **`.sedea/centers/software-development/rules/*.mdc`** and mission skills/plans | **`improve center rules`** on **sedea** — **`center-maintenance`** mission; include **`software-development`** (or target **`centerSlug`**) in the opening message |
 | **Sedea platform** rules (hosting layout, missions, Safeguard, git gate) | **`.sedea/centers/sedea/rules/*.mdc`** | **`improve center rules`** on **sedea** — **`center-maintenance`** mission |
-| A **mission plan** or **skill** under R&D | `missions/<missionSlug>/` under this center | **`improve or expand mission`** or **`fix mission`** on **sedea** — **`mission-maintenance`** mission; include **`research-and-development`** and the mission name in the opening message (longer phrase wins per **`.sedea/centers/sedea/rules/4_mission.mdc`**) |
-| After a **center-repo** PR merges (center **`rules/`**, **`docs/`**, missions, skills) | **Hosting repo** submodule gitlink on **`main`** | Run [`.sedea/centers/sedea/skills/promote-center-submodule-pin/SKILL.md`](.sedea/centers/sedea/skills/promote-center-submodule-pin/SKILL.md) **inline** after merge to center **`defaultBranch`** — see **`.sedea/centers/research-and-development/docs/development-process.md`** § *Center submodule git (two repositories)* |
+| A **mission plan** or **skill** under software-development | `missions/<missionSlug>/` under this center | **`improve or expand mission`** or **`fix mission`** on **sedea** — **`mission-maintenance`** mission; include **`software-development`** and the mission name in the opening message (longer phrase wins per **`.sedea/centers/sedea/rules/4_mission.mdc`**) |
+| After a **center-repo** PR merges (center **`rules/`**, **`docs/`**, missions, skills) | **Hosting repo** submodule gitlink on **`main`** | Run [`.sedea/centers/sedea/skills/promote-center-submodule-pin/SKILL.md`](.sedea/centers/sedea/skills/promote-center-submodule-pin/SKILL.md) **inline** after merge to center **`defaultBranch`** — see **`.sedea/centers/software-development/docs/development-process.md`** § *Center submodule git (two repositories)* |
 
 **Out of scope — Sedea centers (for this rule).** Do **not** use this rule to author or maintain assets under **`.sedea/centers/<centerSlug>/`** (`rules/`, `missions/`, `skills/`, `center.yaml`). When **center** process or rules need to change, use **`improve center rules`** on the matching **`centerSlug`** — not edits driven by per-PR **`## 5. Repo rules impact`** alone.
 
@@ -50,7 +50,7 @@ When the work is driven by a **per-PR plan** linked from the Plan Board (or othe
 3. Bullets that say **no file edit**, **verify only**, or **skip unless …** mean: confirm the code follows the existing rule; no `.mdc` diff required unless you discover drift.
 4. The **`.sedea/operations/.../plans/`** tree is not the hosting repo — rule edits belong in the repo that ships the code.
 
-See **`.sedea/centers/research-and-development/docs/development-process.md`** § *Per-PR plan template* item **5** — *Align hosting-repo rules before commit and push* — for the full contract.
+See **`.sedea/centers/software-development/docs/development-process.md`** § *Per-PR plan template* item **5** — *Align hosting-repo rules before commit and push* — for the full contract.
 
 ## Format
 
@@ -58,11 +58,11 @@ Follow the `.mdc` frontmatter format documented in existing rules. Keep rules co
 
 ## Git and worktree docs in `.cursor/rules/`
 
-When a hosting-repo **`.cursor/rules/*.mdc`** file documents **git worktrees**, post-merge cleanup, or Mission Control workspace attach/detach, it **must** include **worktree removal ownership**: agents remove **only** **this pass’s** **`WORKTREE_ROOT`** when all preconditions pass — **never** repo-wide cleanup from **`git worktree list`**. Link the canonical contract: [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Worktree ownership*; [`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`](20_efficient-pr-shipping.mdc) § *Worktree removal ownership (binding)*.
+When a hosting-repo **`.cursor/rules/*.mdc`** file documents **git worktrees**, post-merge cleanup, or Mission Control workspace attach/detach, it **must** include **worktree removal ownership**: agents remove **only** **this pass’s** **`WORKTREE_ROOT`** when all preconditions pass — **never** repo-wide cleanup from **`git worktree list`**. Link the canonical contract: [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Worktree ownership*; [`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`](20_efficient-pr-shipping.mdc) § *Worktree removal ownership (binding)*.
 
 ## Git and worktree docs in center rules and skills
 
-When **any** file under **`.sedea/centers/<centerSlug>/`** (center **`rules/`**, mission **`plan.mdc`**, **`SKILL.md`**, or center **`docs/`**) mentions **`git worktree add`**, **`git worktree remove`**, **`git worktree prune`**, **`sedea_add_worktree_folder`**, **`sedea_remove_worktree_folder`**, post-merge cleanup, or **`git worktree list`**, it **must** include a **Worktree removal ownership (binding)** block (or equivalent normative one-liner): **do not remove worktrees you do not own**; **`git worktree list` is read-only** unless rule **0** § *Worktree ownership* preconditions hold for **that** path. Link rule **0** § *Worktree ownership* and, for R&D ship lanes, rule **20** § *Worktree removal ownership (binding)*. **Forbidden:** instructing agents to “clean up” or prune every worktree on the repo. **If ownership is unsure:** **stop** and use structured choice — **do not remove**, and **do not** end with prose-only idle.
+When **any** file under **`.sedea/centers/<centerSlug>/`** (center **`rules/`**, mission **`plan.mdc`**, **`SKILL.md`**, or center **`docs/`**) mentions **`git worktree add`**, **`git worktree remove`**, **`git worktree prune`**, **`sedea_add_worktree_folder`**, **`sedea_remove_worktree_folder`**, post-merge cleanup, or **`git worktree list`**, it **must** include a **Worktree removal ownership (binding)** block (or equivalent normative one-liner): **do not remove worktrees you do not own**; **`git worktree list` is read-only** unless rule **0** § *Worktree ownership* preconditions hold for **that** path. Link rule **0** § *Worktree ownership* and, for software-development ship lanes, rule **20** § *Worktree removal ownership (binding)*. **Forbidden:** instructing agents to “clean up” or prune every worktree on the repo. **If ownership is unsure:** **stop** and use structured choice — **do not remove**, and **do not** end with prose-only idle.
 
 ## Checkpoint step continuation (binding)
 

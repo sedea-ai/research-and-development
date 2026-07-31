@@ -4,7 +4,7 @@ This mission uses **three execution shapes** (see **`.sedea/centers/sedea/skills
 
 ## Normative execution mode (plan-and-deliver)
 
-**Do not infer mode from the presence of `## Completion (spawned)` alone** — many skills document both sections for dual-mode authoring. Use this table for **plan and deliver** on the **research-and-development** center.
+**Do not infer mode from the presence of `## Completion (spawned)` alone** — many skills document both sections for dual-mode authoring. Use this table for **plan and deliver** on the **software-development** center.
 
 | Skill | Normative mode on this mission | Invoker | Terminal / result |
 |-------|----------------------------------|---------|-------------------|
@@ -27,7 +27,7 @@ This mission uses **three execution shapes** (see **`.sedea/centers/sedea/skills
 
 **Common mistake — Squad Leader redirect:** Concluding that because the **Squad Leader** does **not** spawn **`coding-session`** from §§1–7, **no lane** may spawn it. **Correct:** the **`master-planner`** Master Plan child lane (and **`phase-planner`**, Quick Fix Plan agent, etc.) spawns **`coding-session`** via inline **`pr-plan`** §5d on **that planning lane** after §5c **Start coding session**. The Squad Leader only **tracks** §8 host sync after child terminals — it does **not** emit the §5d spawn.
 
-Glossary for colliding step labels: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Agent glossary — step and section labels*.
+Glossary for colliding step labels: **`.sedea/centers/software-development/docs/development-process.md`** § *Agent glossary — step and section labels*.
 
 ## Inline execution (same lane)
 
@@ -41,18 +41,18 @@ When a skill runs **inline** on the invoker’s lane (not spawned via **`mission
 
 **Inline `deploy-walk` on `coding-session`:** Agents must self-run agent-executable checklist steps (shell, grep/logs, file read/parse) per **`deploy-walk/SKILL.md`** § *Agent capability inventory (binding)* — manual steps require numbered **Testing steps** in § *Step 4 — Step presentation contract* and close with **`USER_CHECKPOINT`** gates (manual step await, deploy status transition, deploy closure approval) per § *Checkpoint turn UX (skill-local)* — not prose-only deploy handoff.
 
-## R&D center edit destination gate (binding)
+## software-development center edit destination gate (binding)
 
 Applies to **all PRD and planning skills** on this center (`author-prd`, `ad-hoc-prd`, `brainstorm-research`, `master-planner`, `phase-planner`, `delivery-phases`, `pr-breakdown`, `new-plan`, `pr-plan`, and **`quick-fix-plan`**). Happy-path PRD/plan writes under **`.sedea/operations/`** do **not** open this gate.
 
-**Trigger:** any step that would **create, edit, move, or delete** files under **`.sedea/centers/research-and-development/`** (center git content — rules, missions, skills, docs, `center.yaml`).
+**Trigger:** any step that would **create, edit, move, or delete** files under **`.sedea/centers/software-development/`** (center git content — rules, missions, skills, docs, `center.yaml`).
 
-USER_CHECKPOINT — pick R&D center edit destination before any center write.
+USER_CHECKPOINT — pick software-development center edit destination before any center write.
 
 | Option id | Label | Action |
 |-----------|-------|--------|
-| `ship-app-rd` | Ship in `sedea-ai/software-development` — Sedea app process / ops | Continue on the **app-focused** center remote; require hosting **Own centers** listing for `research-and-development` → `git@github.com:sedea-ai/software-development.git` and **`CENTER_WORKTREE_ROOT`** before writes |
-| `delegate-base-rd` | Delegate to base center — `sedea-centers/software-development` | **Stop** local center writes; developer continues on **`sedea-centers-development-hosting-repo`** for **general** R&D center operating-model changes |
+| `ship-app-rd` | Ship in `sedea-ai/software-development` — Sedea app process / ops | Continue on the **app-focused** center remote; require hosting **Own centers** listing for `software-development` → `git@github.com:sedea-ai/software-development.git` and **`CENTER_WORKTREE_ROOT`** before writes |
+| `delegate-base-rd` | Delegate to base center — `sedea-centers/software-development` | **Stop** local center writes; developer continues on **`sedea-centers-development-hosting-repo`** for **general** software-development center operating-model changes |
 | `pause` | Pause — stop until I say more | No writes |
 | `more-details` | More details for option _ | Elaborate; re-ask |
 
@@ -61,7 +61,7 @@ USER_CHECKPOINT — pick R&D center edit destination before any center write.
 | Destination | When |
 |-------------|------|
 | **`sedea-ai/software-development`** (`ship-app-rd`) | Change reflects how the **Sedea app** is developed, its processes and operations |
-| **`sedea-centers/software-development`** (`delegate-base-rd`) | Change applies to how the research-and-development center operates **in general** — not app-specific |
+| **`sedea-centers/software-development`** (`delegate-base-rd`) | Change applies to how the software-development center operates **in general** — not app-specific |
 
 **Forbidden:** writing center files without this gate; treating **`sedea-centers/software-development`** as Own on **`sedea-ai/app`**; editing the primary hosting clone’s submodule checkout without **`CENTER_WORKTREE_ROOT`**.
 
@@ -212,7 +212,7 @@ Field-level `outputs` and `continuationStatus` rules: each skill’s **`## Compl
 | Source | Contract |
 |--------|----------|
 | [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Worktree ownership* | Four preconditions before detach/remove |
-| [`.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`](.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc) § *Worktree removal ownership (binding)* | R&D ship lanes |
+| [`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`](.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc) § *Worktree removal ownership (binding)* | R&D ship lanes |
 | **`coding-session/SKILL.md`** § *Post-merge workspace cleanup* | Primary post-merge owner |
 | **`plan-reconcile/SKILL.md`** §5 | Idempotent fallback only |
 
@@ -368,11 +368,11 @@ Populate **`outputs`** from the skill's **`## Completion (spawned)`** and any re
 
 ## Definitive `bootstrapRules` (R&D layer — plan and deliver)
 
-When Mission Control dispatches **`centerSlug === research-and-development`**, the host merges this path into **`effectiveWarmUp`** after the Sedea bootstrap layer (PRD §5.4; host resolver ships in phase 6 PR 3):
+When Mission Control dispatches **`centerSlug === software-development`**, the host merges this path into **`effectiveWarmUp`** after the Sedea bootstrap layer (PRD §5.4; host resolver ships in phase 6 PR 3):
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/research-and-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB) — mirrors **`.sedea/centers/sedea/rules/bootstrap.mdc`** pattern |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB) — mirrors **`.sedea/centers/sedea/rules/bootstrap.mdc`** pattern |
 
 Spawned skill **`SKILL.md`** § *Warm-up manifest* tables document this row under **`bootstrapRules`**. **`laneRules`** and **`skillWarmUp`** tables in the same section are unchanged by bootstrap authoring alone — numbered R&D rules stay **`alwaysApply: true`** until the flip PR lands.
 
@@ -382,24 +382,24 @@ Normative minimum **`laneRules`** paths per lane role — merged into **`effecti
 
 | Lane role | Definitive `laneRules` (in addition to bootstrap) |
 |-----------|---------------------------------------------------|
-| **Squad Leader** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/4_mission.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc`, `.sedea/centers/research-and-development/docs/development-process.md` |
-| **`author-prd` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/author-prd/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc` (§§1–3) |
-| **`brainstorm-research` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/brainstorm-research/SKILL.md`, `.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
-| **`ad-hoc-prd` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md`, `.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
-| **`master-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/master-planner/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
-| **`quick-fix-plan` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
-| **`coding-session` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`, `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/coding-session/SKILL.md` |
-| **`phase-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
-| **`pre-pr-review` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
-| **`worktree-bootstrap` child** (deprecated — drain gate **D4**) | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/worktree-bootstrap/SKILL.md`, `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` |
+| **Squad Leader** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/4_mission.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc`, `.sedea/centers/software-development/docs/development-process.md` |
+| **`author-prd` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/author-prd/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` (§§1–3) |
+| **`brainstorm-research` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/brainstorm-research/SKILL.md`, `.sedea/centers/software-development/rules/31_dispatch-scope.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
+| **`ad-hoc-prd` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md`, `.sedea/centers/software-development/rules/31_dispatch-scope.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
+| **`master-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/master-planner/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
+| **`quick-fix-plan` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/software-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
+| **`coding-session` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`, `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/coding-session/SKILL.md` |
+| **`phase-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
+| **`pre-pr-review` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
+| **`worktree-bootstrap` child** (deprecated — drain gate **D4**) | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/worktree-bootstrap/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
 
 **Squad Leader:** Mission protocol or host config supplies the leader row — not only child spawn requests (see **`plan.mdc`** § *Squad Leader laneRules*). **Spawned children:** Include **`laneRules`** on the run-request when they differ from the skill frontmatter default, or rely on skill frontmatter when it matches this table exactly. **`ad-hoc-prd` spawn `warmUpRules` (binding):** merge skill frontmatter **`warmUpRules`** but **replace** any `plan-and-deliver/plan.mdc` entry with the **invoking mission `plan.mdc`** — **`single-phase/plan.mdc`** (§§1–3) or **`debug-and-fix/plan.mdc`** (post-fix step **5c**) — so the child loads the correct protocol, not full plan-and-deliver. **`ad-hoc-prd` → `master-planner` handoff (binding):** this skill does **not** spawn **`master-planner`**; **`single-phase`** Squad Leader auto-chains §4 seed → §5 **`master-planner`** after terminal PRD approval — see **`ad-hoc-prd/SKILL.md`** § *Downstream `master-planner` (invoker-owned)*. **`quick-fix-plan` spawn `warmUpRules` (binding):** use **`quick-fix/plan.mdc`**, not `plan-and-deliver/plan.mdc`.
 
 **Parity (§5.3 gate):** **`effectiveWarmUp`** must cover at minimum today's `(alwaysApply scan ∪ skill warmUpRules)` per role — enforced by **`verify-lane-warmup-parity.mjs`**:
 
 ```bash
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-lane-warmup-parity.mjs --bootstrap full
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-lane-warmup-parity.mjs --bootstrap slim
+node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-lane-warmup-parity.mjs --bootstrap full
+node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-lane-warmup-parity.mjs --bootstrap slim
 ```
 
 **Roles covered (9 plan-and-deliver + 3 cross-mission):** **`squad-leader`**, **`author-prd`**, **`brainstorm-research`**, **`master-planner`**, **`coding-session`**, **`phase-planner`**, **`pre-pr-review`**, **`worktree-bootstrap`** (deprecated — retained for parity until [drain gate](#worktree-bootstrap-skill-drain-gate) **D4**), plus cross-mission spawn targets **`ad-hoc-prd`**, **`brainstorm-research`**, and **`quick-fix-plan`** (invoker mission `plan.mdc` in **`warmUpRules`**). Each role's manifest uses skill frontmatter **`laneRules`** + **`warmUpRules`** merged per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md). Sign-off record: same doc § *Parity sign-off record*.
@@ -440,7 +440,7 @@ Full table: rule **4** § *Host-resolved identity*.
 | M3 | Required MCP args present: **`skillPath`**, **`slug`**, **`name`**, **`description`**, **`inputs`** — camelCase keys match skill frontmatter |
 | M4 | **Forbidden args absent** — no host-resolved identity keys (§ *Host-resolved identity* above) |
 | M5 | Optional only when needed: **`warmUpRules`**, **`initiatingPrompt`** (≤ 32 KiB) |
-| M6 | **`skillPath`** resolves under the correct center (R&D skills under **`.sedea/centers/research-and-development/`**) |
+| M6 | **`skillPath`** resolves under the correct center (R&D skills under **`.sedea/centers/software-development/`**) |
 | M7 | On tool validation failure: stop, fix the failing row, retry spawn — new successful spawn mints a **new** host **`correlationId`** |
 | M8 | **`name`** / **`description`** — **lane title prefix** + semantic title per [rule **50**](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Lane title prefix conventions* and § *Lane title prefix (spawn `name`)* below; refresh stale child tab via **`mission_control_update_lane_display`** |
 
@@ -488,7 +488,7 @@ Notify does **not** replace child terminal **`mission_control_send_agent_result`
 
 ### Lane title prefix (spawn `name`)
 
-Before MCP row **M8**, set spawn **`name`** (and child lane **`title`** on refresh) to **`{prefix}-{semantic title}`** per [`.sedea/centers/research-and-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Lane title prefix conventions*:
+Before MCP row **M8**, set spawn **`name`** (and child lane **`title`** on refresh) to **`{prefix}-{semantic title}`** per [`.sedea/centers/software-development/rules/50_mission-control-display-metadata-discipline.mdc`](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Lane title prefix conventions*:
 
 | Target skill | Prefix | `[N]` |
 |--------------|--------|-------|
@@ -554,18 +554,18 @@ Every **spawned** plan-and-deliver skill lists the paths below in frontmatter **
 
 **All spawned skills** (planning + ship):
 
-- `.sedea/centers/research-and-development/missions/plan-and-deliver/plan.mdc` — Squad Leader §§1–7 ledger, spawn/wait; ship skills also use §8 via dev-process / bubble-up
-- `.sedea/centers/research-and-development/missions/plan-and-deliver/skills/README.md` — spawn contracts, inline vs spawned shapes, **terminal stop (normative)**
-- `.sedea/centers/research-and-development/docs/development-process.md`
+- `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` — Squad Leader §§1–7 ledger, spawn/wait; ship skills also use §8 via dev-process / bubble-up
+- `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` — spawn contracts, inline vs spawned shapes, **terminal stop (normative)**
+- `.sedea/centers/software-development/docs/development-process.md`
 
 **Planning skills** also include:
 
-- `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc`
+- `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`
 
 **Ship skills** also include:
 
-- `.sedea/centers/research-and-development/rules/20_efficient-pr-shipping.mdc`
-- `.sedea/centers/research-and-development/rules/30_planning-target-resolution.mdc` — **`pre-pr-review`** spawn only; **`coding-session`** omits rule **30** from frontmatter (384 KiB warm-up cap); use `inputs.targetPlanPath` and explicit `Read` of rule **30** when resolving ambiguous `.sedea` paths
+- `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`
+- `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` — **`pre-pr-review`** spawn only; **`coding-session`** omits rule **30** from frontmatter (384 KiB warm-up cap); use `inputs.targetPlanPath` and explicit `Read` of rule **30** when resolving ambiguous `.sedea` paths
 
 **Warm-up cap exceptions (384 KiB host budget):**
 
@@ -602,8 +602,8 @@ warmUpRules:
 **Repair / verify:** from hosting repo root (with **`scripts/node_modules`** installed):
 
 ```bash
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/fix-skill-frontmatter.mjs --write
-node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
+node .sedea/centers/software-development/missions/plan-and-deliver/scripts/fix-skill-frontmatter.mjs --write
+node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
 ```
 
 ### Adding or removing a skill
@@ -614,7 +614,7 @@ When you add, rename, or remove a protocol branch under `missions/plan-and-deliv
 2. **Verify** from the hosting repo root:
 
  ```bash
- node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
+ node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
  ```
 
 3. **plan-and-deliver only** — if the skill is **spawned**, ensure **`warmUpRules`** includes `missions/plan-and-deliver/plan.mdc`, this README, and the usual rules per § *Default warm-up* above; add **`## Completion (spawned)`** + host protocol line when applicable.
@@ -622,6 +622,6 @@ When you add, rename, or remove a protocol branch under `missions/plan-and-deliv
 ### Scripts (`plan-state.mjs`, `pr-review.mjs`)
 
 - **Location:** `missions/plan-and-deliver/scripts/` for **`plan-state.mjs`** and **`plan-ws-completeness.mjs`**; canonical **`pr-review.mjs`** at **`.sedea/centers/sedea/scripts/pr-review.mjs`** (paths in skills and rule **20** are workspace-root relative from the hosting repo that contains **`.sedea/`** — see that repo’s **`.cursor/rules/`** for hosting-repo specifics).
-- **Runtime:** **Node** (bundled with Sedea / VS Code) — see [`.sedea/centers/research-and-development/rules/31_dispatch-scope.mdc`](../../../rules/31_dispatch-scope.mdc) § *Hosting repo cwd (scripts)* and the hosting repo **`.cursor/rules/`**.
+- **Runtime:** **Node** (bundled with Sedea / VS Code) — see [`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`](../../../rules/31_dispatch-scope.mdc) § *Hosting repo cwd (scripts)* and the hosting repo **`.cursor/rules/`**.
 - **Vendor trees:** do not treat `scripts/**/node_modules/` or other installed dependencies as protocol documentation (center governance ends at `SKILL.md`, rules, and mission plans).
 - **`verify-skill-manifest.mjs`** — compares **`center.yaml`** `skillEntries` to on-disk `SKILL.md` files; validates frontmatter YAML; lints **`warmUpRules`** / **`laneRules`** table ↔ frontmatter parity on spawned plan-and-deliver skills; enforces spawn preflight row **11** definitive **`laneRules`** for **`author-prd`**, **`master-planner`**, and **`coding-session`**; lints **`mission_control_spawn_agent`** spawn examples on master-planner skills (R&D + Sedea maintenance copies) so string-typed **`inputs.parent`** never uses JSON **`null`** — wire encoding must be **`"parent":"null"`**; lints **plan-change notify governance** — parent emit (**`master-planner`**, **`phase-planner`**, **`pr-breakdown`**) N1–N8 preflight rows + child receive (**`coding-session`**, **`phase-planner`**, **`master-planner`**) USER_CHECKPOINT contract + README N1–N8 / v1 receive table (exit 0 = match + parity + spawn wire lint + notify lint).

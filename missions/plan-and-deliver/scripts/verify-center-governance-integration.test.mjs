@@ -5,7 +5,7 @@
  * Run from hosting repo root (after npm ci in this directory):
  *
  *   HOSTING_ROOT="$(pwd)" node --test \
- *     .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-center-governance-integration.test.mjs
+ *     .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-center-governance-integration.test.mjs
  */
 
 import assert from 'node:assert/strict';
