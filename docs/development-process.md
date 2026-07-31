@@ -103,7 +103,7 @@ Exit **0** when every **plan and deliver** lane role's manifest **`effectiveWarm
 
 | Variable / secret | Where | Purpose |
 |-------------------|-------|---------|
-| **`GH_SUBMODULE_CHECKOUT_TOKEN`** | GitHub Actions secret on the hosting repo | PAT with **`contents:read`** on **`sedea-ai/app`** and **`sedea-centers/research-and-development`**. Required because the default **`GITHUB_TOKEN`** cannot read private submodule repos during **`actions/checkout`**. |
+| **`GH_SUBMODULE_CHECKOUT_TOKEN`** | GitHub Actions secret on the hosting repo | PAT with **`contents:read`** on **`sedea-ai/app`** and **`sedea-centers/software-development`**. Required because the default **`GITHUB_TOKEN`** cannot read private submodule repos during **`actions/checkout`**. |
 | **`HOSTING_ROOT`** | Local / integration test env (optional) | Absolute path to the hosting repo root. **`verify-center-governance-integration.test.mjs`** defaults to the hosting root inferred from the script path when unset; set explicitly when running tests from a non-standard cwd. |
 
 **Local pre-PR check:** from the hosting repo root, **`./scripts/verify-center-governance.sh`** runs **`npm ci`** in **`missions/plan-and-deliver/scripts/`** then the same three verify steps as CI. No extra env vars are required for a standard clone with populated **`.sedea/centers/research-and-development`** submodule.
