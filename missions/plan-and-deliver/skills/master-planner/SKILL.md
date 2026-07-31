@@ -63,6 +63,10 @@ The procedure below is a hard contract — do **not** skip steps, re-order them,
 
 **Worktree removal ownership (binding).** This skill is planning-only — it does **not** create or remove hosting-repo worktrees. **Do not remove worktrees you do not own.** **`git worktree list` is read-only** unless rule **0** § *Worktree ownership* preconditions hold for **that** path. Ship worktrees belong to **`coding-session`** on a separate lane.
 
+## R&D center edit destination gate (binding)
+
+When this skill would write under **`.sedea/centers/research-and-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *R&D center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
+
 ## Warm-up manifest (spawned)
 
 Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up* / *Definitive `laneRules`*. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table; spawners may omit run-request **`laneRules`** when identical (README spawn preflight row 11). **No `alwaysApply` frontmatter flip.**
@@ -508,26 +512,26 @@ _TBD_
 
 The literal `## 6. Delivery phases | PR breakdown` heading is the **deliberate, not-yet-decided** form documented in the dev-process doc's **§ 6 / § 5 contents rule**. When § 6 is drafted in a follow-up turn, the agent picks one of `Delivery phases` (the feature decomposes into phases) or `PR breakdown` (the feature is small enough to skip the phase layer) and rewrites the heading to the chosen value, dropping the other side. Until then, the dual heading communicates "decomposition pending" at a glance.
 
-Use uniform italic **`_TBD_`** for every pending section (scannable in Plan Board and GitHub; grep with `rg '^_TBD_$'`). Rationale and template rules: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Master Plan template*.
+Use uniform italic **`_TBD_`** for every pending section (scannable in GitHub and operations plan files; grep with `rg '^_TBD_$'`). Rationale and template rules: **`.sedea/centers/research-and-development/docs/development-process.md`** § *Master Plan template*.
 
 Frontmatter rules carry over from the new-plan contract:
 
 - Do **not** put `parent:` in frontmatter. Parent lives in the sidecar.
-- Seed `todos:` with the one honest first todo shown above (so the Plan Board renders the plan as `not_started` until the user marks it in-progress).
+- Seed `todos:` with the one honest first todo shown above (so the plan renders as `not_started` until the user marks it in-progress).
 - `isProject: false` unless the user says otherwise.
 - Do not invent a `status:` field.
-- **Quote YAML scalar values that would otherwise mis-parse** — most commonly **`name:`** when the PRD title contains `: ` (colon + space). Follow the local `new-plan` skill's YAML-scalar rules for the full trigger list. PRD titles routinely use the form `Subject: clarifier`, which the YAML parser reads as a nested mapping unless the value is wrapped in **double quotes**, and that silently breaks the Plan Board tree label (snake-cased slug fallback) and todo rendering. When in doubt, quote.
+- **Quote YAML scalar values that would otherwise mis-parse** — most commonly **`name:`** when the PRD title contains `: ` (colon + space). Follow the local `new-plan` skill's YAML-scalar rules for the full trigger list. PRD titles routinely use the form `Subject: clarifier`, which the YAML parser reads as a nested mapping unless the value is wrapped in **double quotes**, and that silently breaks the operations plan tree label (snake-cased slug fallback) and todo rendering. When in doubt, quote.
 
 Write `<slug>.state.yaml` alongside:
 
 ```yaml
-# Sidecar for Plan Board (runtime). Plan: <slug>.plan.md
+# Sidecar for operations plan runtime. Plan: <slug>.plan.md
 parent: <resolved-parent-slug-or-null>
 worktrees: []
 prs: []
 ```
 
-Both files must be written in the same skill turn so the Plan Board picks the plan up cleanly on first scan.
+Both files must be written in the same skill turn so the operations plan pair is consistent on first write.
 
 After writing, present the plan file as a backtick path so Mission Control can open it. Prefer the hosting-absolute path; a `.sedea/operations/…/plans/…` path is also valid:
 
@@ -588,7 +592,7 @@ One or more diagrams showing what the implementation will look like. Pick the di
 - State diagram — lifecycle / state-machine changes.
 - ER / schema diagram — data model or database changes.
 
-Use **Mermaid** (in fenced ```mermaid blocks) so the diagrams render in Cursor and on the Plan Board. Include only what is necessary to understand the *shape*; don't draft pseudocode here. If multiple diagrams are needed, label each one. Follow [`.sedea/centers/sedea/docs/mermaid-authoring.md`](.sedea/centers/sedea/docs/mermaid-authoring.md) — opaque ids, sequence `Note` single-line (no `<br/>`), flowchart-only `<br/>` in quoted node labels.
+Use **Mermaid** (in fenced ```mermaid blocks) so the diagrams render in Cursor and in GitHub. Include only what is necessary to understand the *shape*; don't draft pseudocode here. If multiple diagrams are needed, label each one. Follow [`.sedea/centers/sedea/docs/mermaid-authoring.md`](.sedea/centers/sedea/docs/mermaid-authoring.md) — opaque ids, sequence `Note` single-line (no `<br/>`), flowchart-only `<br/>` in quoted node labels.
 
 **High-risk abbreviations:** Never use uppercased reserved keywords as bare ids — e.g. `OPT`, `ALT`, `END`, `LOOP`, `PAR`, `AND`, `AS` (Mermaid matches case-insensitively → `opt`, `alt`, …). Prefer opaque ids + labels (`participant scopeOpts as OPT`, `participant ScopeOpts as Scope options`). Do **not** reuse a flowchart node id as a sequence `participant` id.
 

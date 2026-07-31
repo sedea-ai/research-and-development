@@ -67,6 +67,10 @@ The agent has enough context after step 3 to draft §§ 1–4 and the assessment
 
 The procedure below is a hard contract — do **not** skip steps, re-order them, or start drafting before the target plan is verified as a phase plan stub. Skipping a step is the difference between a clean phase plan and one that drifts from the documented process.
 
+## R&D center edit destination gate (binding)
+
+When this skill would write under **`.sedea/centers/research-and-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *R&D center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
+
 ## Warm-up manifest (spawned)
 
 Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up*. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table; spawners may omit run-request **`laneRules`** when identical (README spawn preflight row 11). **No `alwaysApply` frontmatter flip.**
@@ -348,7 +352,7 @@ _TBD_
 
 The `_TBD_` placeholders under §§ 5–6 mirror the convention from `master-planner` step 5c — italic and easy to grep (`rg '^_TBD_$'`). The `## 5.` heading uses the **deliberate dual-title** form per the doc's § 6 / § 5 contents rule; the actual decomposition decision (`Delivery phases` vs `PR breakdown`) and the numbered child list are made when § 5 is drafted via `delivery-phases` / `pr-breakdown`. The **`### Decomposition assessment`** block is **not** a substitute for that list — it records evidence *before* the choice.
 
-The frontmatter (`name`, `overview`, `todos`, `isProject`) is **not** touched — those were set correctly by the new-plan skill at scaffold time. If a follow-up `iterate` ever does edit a frontmatter scalar (e.g. fixing a typo in `name:`), follow the YAML scalar-quoting bullet in [`../new-plan/SKILL.md`](../new-plan/SKILL.md) § *Write the plan template* → `<slug>.plan.md` rules — most importantly, wrap any value containing `: ` (colon + space) in double quotes so Plan Board doesn't fall back to the slug for the tree label.
+The frontmatter (`name`, `overview`, `todos`, `isProject`) is **not** touched — those were set correctly by the new-plan skill at scaffold time. If a follow-up `iterate` ever does edit a frontmatter scalar (e.g. fixing a typo in `name:`), follow the YAML scalar-quoting bullet in [`../new-plan/SKILL.md`](../new-plan/SKILL.md) § *Write the plan template* → `<slug>.plan.md` rules — most importantly, wrap any value containing `: ` (colon + space) in double quotes so the operations plan tree does not fall back to the slug for the tree label.
 
 If the body is **partially drafted** (per the step 1a table), do not rewrite the whole body. Instead, fill only the still-`_TBD_` section(s) — one `StrReplace` per section, using the section header as disambiguating context (same shape as `master-planner` step 6 for §§ 1–5). Keep already-drafted content untouched. To add a missing assessment only, insert `### Decomposition assessment` and its bullets **immediately before** `## 5. Delivery phases | PR breakdown` (step 4g).
 
@@ -390,7 +394,7 @@ flowchart LR
 
 **Legend rules:**
 
-- Always include the `Legend` subgraph for **flowchart**-shaped reused diagrams so the diagram is self-documenting in the file, on the Plan Board, and in chat echo. Drop any explanatory prose that would otherwise restate what the legend conveys.
+- Always include the `Legend` subgraph for **flowchart**-shaped reused diagrams so the diagram is self-documenting in the file, in GitHub, and in chat echo. Drop any explanatory prose that would otherwise restate what the legend conveys.
 - Emit `LegendTouch` only when the phase has at least one `phaseTouch` node; emit `LegendNew` only when it has at least one `phaseNew` node. If the phase has only one of the two, drop the unused legend node and its `class … phaseNew` / `class … phaseTouch` entry from the legend.
 - **Skip** the `Legend` subgraph for non-flowchart reused diagrams (`sequenceDiagram`, `erDiagram`, `stateDiagram`, etc.) — `subgraph` is flowchart-only syntax. For those, fall back to a short prose legend below the diagram (e.g. "*Bold actors are touched in this phase.*").
 
@@ -410,7 +414,7 @@ A new Mermaid diagram giving a visual representation of the change introduced by
 - State diagram — when the change introduces a new lifecycle / state machine.
 - ER / schema diagram — when the change is a data-model / DB delta.
 
-Use **Mermaid** in fenced ```` ```mermaid ```` blocks so the diagram renders in Cursor and on the Plan Board. Include only what is necessary to understand the *shape* of the change; this is design granularity, not pseudocode. Follow [`.sedea/centers/sedea/docs/mermaid-authoring.md`](.sedea/centers/sedea/docs/mermaid-authoring.md) — opaque ids; when the diagram is a **flowchart**, `<br/>` in quoted labels and Legend `subgraph` are allowed; when it is a **`sequenceDiagram`**, use single-line `Note` only (no `<br/>`, no flowchart `subgraph`/`classDef`).
+Use **Mermaid** in fenced ```` ```mermaid ```` blocks so the diagram renders in Cursor and in GitHub. Include only what is necessary to understand the *shape* of the change; this is design granularity, not pseudocode. Follow [`.sedea/centers/sedea/docs/mermaid-authoring.md`](.sedea/centers/sedea/docs/mermaid-authoring.md) — opaque ids; when the diagram is a **flowchart**, `<br/>` in quoted labels and Legend `subgraph` are allowed; when it is a **`sequenceDiagram`**, use single-line `Note` only (no `<br/>`, no flowchart `subgraph`/`classDef`).
 
 The § 3 diagram complements § 2's reused-with-highlight diagram: § 2 shows *where in the parent's design* this phase lives; § 3 shows *what new shape* this phase introduces. They are usually different diagram types — § 2 inherits the parent's type (often component or flow), § 3 picks whatever conveys the per-phase change best (often sequence or state).
 
