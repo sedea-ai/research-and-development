@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Operations plan sidecar writer for R&D plan-and-deliver (lifecycle + archive fields).
-// Normative contract: `.sedea/centers/sedea/rules/8_plan-board-contract.mdc`
+// Normative contract: `.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc`
 // Invoked by: coding-session skill, plan-reconcile, efficient-pr-shipping commit-and-push cadence, hosting repo automation.
 // Design contract: Sedea `.sedea/operations/` plan union across dispatch-scoped plan directories.
 
@@ -1452,8 +1452,8 @@ async function collectAncestorSlugs(startSlug) {
 // fields it doesn't recognise, so we keep the hierarchy link in the sidecar
 // (which Cursor never touches) and leave plan-frontmatter alone. The
 // plan-state resolves the effective parent via `resolveParentSlug`
-// in plan-board/src/model/merge.ts (sidecar wins, frontmatter is a legacy
-// fallback until the `migrate-parent-to-sidecar` subcommand runs).
+// (sidecar wins, frontmatter is a legacy fallback until the
+// `migrate-parent-to-sidecar` subcommand runs).
 //
 // Null writes as the literal `null` scalar. Returns `false` when the sidecar
 // `parent:` already equals `newParent` (idempotent). Position: inserted at

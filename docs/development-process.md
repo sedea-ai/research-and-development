@@ -245,7 +245,7 @@ Sedea **`.plan.md`** files are **delivery anchors** for Mission Control ship (Ma
 
 ### Operations plan writer notes
 
-Normative field semantics: [`.sedea/centers/sedea/rules/8_plan-board-contract.mdc`](.sedea/centers/sedea/rules/8_plan-board-contract.mdc). This subsection is the **R&D operator checklist** for agents and tools that create or update `.sedea/operations/**/plans/` pairs.
+Normative field semantics: [`.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc`](.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc). This subsection is the **R&D operator checklist** for agents and tools that create or update `.sedea/operations/**/plans/` pairs.
 
 | Write target | Rule |
 | --- | --- |

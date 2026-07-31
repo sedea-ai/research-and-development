@@ -694,7 +694,7 @@ Use a **blockquote** or plain lines for the presentation shell — **do not** pu
 2. Each sub-step is **one action + one checkpoint** (run command → check output; open page → confirm element; trigger flow → verify side effect).
 3. Expand plan shorthand into executable detail (URLs, curl bodies, CLI flags, UI paths, env vars as `TODO:` when unknown).
 4. **Forbidden:** manual presentation with only context blocks and **no** **Testing steps** list.
-5. **Forbidden:** inventing UI navigation paths that do not exist today — for example *Open Sedea Hub → Plan Board* or any Hub **Plans** pane. Cite only verbatim plan §7 text, verified CLI commands (for example `plan-state.mjs list-candidates` from **`HOSTING_ROOT`**), or Hub surfaces that exist today (**Dispatch** and **Centers** only).
+5. **Forbidden:** inventing UI navigation paths that do not exist today — for example directing developers to a removed Hub **Plans** pane. Cite only verbatim plan §7 text, verified CLI commands (for example `plan-state.mjs list-candidates` from **`HOSTING_ROOT`**), or Hub surfaces that exist today (**Dispatch** and **Centers** only).
 6. When an agent-executable run **failed** and you hand back to the developer, include **Testing steps** for the retry path (same rules).
 
 **Example** (plan step: `Confirm staging health dashboard shows no alerts`):
