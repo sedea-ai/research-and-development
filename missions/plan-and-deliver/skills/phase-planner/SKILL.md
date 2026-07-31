@@ -67,9 +67,9 @@ The agent has enough context after step 3 to draft §§ 1–4 and the assessment
 
 The procedure below is a hard contract — do **not** skip steps, re-order them, or start drafting before the target plan is verified as a phase plan stub. Skipping a step is the difference between a clean phase plan and one that drifts from the documented process.
 
-## Software Development center edit destination gate (binding)
+## software-development center edit destination gate (binding)
 
-When this skill would write under **`.sedea/centers/software-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *Software Development center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
+When this skill would write under **`.sedea/centers/software-development/`**, open **USER_CHECKPOINT** per **`missions/plan-and-deliver/skills/README.md`** § *software-development center edit destination gate* **before** any center write. Happy-path operations/plan writes do not open this gate. **Forbidden:** skip the gate; treat `sedea-centers/software-development` as Own on `sedea-ai/app`.
 
 ## Warm-up manifest (spawned)
 
@@ -79,7 +79,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole Software Development `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
 
 ### `skillWarmUp` — frontmatter `warmUpRules`
 
