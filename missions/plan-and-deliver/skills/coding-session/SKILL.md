@@ -728,6 +728,8 @@ Single-concern **docs-only** promotion of one approved unreleased fragment onto 
 
 **Parent consent surface:** **`capture-release-note`** Step **4** **`approve-fragment`** only — this profile **does not** open [Checkpoint three-stop model](#checkpoint-three-stop-model-binding) stops **1–3** on the clean path.
 
+**Content policy:** Fragment text is authored on the **`capture-release-note`** lane — see that skill § *Release note content policy*. This profile ships approved text only; do not add pin-promotion bullets during staging.
+
 **Same-turn auto-advance chain (clean path — Act without turn-end modal between steps):**
 
 1. [Generic flow](#generic-flow-single-repo) — center **`worktree-setup.sh`**, attach, bootstrap.

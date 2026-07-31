@@ -843,6 +843,8 @@ Before calling MCP **`mission_control_propose_dispatch_resolution`** when the de
 
 **Overlay source of truth:** Unfenced **`releaseVersions`** in the active hosting repo **`.cursor/rules/dot-sedea.mdc`**. On-value is exactly **`release-versions`**. Consumers **must not** redefine the key. Absent or any other value → treat as **off**.
 
+**Release note content (binding):** Fragments describe user-facing or operator-meaningful changes only. **Forbidden:** bullets about submodule pin promotion, gitlink bumps, or center pin updates — mechanical operations expected to run automatically. Detail: **`capture-release-note/SKILL.md`** § *Release note content policy*.
+
 **Leader state (`releaseNoteStatus` — once per dispatch):**
 
 | Value | Meaning |

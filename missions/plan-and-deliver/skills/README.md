@@ -245,7 +245,7 @@ When the hosting overlay requires release notes (**`releaseVersions: release-ver
 | **Child** | **`coding-session`** | [Release-note fragment ship profile](coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding) — auto-advance worktree → stage fragment only → commit → push → PR → approval-gated merge → cleanup; terminal **`mergeProofVerified: true`**, **`mergeProofPath`**, **`fragmentShipStatus: merged`** |
 | **Leader** | Squad Leader | Verify path on **`origin/main`** → map **`releaseNoteStatus: success`** |
 
-**Forbidden on clean path:** second developer gate after **`approve-fragment`**; **`pre-pr-review`** spawn; post-create-pr handoff; inline **`pr-review`** disposition; deploy-walk; plan-reconcile on the fragment child. See **`capture-release-note/SKILL.md`** § *Fragment approve = ship consent* and **`coding-session/SKILL.md`** § *Release-note fragment ship profile*.
+**Forbidden on clean path:** second developer gate after **`approve-fragment`**; **`pre-pr-review`** spawn; post-create-pr handoff; inline **`pr-review`** disposition; deploy-walk; plan-reconcile on the fragment child. See **`capture-release-note/SKILL.md`** § *Fragment approve = ship consent* and **`coding-session/SKILL.md`** § *Release-note fragment ship profile*. Release-note **content policy** (no pin-promotion bullets): **`capture-release-note/SKILL.md`** § *Release note content policy*.
 
 ### Worktree-bootstrap skill drain gate
 
