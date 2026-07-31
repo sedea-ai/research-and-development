@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Operations plan sidecar writer for R&D plan-and-deliver (lifecycle + archive fields).
-// Normative contract: `.sedea/centers/sedea/rules/8_plan-board-contract.mdc`
+// Normative contract: `.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc`
 // Invoked by: coding-session skill, plan-reconcile, efficient-pr-shipping commit-and-push cadence, hosting repo automation.
 // Design contract: Sedea `.sedea/operations/` plan union across dispatch-scoped plan directories.
 
 /** Plan lifecycle dot values (American spelling `canceled`). See rule 8 § Lifecycle. */
-const PLAN_BOARD_STATUSES = new Set(['not_started', 'started', 'completed', 'canceled']);
+const OPERATIONS_PLAN_STATUSES = new Set(['not_started', 'started', 'completed', 'canceled']);
 
 import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
@@ -341,7 +341,7 @@ async function readSidecarPlain(planPath) {
   const archived = raw.archived === true;
   const statusRaw = typeof raw.status === 'string' ? raw.status : null;
   const status =
-    statusRaw && PLAN_BOARD_STATUSES.has(statusRaw) ? statusRaw : null;
+    statusRaw && OPERATIONS_PLAN_STATUSES.has(statusRaw) ? statusRaw : null;
   return { statePath, data: { worktrees, prs, session, parent, archived, status } };
 }
 
@@ -1451,9 +1451,9 @@ async function collectAncestorSlugs(startSlug) {
 // for the parent link — Cursor's native Plan-mode writer strips frontmatter
 // fields it doesn't recognise, so we keep the hierarchy link in the sidecar
 // (which Cursor never touches) and leave plan-frontmatter alone. The
-// plan-state resolves the effective parent via `resolveParentSlug`
-// in plan-board/src/model/merge.ts (sidecar wins, frontmatter is a legacy
-// fallback until the `migrate-parent-to-sidecar` subcommand runs).
+// plan-state resolves the effective parent via sidecar `parent:` (sidecar wins;
+// plan frontmatter is a legacy fallback until the `migrate-parent-to-sidecar`
+// subcommand runs).
 //
 // Null writes as the literal `null` scalar. Returns `false` when the sidecar
 // `parent:` already equals `newParent` (idempotent). Position: inserted at
@@ -1498,7 +1498,7 @@ async function setSidecarArchived(planPath, value, { dryRun } = {}) {
 
 // Set sidecar plan lifecycle `status` (plan lifecycle status — rule 8 § Lifecycle).
 async function setSidecarStatus(planPath, status, { dryRun } = {}) {
-  if (!PLAN_BOARD_STATUSES.has(status)) {
+  if (!OPERATIONS_PLAN_STATUSES.has(status)) {
     die(`setSidecarStatus: status must be one of not_started|started|completed|canceled (got "${status}")`);
   }
   const { doc, statePath } = await loadSidecarDoc(planPath);
@@ -1767,7 +1767,7 @@ async function stripFrontmatterParent(planPath, { dryRun } = {}) {
 async function cmdSetPlanStatus(flags) {
   const slug = requireString(flags, 'slug');
   const rawStatus = requireString(flags, 'status');
-  if (!PLAN_BOARD_STATUSES.has(rawStatus)) {
+  if (!OPERATIONS_PLAN_STATUSES.has(rawStatus)) {
     die(
       `set-plan-status: status must be one of not_started|started|completed|canceled (got "${rawStatus}")`,
     );
