@@ -5,7 +5,7 @@ alwaysApply: false
 
 # Efficient PR shipping
 
-**On-demand rule.** Mission Control warm-up loads [`.sedea/centers/software-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole software-development `alwaysApply: true` bootstrap. Read **this file** when you need worktrees, commit/push cadence, ship chain, and PR creation gates — not on every dispatch warm-up.
+**On-demand rule.** Mission Control warm-up loads [`.sedea/centers/software-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole Software Development `alwaysApply: true` bootstrap. Read **this file** when you need worktrees, commit/push cadence, ship chain, and PR creation gates — not on every dispatch warm-up.
 
 Sedea's workflow for shipping multi-PR plans fast.
 
@@ -53,7 +53,7 @@ When the Squad Leader receives an implementation request, PR review, or cross-re
 
 ## Hosting repo cwd for scripts (canonical)
 
-software-development automation scripts **`plan-state.mjs`** and **`plan-ws-completeness.mjs`** live under **`.sedea/centers/software-development/missions/plan-and-deliver/scripts/`** in the **hosting repo** whose root contains **`.sedea/`** (and usually **`.sedea/centers/sedea/`**). Canonical **`pr-review.mjs`** lives under **`.sedea/centers/sedea/scripts/`** — see § *`pr-review.mjs`* below.
+R&D automation scripts **`plan-state.mjs`** and **`plan-ws-completeness.mjs`** live under **`.sedea/centers/software-development/missions/plan-and-deliver/scripts/`** in the **hosting repo** whose root contains **`.sedea/`** (and usually **`.sedea/centers/sedea/`**). Canonical **`pr-review.mjs`** lives under **`.sedea/centers/sedea/scripts/`** — see § *`pr-review.mjs`* below.
 
 **Hosting repo worktrees** (`git worktree add` for `user-auth`, `payments-web`, etc.) often have a **different** `git rev-parse --show-toplevel` and **no** `.sedea/centers/` tree. Do **not** derive script paths from the worktree root alone.
 
@@ -109,7 +109,7 @@ Use **`HOSTING_ROOT`** plus a repo-relative script path from the hosting repo, o
 
 ### Operations plan files (binding)
 
-**Forbidden:** editing `.plan.md` or `.state.yaml` under **worktree** `.sedea/operations/`. Plan Board authority lives on **`HOSTING_ROOT`** only. Worktree bootstrap may copy operations for read-only context; all plan/sidecar writes target primary paths. See **`coding-session/SKILL.md`** § *Plan and sidecar IO (binding)* and **0_hosting-repo.mdc** § *Operations persistence (main hosting root only)*.
+**Forbidden:** editing `.plan.md` or `.state.yaml` under **worktree** `.sedea/operations/`. Operations plan authority lives on **`HOSTING_ROOT`** only. Worktree bootstrap may copy operations for read-only context; all plan/sidecar writes target primary paths. See **`coding-session/SKILL.md`** § *Plan and sidecar IO (binding)* and **0_hosting-repo.mdc** § *Operations persistence (main hosting root only)*.
 
 Cross-refs: [`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`](31_dispatch-scope.mdc) § *Worked example*; [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc).
 
@@ -346,7 +346,7 @@ Apply § *Hosting repo cwd for scripts (canonical)* for every script invocation 
 
    **Forbidden:** ending the assistant turn at push when Step 4 ran in-session; opening post-create-pr or pre-merge modals before **`outputs.githubReconciliationStatus: complete`** when Step 5 was required.
 
-4. **Link the PR to its plan sidecar.** After push (and after step 3 when applicable), attempt to upsert the PR number into the Plan Board sidecar so `plan-reconcile` can later archive the plan when all linked PRs merge. Run with **`cd "$HOSTING_ROOT"`** (`WORKTREE_ROOT` = hosting repo worktree where commit/push ran):
+4. **Link the PR to its plan sidecar.** After push (and after step 3 when applicable), attempt to upsert the PR number into the plan sidecar so `plan-reconcile` can later archive the plan when all linked PRs merge. Run with **`cd "$HOSTING_ROOT"`** (`WORKTREE_ROOT` = hosting repo worktree where commit/push ran):
 
    ```bash
    WORKTREE_ROOT="$(pwd)"   # hosting repo worktree (before cd to HOSTING_ROOT)
@@ -499,7 +499,7 @@ When estimating PR size for breakdown decisions, count **kinds** first, then enu
 
 Break work down recursively until each piece is a **PR leaf**: one reviewable **concern**, one clear merge base (`origin/main` unless stacking is explicitly requested), not "one line" by default. Prefer **smallest meaningful** slices: each leaf should have a clear behavioral or structural outcome (what changed, how to see it, what tests cover) so reviews are substantive, not noise.
 
-- **Plan tree vs. git worktree** — The **plan** is a tree of intent: **master-planner** roots and nested `.plan.md` files (e.g. `parent:` links), with YAML **todos** in each file for **agents** (the Plan Board sidebar lists **plan files only**, not todo rows). **Git worktrees** are execution: at most one active PR per worktree ([One PR per worktree](#one-pr-per-worktree-many-worktrees-in-parallel)). **Each parallel PR** should map to **one leaf plan file** (and honest todos inside that file for the agent) so status stays honest.
+- **Plan tree vs. git worktree** — The **plan** is a tree of intent: **master-planner** roots and nested `.plan.md` files (e.g. `parent:` links), with YAML **todos** in each file for **agents** (Mission Control **Relevant Links** and the operations plan tree surface **plan files only**, not todo rows). **Git worktrees** are execution: at most one active PR per worktree ([One PR per worktree](#one-pr-per-worktree-many-worktrees-in-parallel)). **Each parallel PR** should map to **one leaf plan file** (and honest todos inside that file for the agent) so status stays honest.
 - **Child plans** — If one `.plan.md` gets too deep or cross-repo, add a **linked child plan**. The parent keeps a short **Plan map** (bullets or Mermaid) listing child slugs and roles.
 - **Contract drift** — If a leaf PR invalidates the breakdown, **update the parent plan** (diagram + todos) before spawning more worktrees so the tree stays the source of truth.
 - **Splitting an existing pile** — When splitting after the fact: get explicit approval before worktree edits, commit, or push; save a recoverable snapshot (`git stash create` + `git update-ref refs/backup/pre-split-<timestamp> …`); stage named paths or hunks only (no `git add .` / `git add -A`); use Mermaid when multiple slices. After push, complete **`coding-session`** ship chain through inline **`create-pr`** — never open a PR from other lanes (see **PR creation — inline `create-pr` on `coding-session`** above).
@@ -510,13 +510,13 @@ For **multi-step or multi-PR** plans, include **at least one Mermaid diagram** (
 
 After each decomposition step, make validation easy for the human: **(a)** diagram, **(b)** ordered leaves marked **independent** vs **depends on …** (see [Plan for independence](#plan-for-independence)), **(c)** explicit **out of scope**. Prefer validation before hosting repo worktrees spin up.
 
-### Situation awareness and Plan Board
+### Situation awareness and operations plans
 
 Do not rely on chat alone for where work stands.
 
-- **Filesystem** — Intent lives in `.sedea/operations/**/plans/*.plan.md`: body, overview, frontmatter **todos**. Runtime state for the **Plan Board** extension lives in optional sidecars `.sedea/operations/**/plans/<slug>.state.yaml` (e.g. `worktrees`, `prs`, `session.focusPath`). Plan Board hierarchy and status come from that union — do not assume a fixed roadmap filename; when the workspace ships a roadmap or extension plan under `.sedea/operations/`, resolve it from Plan Board UI, user message, or `plan-state.mjs list-candidates` rather than a hard-coded slug.
+- **Filesystem** — Intent lives in `.sedea/operations/**/plans/*.plan.md`: body, overview, frontmatter **todos**. Runtime state for the **operations plan sidecar union** lives in optional sidecars `.sedea/operations/**/plans/<slug>.state.yaml` (e.g. `worktrees`, `prs`, `session.focusPath`). Plan hierarchy and lifecycle status come from that union — do not assume a fixed roadmap filename; when the workspace ships a roadmap or extension plan under `.sedea/operations/`, resolve it from the user message, Mission Control **Relevant Links**, or `plan-state.mjs list-candidates` (from **`HOSTING_ROOT`**) rather than a hard-coded slug.
 - **Agent habits** — Keep todo `status` accurate (`not_started` / `started` / `completed` / `canceled`). Track **postponed** work with a **Postponed / Deferred** subsection or explicit todos so "done" plans do not hide scope. Link related work: a **Related plans** section (slug + one line) in the parent body is enough unless you maintain optional `parent:` / `children:` frontmatter.
-- **Dashboard** — Use the Plan Board sidebar to see the **plan-file hierarchy** (master-plans, plan nesting, **Unlinked**), **status** icons, **worktrees**, and (when wired) PRs; keep plans and sidecars consistent with what the board displays.
+- **Discovery** — Use Mission Control **Relevant Links**, lane handover paths, or `plan-state.mjs list-candidates` to see the **plan-file hierarchy** (master-plans, plan nesting, archive state), **lifecycle status**, **worktrees**, and linked PRs; keep plans and sidecars consistent with what those surfaces show. **Forbidden:** instructing developers to open a removed Hub **Plans** pane — that UI was removed; Hub today exposes **Dispatch** and **Centers** only.
 
 ### Parallelism vs. batching
 

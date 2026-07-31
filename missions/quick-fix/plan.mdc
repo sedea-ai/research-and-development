@@ -232,7 +232,7 @@ USER_CHECKPOINT — pick next step when Quick Fix Plan child reports failure or 
 2. **Minimal parent plan** — scaffold under `.sedea/operations/.../plans/` with:
    - Title from intake **`title`**
    - **`### PR list`** with **exactly one** row summarizing the bullet list as a single quick-fix concern
-   - Sidecar **`parent: null`**, **`status: started`** per [`.sedea/centers/sedea/rules/8_plan-board-contract.mdc`](.sedea/centers/sedea/rules/8_plan-board-contract.mdc)
+   - Sidecar **`parent: null`**, **`status: started`** per [`.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc`](.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc)
 3. **`new-plan`** inline — `mode: indexed-child`, `childKind: pr-plan`, `index: 1`, parent paths from step 2.
 4. **`pr-plan`** inline — populate §§1–4 from bullet list; §§5–8 remain **`_TBD_`** for **`coding-session`** (normative).
 5. At **`pr-plan`** §5c/§5d — spawn **`coding-session`** with planning handoff `inputs` (`readyForImplementation`, `targetPlanPath`, `upstreamSkill: pr-plan`, etc.) per **`pr-plan/SKILL.md`**.
@@ -275,7 +275,7 @@ Same automation contract as plan-and-deliver §8 (*Mission Control host sync*) w
 
 USER_CHECKPOINT — pick planning-only close vs keep ship active when pre-resolution checklist fails.
 
-**Pre-resolution checklist:** Before **`mission_control_propose_dispatch_resolution`**, re-scan ship rows — do not propose **`resolved`** while `open`/`blocked` rows lack host-sync this session unless developer chose planning-only close via USER_CHECKPOINT gate above.
+**Pre-resolution checklist:** Before **`mission_control_propose_dispatch_resolution`**, re-scan ship rows — do not propose **`resolved`** while `open`/`blocked` rows lack host-sync this session unless developer chose planning-only close via USER_CHECKPOINT gate above. **Also run** plan-and-deliver §8 [Release-versions dissolve gate](.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc#release-versions-dissolve-gate-binding) (overlay check → once-per-dispatch release-note spawn → hard-block until success; skip when flag off or no commits) — **no duplicate full prose here**.
 
 ### 8. Dispatch resolution (Squad Leader)
 
