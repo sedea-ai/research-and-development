@@ -9,7 +9,7 @@
  *
  * Run from hosting repo root:
  *
- *   node .sedea/centers/research-and-development/missions/plan-and-deliver/scripts/verify-checkpoint-steps.mjs
+ *   node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-checkpoint-steps.mjs
  *   node .../verify-checkpoint-steps.mjs --enforce
  *
  * Exit 0 when warn-only (default) or no violations under --enforce.
