@@ -1,8 +1,8 @@
-# Mission Control display metadata — host spec pointer (R&D)
+# Mission Control display metadata — host spec pointer (Software Development)
 
 This document is a **read-only pointer** for software-development agents and plan authors. The **host implementation** lives in the **active hosting repo** Mission Control host integration (not in the **software-development** center git repo). Do not treat this file as the normative authority table — use [`.sedea/centers/sedea/rules/9_display-metadata-authority.mdc`](.sedea/centers/sedea/rules/9_display-metadata-authority.mdc).
 
-Phase **1** (host persistence + MCP tools) must be merged before agents rely on governed updates. Phase **2** PR **1** added rule **9**; this doc supports PR **2** (R&D rules + development-process cross-links).
+Phase **1** (host persistence + MCP tools) must be merged before agents rely on governed updates. Phase **2** PR **1** added rule **9**; this doc supports PR **2** (Software Development rules + development-process cross-links).
 
 ---
 
@@ -58,6 +58,6 @@ software-development center agents **reference** host overlay docs in plans; **i
 
 ## Related software-development governance
 
-- R&D discipline rule: [`.sedea/centers/software-development/rules/50_mission-control-display-metadata-discipline.mdc`](../rules/50_mission-control-display-metadata-discipline.mdc)
+- Software Development discipline rule: [`.sedea/centers/software-development/rules/50_mission-control-display-metadata-discipline.mdc`](../rules/50_mission-control-display-metadata-discipline.mdc)
 - Platform authority: [`.sedea/centers/sedea/rules/9_display-metadata-authority.mdc`](.sedea/centers/sedea/rules/9_display-metadata-authority.mdc)
 - Agent UX pitfalls: [`.sedea/centers/software-development/docs/development-process.md`](development-process.md) § *Agent UX pitfalls*

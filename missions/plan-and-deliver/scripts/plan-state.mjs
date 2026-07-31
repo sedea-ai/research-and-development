@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Operations plan sidecar writer for R&D plan-and-deliver (lifecycle + archive fields).
+// Operations plan sidecar writer for Software Development plan-and-deliver (lifecycle + archive fields).
 // Normative contract: `.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc`
 // Invoked by: coding-session skill, plan-reconcile, efficient-pr-shipping commit-and-push cadence, hosting repo automation.
 // Design contract: Sedea `.sedea/operations/` plan union across dispatch-scoped plan directories.

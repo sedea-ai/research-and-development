@@ -9,7 +9,7 @@ Derived index of **Checkpoint trust** turn behavior for **software-development**
 - [Sedea mission calibration](../../sedea/docs/checkpoint-mission-calibration.md) — sedea-center mission skills and plans
 - Parent rollout: governance marker rollout row 6 (`6_governance_matrix_66a5fdbe`)
 
-**Rollout status (2026-06-28):** Documents **shipped** R&D skill Checkpoint turn UX tables and aligned R&D mission `plan.mdc` markers. Skills without a local table are **pending calibration**. Host/platform governance and per-center split reconciled after [#764](https://github.com/sedea-ai/app/pull/764) / [#765](https://github.com/sedea-ai/app/pull/765) — see [host governance](../../sedea/docs/checkpoint-ask-auto-advance-matrix.md) § Reconcile note.
+**Rollout status (2026-06-28):** Documents **shipped** Software Development skill Checkpoint turn UX tables and aligned Software Development mission `plan.mdc` markers. Skills without a local table are **pending calibration**. Host/platform governance and per-center split reconciled after [#764](https://github.com/sedea-ai/app/pull/764) / [#765](https://github.com/sedea-ai/app/pull/765) — see [host governance](../../sedea/docs/checkpoint-ask-auto-advance-matrix.md) § Reconcile note.
 
 **No cross-skill inheritance (binding):** This doc is a **derived** cross-ref for software-development only — prefer skill and plan sources.
 
@@ -93,9 +93,9 @@ Derived index of **Checkpoint trust** turn behavior for **software-development**
 
 ---
 
-## Mission `plan.mdc` protocol surfaces (row 5 — R&D)
+## Mission `plan.mdc` protocol surfaces (row 5 — Software Development)
 
-Aligned warm-up tables and protocol **USER_CHECKPOINT** markers. Host merge for plan-and-deliver missions: `effectiveWarmUp = dedupe(sedeaBootstrapRules → rdBootstrapRules → laneRules)`.
+Aligned warm-up tables and protocol **USER_CHECKPOINT** markers. Host merge for plan-and-deliver missions: `effectiveWarmUp = dedupe(sedeaBootstrapRules → softwareDevelopmentBootstrapRules → laneRules)`.
 
 | Mission plan | Checkpoint warm-up binding | Protocol USER_CHECKPOINT markers (representative) | Source |
 |--------------|---------------------------|---------------------------------------------------|--------|
@@ -115,7 +115,7 @@ Aligned warm-up tables and protocol **USER_CHECKPOINT** markers. Host merge for 
 
 ---
 
-## Cross-ref index — R&D skills with Checkpoint turn UX tables
+## Cross-ref index — Software Development skills with Checkpoint turn UX tables
 
 | # | Skill path (under `.sedea/centers/software-development/`) | Calibrated |
 |---|----------------------------------------------------------------|------------|
@@ -145,15 +145,15 @@ Aligned warm-up tables and protocol **USER_CHECKPOINT** markers. Host merge for 
 
 ---
 
-## Maintenance policy (R&D)
+## Maintenance policy (Software Development)
 
 | Trigger | Action |
 |---------|--------|
-| R&D skill adds/removes/moves a **USER_CHECKPOINT** marker | Update skill `Checkpoint turn UX` table; refresh cluster summary here |
-| R&D mission `plan.mdc` gate changes | Update mission plan; refresh mission table above |
-| New R&D skill ships with calibration table | Append cross-ref index row |
+| Software Development skill adds/removes/moves a **USER_CHECKPOINT** marker | Update skill `Checkpoint turn UX` table; refresh cluster summary here |
+| Software Development mission `plan.mdc` gate changes | Update mission plan; refresh mission table above |
+| New Software Development skill ships with calibration table | Append cross-ref index row |
 
-**Verification (R&D scope):**
+**Verification (Software Development scope):**
 
 ```bash
 find .sedea/centers/software-development -path '*/skills/*/SKILL.md' \
@@ -163,7 +163,7 @@ rg -l 'Checkpoint trust \(binding\)' .sedea/centers/software-development/**/plan
 
 ---
 
-## Spot-check (R&D skills)
+## Spot-check (Software Development skills)
 
 1. Confirm dispatch `trustLevel: checkpoint`.
 2. Walk to first documented **Gate** — happy-path steps auto-advance without turn-end modals.

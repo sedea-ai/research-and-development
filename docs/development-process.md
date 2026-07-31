@@ -35,13 +35,13 @@ Single catalogue of **what we use** in this process. Later sections still spell 
 
 This center does **not** ship **`missions/<missionSlug>/rules/*.mdc`** for **`plan-and-deliver`** or **`prd`**. That is **intentional**, not incomplete setup. Sedea treats mission rules as **optional** (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Rules* — absence is normal).
 
-R&D delivery agents are governed by:
+Software Development delivery agents are governed by:
 
 - **Center rules** — `.sedea/centers/software-development/rules/`
 - **Mission plans** — `missions/<missionSlug>/plan.mdc`
 - **Skills** — `missions/<missionSlug>/skills/` and the **Protocol branches** table below
 
-**Lane warm-up manifest contract.** Per-lane warm-up semantics (`bootstrapRules`, `laneRules`, `skillWarmUp`, `effectiveWarmUp`, reload obligations) are normative in **`.sedea/centers/sedea/docs/lane-manifest-contract.md`**, with spawn/reload bindings in **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Lane warm-up manifest (spawn and reload)*. R&D plans and skills should reference that contract when declaring role-specific **`laneRules`**.
+**Lane warm-up manifest contract.** Per-lane warm-up semantics (`bootstrapRules`, `laneRules`, `skillWarmUp`, `effectiveWarmUp`, reload obligations) are normative in **`.sedea/centers/sedea/docs/lane-manifest-contract.md`**, with spawn/reload bindings in **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Lane warm-up manifest (spawn and reload)*. Software Development plans and skills should reference that contract when declaring role-specific **`laneRules`**.
 
 | Layer | Software Development dispatch path |
 |-------|-------------------|
@@ -50,7 +50,7 @@ R&D delivery agents are governed by:
 | **`laneRules`** | Role minimums in **`skills/README.md`** § *Definitive `laneRules`* and skill frontmatter |
 | **`skillWarmUp`** | Skill frontmatter **`warmUpRules`** + optional spawn **`warmUpRules`** |
 
-Do not flip numbered R&D rule **`alwaysApply`** frontmatter until the host R&D resolver and parity gate ship (reduce-alwaysapply-governance-load PRD §5.4 phase 6 sequencing). Sedea center **`alwaysApply`** flip is governed separately (PRD §5.3).
+Do not flip numbered Software Development rule **`alwaysApply`** frontmatter until the host Software Development resolver and parity gate ship (reduce-alwaysapply-governance-load PRD §5.4 phase 6 sequencing). Sedea center **`alwaysApply`** flip is governed separately (PRD §5.3).
 
 **Audits and gap reports** must **not** flag missing mission-level rule files under this center. To change **this center's** process or rules, use **`improve center rules`** on **`software-development`** (`center-maintenance` on the **sedea** center). For **Sedea platform** governance (hosting layout, git gate, Safeguard), use **`improve center rules`** on **`sedea`**. To change **repo** agent guidance in a hosting repo, use **`.cursor/rules/*.mdc`** per **`.sedea/centers/software-development/rules/40_maintain-rules.mdc`** and per-PR plan **§ 5. Repo rules impact**.
 
@@ -79,7 +79,7 @@ Implementation and ship use **git worktrees** only — not **`git checkout -b`**
 |------|--------|
 | **`.sedea/centers/sedea/rules/0_hosting-repo.mdc`** § *Worktree ownership* | Four preconditions before **`sedea_remove_worktree_folder`** / **`git worktree remove`** |
 | **`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`** § *Post-merge worktree cleanup* | Consent + **this pass’s** path only |
-| **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** § *Worktree removal ownership (binding)* | R&D ship lanes (**`coding-session`**, **`plan-reconcile`** §5) |
+| **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** § *Worktree removal ownership (binding)* | Software Development ship lanes (**`coding-session`**, **`plan-reconcile`** §5) |
 
 **Forbidden:** **`git worktree remove`**, **`git worktree prune`**, or **`sedea_remove_worktree_folder`** on worktrees created by another developer, dispatch, agent lane, or prior session; repo-wide “cleanup” from **`git worktree list`**; **`git worktree remove`** on **`HOSTING_ROOT`**; hand-deleting worktree directories while still mounted in Sedea. **`git worktree list` is read-only** when ownership is unclear — stop and use structured choice. Post-merge cleanup removes **only** **this pass’s** **`WORKTREE_ROOT`** after merge consent (see **`coding-session/SKILL.md`** § *Post-merge workspace cleanup*).
 
@@ -184,11 +184,11 @@ Resolution order is normative in **`.sedea/centers/software-development/rules/31
 | “Plan and deliver — small auth tweak for SSO” | **`plan and deliver`** → §2 intake (description + sources) → §3 **`author-prd`** |
 | “This Confluence link won’t load” | **`plan and deliver`** §2 **AskQuestion** (paste, different path, or switch **`create`**) |
 
-**Referenced skills:** **`author-prd`** (plan-and-deliver §3); **`ad-hoc-prd`** (**`debug-and-fix`**, **`single-phase`**); **`brainstorm-research`** (optional pre-intake on all four R&D delivery missions).
+**Referenced skills:** **`author-prd`** (plan-and-deliver §3); **`ad-hoc-prd`** (**`debug-and-fix`**, **`single-phase`**); **`brainstorm-research`** (optional pre-intake on all four Software Development delivery missions).
 
 ### Brainstorm research (optional pre-intake)
 
-Every R&D delivery mission (**`plan-and-deliver`**, **`single-phase`**, **`quick-fix`**, **`debug-and-fix`**) offers **`brainstorm-first`** alongside direct intake at §2 step 0 (or §2 step 1 for **`quick-fix`**). Canonical skill: **`.sedea/centers/software-development/missions/plan-and-deliver/skills/brainstorm-research/SKILL.md`**.
+Every Software Development delivery mission (**`plan-and-deliver`**, **`single-phase`**, **`quick-fix`**, **`debug-and-fix`**) offers **`brainstorm-first`** alongside direct intake at §2 step 0 (or §2 step 1 for **`quick-fix`**). Canonical skill: **`.sedea/centers/software-development/missions/plan-and-deliver/skills/brainstorm-research/SKILL.md`**.
 
 | Intake option | Behavior |
 | --- | --- |
@@ -245,7 +245,7 @@ Sedea **`.plan.md`** files are **delivery anchors** for Mission Control ship (Ma
 
 ### Operations plan writer notes
 
-Normative field semantics: [`.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc`](.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc). This subsection is the **R&D operator checklist** for agents and tools that create or update `.sedea/operations/**/plans/` pairs.
+Normative field semantics: [`.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc`](.sedea/centers/sedea/rules/8_operations-plan-sidecar-contract.mdc). This subsection is the **Software Development operator checklist** for agents and tools that create or update `.sedea/operations/**/plans/` pairs.
 
 | Write target | Rule |
 | --- | --- |
@@ -299,7 +299,7 @@ Labels reuse numbers and § symbols across documents. **Read the owning doc** be
 | **`pr-review` Steps 1–5** | **`pr-review/SKILL.md`** inline on **`coding-session`** | Full comment triage; Step 5 = GitHub reconciliation. |
 | **Per-PR plan §§1–8** | Plan file template | §§1–4 = planning; §§5–8 = implementation/ship (often filled on **`coding-session`** lane). |
 | **§8 `shipPhase` / `rowStatus`** | Squad Leader **`plan.mdc` §8** | Ship ledger on leader dispatch — updated **only** via Mission Control **host sync** from ship child terminals. |
-| **Sedea rule 6 / rule 30** | **`.sedea/centers/sedea/rules/`** | Git consent gate vs planning-target resolution — not R&D skill step numbers. |
+| **Sedea rule 6 / rule 30** | **`.sedea/centers/sedea/rules/`** | Git consent gate vs planning-target resolution — not Software Development skill step numbers. |
 
 ### Agents and roles
 
@@ -315,7 +315,7 @@ Labels reuse numbers and § symbols across documents. **Read the owning doc** be
 
 - **GitHub** — Pull requests, diffs, and PR description fields (e.g. “Notes for the reviewer”). **A PR-creating agent** fills the body from the prompt **a coding agent** supplies.
 - **Operations plan files** — Where **developers** open and review planning-mode `.plan.md` files in the plans folder `.sedea/operations/**/plans/**` (Mission Control **Relevant Links**, workspace paths, or `plan-state.mjs list-candidates` — not a Hub Plans pane).
-- **Path placeholders (`...`)** — In this document and R&D governance, `` `...` `` inside path examples (e.g. `.sedea/operations/.../plans/`) denotes **omitted segments**, not a folder named `...`. Substitute the **bundle-relative** segment or a handover-supplied absolute path — never literal **`joint`**. See **`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`** § *Path placeholders in documentation*.
+- **Path placeholders (`...`)** — In this document and Software Development governance, `` `...` `` inside path examples (e.g. `.sedea/operations/.../plans/`) denotes **omitted segments**, not a folder named `...`. Substitute the **bundle-relative** segment or a handover-supplied absolute path — never literal **`joint`**. See **`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`** § *Path placeholders in documentation*.
 - **`.plan.md` files** — Standalone plan files at each hierarchy level (Master Plan, phase plans, PR plans); canonical location is under `.sedea/operations/**/plans/**`.
 - **PRD** — Product (or feature) Requirements Document — the prime input for the one-shot **Master Plan** (mode #1). Every **`plan and deliver`** dispatch authors or validates PRD via **`author-prd`** (§§1–3) before **`master-planner`** — see § *PRD routing (canonical)*.
 - **Git worktree** — Isolated worktree used by the **`coding-session`** protocol branch when spinning up a coding agent.
