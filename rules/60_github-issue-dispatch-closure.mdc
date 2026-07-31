@@ -1,6 +1,6 @@
 ---
 description: >-
-  GitHub issue link intake on R&D Mission Control dispatches and Squad Leader
+  GitHub issue link intake on Software Development Mission Control dispatches and Squad Leader
   status update at dispatch resolution so bound issues do not linger.
 globs: "**/*"
 alwaysApply: false
@@ -8,7 +8,7 @@ alwaysApply: false
 
 # GitHub issue dispatch closure (R&D)
 
-**On-demand rule.** Load when an R&D delivery mission binds a GitHub issue at intake or when the Squad Leader is about to call **`mission_control_propose_dispatch_resolution`**.
+**On-demand rule.** Load when an software-development delivery mission binds a GitHub issue at intake or when the Squad Leader is about to call **`mission_control_propose_dispatch_resolution`**.
 
 ## Purpose
 
