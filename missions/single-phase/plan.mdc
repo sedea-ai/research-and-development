@@ -91,7 +91,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole Software Development `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
 
 ### `laneRules` — mission protocol (Squad Leader)
 
@@ -318,7 +318,7 @@ USER_CHECKPOINT — close dispatch planning-only vs keep ship active when no shi
 
 USER_CHECKPOINT — approve dispatch resolution when planning and ship gates allow.
 
-**Dispatch resolution:** Squad Leader proposes **`mission_control_propose_dispatch_resolution`** when planning complete and ship rows closed (or planning-only close per plan-and-deliver §8 gates). When **`githubIssueBound`**, apply [rule **60**](../../rules/60_github-issue-dispatch-closure.mdc) status map for the chosen status **before** that MCP call.
+**Dispatch resolution:** Squad Leader proposes **`mission_control_propose_dispatch_resolution`** when planning complete and ship rows closed (or planning-only close per plan-and-deliver §8 gates). **Also run** plan-and-deliver §8 [Release-versions dissolve gate](.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc#release-versions-dissolve-gate-binding) before any dissolve call — **no duplicate full prose here**. When **`githubIssueBound`**, apply [rule **60**](../../rules/60_github-issue-dispatch-closure.mdc) status map for the chosen status **before** that MCP call.
 
 ## Related assets
 

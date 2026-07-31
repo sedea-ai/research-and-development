@@ -18,6 +18,7 @@ This mission uses **three execution shapes** (see **`.sedea/centers/sedea/skills
 | **`phase-planner` + `autoContinue: true`** → inline **`pr-breakdown`** (single-PR K=1) | Inline on **`phase-planner`** lane after Step **5b** route approval | **`phase-planner`** | May **skip **`pr-breakdown`** Step **6** modal** when **`skipPrBreakdownApprovalModal: true`** — drafts § 5 on **phase plan**; same-turn **`approve-list`** act-after-select matches **`master-planner`** **`approve-list`** auto-expand semantics |
 | **`phase-planner` + single-PR** | **`pr-breakdown`** writes § 5 **`PR breakdown`** on **this phase plan** (not the ancestor Master Plan) | **`phase-planner`** | See **`phase-planner/SKILL.md`** Step **5b-decompose** and **`pr-breakdown/SKILL.md`** § *Inline invoker lane* — does **not** replace **`master-planner`** Step **7** Master Plan **`route-6`** when no phase-planner child is active |
 | **`coding-session`** | Spawned (from **`pr-plan`** §5d or **`phase-planner`** §5f) or detached entry | **`pr-plan`**, **`phase-planner`** (inline subtree), developer, dispatch | Child terminal + inline ship skills |
+| **`capture-release-note`** → **`coding-session`** | Spawn after Step **4** **`approve-fragment`** — fragment PR ship auto-advance (Checkpoint) | **`capture-release-note`** Step **6** | Child **`coding-session`** terminal with **`mergeProofVerified`** / **`fragmentShipStatus: merged`** |
 | **`hosting-repo-rules`** | **Spawned only** — detached parallel fork after **`coding-session`** terminal when spawn contract matches | **`master-planner`** Step **7c**, **`phase-planner`** Step **5e** (fire-and-forget — not **`pendingByParent`**) | Child **`mission_control_send_agent_result`**; parent updates product row **`rulesUpdatesStatus`** |
 | **`pr-review`**, **`create-pr`**, **`deploy-walk`**, **`plan-reconcile`** | **Inline only** on active **`coding-session`** or **`hosting-repo-rules`** | **`coding-session`**, **`hosting-repo-rules`** | Prose to invoker ship lane — no separate child terminal |
 
@@ -41,18 +42,18 @@ When a skill runs **inline** on the invoker’s lane (not spawned via **`mission
 
 **Inline `deploy-walk` on `coding-session`:** Agents must self-run agent-executable checklist steps (shell, grep/logs, file read/parse) per **`deploy-walk/SKILL.md`** § *Agent capability inventory (binding)* — manual steps require numbered **Testing steps** in § *Step 4 — Step presentation contract* and close with **`USER_CHECKPOINT`** gates (manual step await, deploy status transition, deploy closure approval) per § *Checkpoint turn UX (skill-local)* — not prose-only deploy handoff.
 
-## software-development center edit destination gate (binding)
+## Software Development center edit destination gate (binding)
 
 Applies to **all PRD and planning skills** on this center (`author-prd`, `ad-hoc-prd`, `brainstorm-research`, `master-planner`, `phase-planner`, `delivery-phases`, `pr-breakdown`, `new-plan`, `pr-plan`, and **`quick-fix-plan`**). Happy-path PRD/plan writes under **`.sedea/operations/`** do **not** open this gate.
 
 **Trigger:** any step that would **create, edit, move, or delete** files under **`.sedea/centers/software-development/`** (center git content — rules, missions, skills, docs, `center.yaml`).
 
-USER_CHECKPOINT — pick software-development center edit destination before any center write.
+USER_CHECKPOINT — pick Software Development center edit destination before any center write.
 
 | Option id | Label | Action |
 |-----------|-------|--------|
 | `ship-app-rd` | Ship in `sedea-ai/software-development` — Sedea app process / ops | Continue on the **app-focused** center remote; require hosting **Own centers** listing for `software-development` → `git@github.com:sedea-ai/software-development.git` and **`CENTER_WORKTREE_ROOT`** before writes |
-| `delegate-base-rd` | Delegate to base center — `sedea-centers/software-development` | **Stop** local center writes; developer continues on **`sedea-centers-development-hosting-repo`** for **general** software-development center operating-model changes |
+| `delegate-base-rd` | Delegate to base center — `sedea-centers/software-development` | **Stop** local center writes; developer continues on **`sedea-centers-development-hosting-repo`** for **general** Software Development center operating-model changes |
 | `pause` | Pause — stop until I say more | No writes |
 | `more-details` | More details for option _ | Elaborate; re-ask |
 
@@ -224,7 +225,7 @@ These skills run on **detached** or **nested** lanes (often **not** the Squad Le
 
 | Skill | Typical spawner | Outputs section | §8 ship phase hints |
 |-------|-----------------|-----------------|---------------------|
-| `coding-session` | Developer / mission dispatch; **`pr-plan`** §5d or **`phase-planner`** §5f spawn (default **spawned-lane** implement) | `## Implementation handoff result` (+ **`## Completion (inline)`** if same-lane) | Layer 2: `developerApprovedImplementation` after worktree-open gate (auto-waived on pr-plan/phase-planner handoff when eligible); Checkpoint **`USER_CHECKPOINT`** ship gates per **`coding-session/SKILL.md`** § *Checkpoint turn UX*; `shipPhase: implementing` when spawned child codes on lane (not prompt-only stop); **`worktree`** / bootstrap via this lane's terminal — not a separate child |
+| `coding-session` | Developer / mission dispatch; **`pr-plan`** §5d or **`phase-planner`** §5f spawn (default **spawned-lane** implement); **`capture-release-note`** Step **6** fragment ship spawn | `## Implementation handoff result` (+ **`## Completion (inline)`** if same-lane) | Layer 2: `developerApprovedImplementation` after worktree-open gate (auto-waived on pr-plan/phase-planner handoff or **`capture-release-note`** fragment spawn when eligible); Checkpoint **`USER_CHECKPOINT`** ship gates per **`coding-session/SKILL.md`** § *Checkpoint turn UX* — **except** [Release-note fragment ship profile](coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding) (parent **`approve-fragment`** only); `shipPhase: implementing` when spawned child codes on lane (not prompt-only stop); **`worktree`** / bootstrap via this lane's terminal — not a separate child |
 | `hosting-repo-rules` | **`master-planner`** / **`phase-planner`** fire-and-forget after **`coding-session`** terminal (`repoRulesReconciliationStatus: pending` or uncovered §5 `.mdc` bullets) | `## Completion (spawned)` | `shipPhase: implementing` → `done`; `prShipComplete` on rules PR merge; parent product row **`rulesUpdatesStatus`** — not a separate **`shipRows`** entry |
 | `worktree-bootstrap` | **Deprecated** — do not spawn by default; normative bootstrap is center **`worktree-setup.sh`** on **`coding-session`**. Exception-only **inline** retry when setup failed (see **`coding-session/SKILL.md`** § *Worktree bootstrap (inline mandatory)*) | `## Spawned result contract` (legacy in-flight dispatches only) | `worktree`; `bootstrapStatus` |
 | `pre-pr-review` | `coding-session`, **`hosting-repo-rules`** | Step 8 — Report and result | `pre-pr-review`; `recommendation: go` |
@@ -232,6 +233,19 @@ These skills run on **detached** or **nested** lanes (often **not** the Squad Le
 **Not §8 host-sync children:** inline **`pr-review`**, **`create-pr`**, **`deploy-walk`**, **`plan-reconcile`**, and deprecated inline **`worktree-bootstrap`** retry — milestones **must** ship §8 fields on the next **`coding-session`** terminal re-emit (see § *§8 terminal contract* below).
 
 The Squad Leader **§8** ship ledger updates via Mission Control **host sync** when ship child lanes emit terminals with required **`outputs`**. See **`../plan.mdc`** §8 *Mission Control host sync* and **development-process.md** § *Leader-lane §8 host sync*.
+
+### Release-note fragment ship spawn (binding)
+
+When the hosting overlay requires release notes (**`releaseVersions: release-versions`** in **`.cursor/rules/dot-sedea.mdc`**) and commits landed, the Squad Leader spawns **`capture-release-note`** once per dispatch (**`../plan.mdc`** § *Release-versions dissolve gate*). Fragment promotion uses a **two-lane chain**:
+
+| Step | Lane | Action |
+|------|------|--------|
+| **4** | **`capture-release-note`** | Developer **`approve-fragment`** (sole consent gate for text **and** ship) or structured skip |
+| **6** | **`capture-release-note`** | **`mission_control_spawn_agent`** → **`coding-session`** with **`upstreamSkill: capture-release-note`**, **`fragmentShipAutoAdvance: true`**, **`hostingFragmentPath`**, **`hostingFragmentRelPath`**, **`readyForImplementation: true`**, **`repoPath`** = hosting root |
+| **Child** | **`coding-session`** | [Release-note fragment ship profile](coding-session/SKILL.md#release-note-fragment-ship-profile-checkpoint--binding) — auto-advance worktree → stage fragment only → commit → push → PR → approval-gated merge → cleanup; terminal **`mergeProofVerified: true`**, **`mergeProofPath`**, **`fragmentShipStatus: merged`** |
+| **Leader** | Squad Leader | Verify path on **`origin/main`** → map **`releaseNoteStatus: success`** |
+
+**Forbidden on clean path:** second developer gate after **`approve-fragment`**; **`pre-pr-review`** spawn; post-create-pr handoff; inline **`pr-review`** disposition; deploy-walk; plan-reconcile on the fragment child. See **`capture-release-note/SKILL.md`** § *Fragment approve = ship consent* and **`coding-session/SKILL.md`** § *Release-note fragment ship profile*.
 
 ### Worktree-bootstrap skill drain gate
 
@@ -372,7 +386,7 @@ When Mission Control dispatches **`centerSlug === software-development`**, the h
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB) — mirrors **`.sedea/centers/sedea/rules/bootstrap.mdc`** pattern |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole Software Development `alwaysApply: true` bootstrap (≤10 KB) — mirrors **`.sedea/centers/sedea/rules/bootstrap.mdc`** pattern |
 
 Spawned skill **`SKILL.md`** § *Warm-up manifest* tables document this row under **`bootstrapRules`**. **`laneRules`** and **`skillWarmUp`** tables in the same section are unchanged by bootstrap authoring alone — numbered R&D rules stay **`alwaysApply: true`** until the flip PR lands.
 
@@ -388,6 +402,7 @@ Normative minimum **`laneRules`** paths per lane role — merged into **`effecti
 | **`ad-hoc-prd` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/ad-hoc-prd/SKILL.md`, `.sedea/centers/software-development/rules/31_dispatch-scope.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
 | **`master-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/master-planner/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
 | **`quick-fix-plan` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/software-development/missions/quick-fix/skills/quick-fix-plan/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
+| **`capture-release-note` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/4_mission.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/capture-release-note/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
 | **`coding-session` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`, `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/coding-session/SKILL.md` |
 | **`phase-planner` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |
 | **`pre-pr-review` child** | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc`, `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/pre-pr-review/SKILL.md`, `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` |

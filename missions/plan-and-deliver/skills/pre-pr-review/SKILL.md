@@ -87,7 +87,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole R&D `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
+| `.sedea/centers/software-development/rules/bootstrap.mdc` | Sole Software Development `alwaysApply: true` bootstrap (≤10 KB); host merges when `centerSlug === software-development` |
 
 ### `skillWarmUp` — frontmatter `warmUpRules`
 
@@ -137,7 +137,7 @@ Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-p
 
 **Parent yield gate:** After this child spawns (or while the parent awaits terminal result), **`coding-session`** must close the wait turn with a next-step resume modal per **`coding-session/SKILL.md`** § [Yield gate (Checkpoint — binding)](../coding-session/SKILL.md#yield-gate-checkpoint--binding). This skill’s Step **8** auto-emit does **not** waive that parent Yield obligation.
 
-**Real-dispatch test loop (binding):** After merge, run one full **`pre-pr-review`** spawn on a Checkpoint dispatch through Step **8** — verify Steps **1–7** auto-advance and Step **8** **always** auto-emits terminal + parent refocus (including **`no-go`**) without a modal; the **`coding-session`** parent receives the bubble-up and owns next-step gates before the parent phase advances the next ship-chain skill PR — per **Phase 2 — software-development center audit** § *Single-concern strategy*.
+**Real-dispatch test loop (binding):** After merge, run one full **`pre-pr-review`** spawn on a Checkpoint dispatch through Step **8** — verify Steps **1–7** auto-advance and Step **8** **always** auto-emits terminal + parent refocus (including **`no-go`**) without a modal; the **`coding-session`** parent receives the bubble-up and owns next-step gates before the parent phase advances the next ship-chain skill PR — per **Phase 2 — Software Development center audit** § *Single-concern strategy*.
 
 Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md).
 
