@@ -52,8 +52,8 @@ USER_CHECKPOINT — pick R&D center edit destination before any center write.
 
 | Option id | Label | Action |
 |-----------|-------|--------|
-| `ship-app-rd` | Ship in `sedea-ai/research-and-development` — Sedea app process / ops | Continue on the **app-focused** center remote; require hosting **Own centers** listing for `research-and-development` → `git@github.com:sedea-ai/research-and-development.git` and **`CENTER_WORKTREE_ROOT`** before writes |
-| `delegate-base-rd` | Delegate to base center — `sedea-centers/research-and-development` | **Stop** local center writes; developer continues on **`sedea-centers-development-hosting-repo`** for **general** R&D center operating-model changes |
+| `ship-app-rd` | Ship in `sedea-ai/software-development` — Sedea app process / ops | Continue on the **app-focused** center remote; require hosting **Own centers** listing for `research-and-development` → `git@github.com:sedea-ai/software-development.git` and **`CENTER_WORKTREE_ROOT`** before writes |
+| `delegate-base-rd` | Delegate to base center — `sedea-centers/software-development` | **Stop** local center writes; developer continues on **`sedea-centers-development-hosting-repo`** for **general** R&D center operating-model changes |
 | `pause` | Pause — stop until I say more | No writes |
 | `more-details` | More details for option _ | Elaborate; re-ask |
 
@@ -61,10 +61,10 @@ USER_CHECKPOINT — pick R&D center edit destination before any center write.
 
 | Destination | When |
 |-------------|------|
-| **`sedea-ai/research-and-development`** (`ship-app-rd`) | Change reflects how the **Sedea app** is developed, its processes and operations |
-| **`sedea-centers/research-and-development`** (`delegate-base-rd`) | Change applies to how the research-and-development center operates **in general** — not app-specific |
+| **`sedea-ai/software-development`** (`ship-app-rd`) | Change reflects how the **Sedea app** is developed, its processes and operations |
+| **`sedea-centers/software-development`** (`delegate-base-rd`) | Change applies to how the research-and-development center operates **in general** — not app-specific |
 
-**Forbidden:** writing center files without this gate; treating **`sedea-centers/research-and-development`** as Own on **`sedea-ai/app`**; editing the primary hosting clone’s submodule checkout without **`CENTER_WORKTREE_ROOT`**.
+**Forbidden:** writing center files without this gate; treating **`sedea-centers/software-development`** as Own on **`sedea-ai/app`**; editing the primary hosting clone’s submodule checkout without **`CENTER_WORKTREE_ROOT`**.
 
 Each listed skill **must** point here from its Checkpoint / pre-write guidance. Do not re-author a divergent option table in individual skills.
 
