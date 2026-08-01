@@ -923,6 +923,50 @@ Under Checkpoint trust, after a **clean** rebase (or Checkpoint conflict resolve
 
 **Forbidden:** `git rebase` on **`HOSTING_ROOT`** checked-out tree; repo-wide cleanup; push without Checkpoint auto-advance **or** explicit developer consent on this lane.
 
+### Post-merge ship mechanics script (binding)
+
+**Binding helper (PRD B6–B7):** `.sedea/centers/software-development/missions/plan-and-deliver/scripts/post-merge-ship-mechanics.mjs` — invoke for **mechanical** post-merge steps (merge verify, **`HOSTING_ROOT`** ff-only pull, center gitlink drift hint, §8 JSON fields). **Developer consent gates** (merge authorization, cleanup, deploy attestation) stay in SKILL checkpoint UX — the script does **not** bypass rule **6**.
+
+**When to invoke:**
+
+| Trigger | Flags |
+|---------|--------|
+| [Merge procedure](#merge-procedure) step **6** (refresh outputs after merge) | `--hosting-root "$HOSTING_ROOT"` `--pr-number <n>` (verify only — no `--apply`) |
+| **`check-pr-status`** / **`merged-pr-proceed`** when merge confirmed | Same verify-only invocation |
+| Start of [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding) step **1** prep (before cleanup **`--apply`**) | `--hosting-root "$HOSTING_ROOT"` `--pr-number <n>` **`--apply`** when developer consent for pull already granted on this chain |
+| Deploy / CI smoke (Before deploy step 2) | **`--dry-run`** only |
+| **Center-submodule PR** (worktree on `sedea-centers/software-development` or other center repo — hosting `origin` is not the PR repo) | Add **`--repo sedea-centers/software-development`** (or the center's `ORG/REPO`) so `gh pr view` targets the merged PR's repository |
+
+**Center-submodule PRs (binding):** When the merged PR lives on a **center repo** (not the hosting repo), `gh pr view` defaults to hosting **`origin`** unless **`--repo ORG/REPO`** is passed. Always supply **`--repo`** for center worktree dogfood and merge-procedure step **6** refresh.
+
+**Invocation (from `HOSTING_ROOT`):**
+
+```bash
+cd "$HOSTING_ROOT"
+
+.sedea/centers/sedea/scripts/run-sedea-node.sh \
+  .sedea/centers/software-development/missions/plan-and-deliver/scripts/post-merge-ship-mechanics.mjs \
+  --hosting-root "$HOSTING_ROOT" \
+  --pr-number <number> \
+  [--repo sedea-centers/software-development] \
+  [--apply]
+```
+
+**Verify-only step 6 `shipPhase`:** When **`--apply`** is omitted, expect **`shipPhase: pr-merged`** (not **`post-merge-cleanup`**) — cleanup phase follows the **`--apply`** pull in [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding).
+
+**Stdout:** one JSON object. Merge into coding-session `outputs`:
+
+| JSON field | `outputs` key |
+|------------|---------------|
+| `prState` | `prState` |
+| `mergeSha` | `mergeSha` |
+| `mergedAt` | `mergedAt` |
+| `mainPullStatus` | `mainPullStatus` |
+| `shipPhase` | `shipPhase` |
+| `nextAction: promote-pin-required` | Hand off to inline **`promote-submodule-pin`** per [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding) — use `centerPinDriftPaths` for scope |
+
+**Forbidden:** re-implementing merge-state query, **`HOSTING_ROOT`** pull, or pin-drift detection as multi-turn agent prose when this script applies; substituting raw **`gh pr view`** + ad-hoc **`git pull`** for step **6** refresh when **`--pr-number`** is known.
+
 ### Post-merge workspace cleanup
 
 Run on this lane **after** `prState: merged` **and before** [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff). Normative entry: [Act after post-create-pr pick](#act-after-post-create-pr-pick) (**`spawn-after-deploy-walk`** or **`check-pr-status`** → merged), explicit developer message (*pull main*, *remove worktree*, *post-merge cleanup*), or **auto-apply** when merge is confirmed and ownership preconditions pass.
@@ -1357,7 +1401,7 @@ Run only after **`approve-merge-pr`** or **`delegate-merge-confirm`** at [Pre-me
 3. **Approve** — When inspect shows approval required per rule **6** § *Mergeable — approval required*: `gh pr review <n> --approve` (cwd any; uses authenticated **`gh`** identity). When inspect shows merge-only is sufficient, **skip** approve per rule **6** § *Mergeable — approval not required*.
 4. **Merge method** — Default **`--squash --delete-branch`**. When `gh repo view --json squashMergeAllowed,mergeCommitAllowed,rebaseMergeAllowed` shows squash disabled, use the first allowed method (`merge` or `rebase`) and note the choice in recap.
 5. **Merge** — `gh pr merge <n> --squash --delete-branch` (adjust flags per step 4). When checks are still running and the repo allows it, you may use **`--auto`** instead of immediate merge — prefer **`--auto`** when status checks are pending but mergeable.
-6. **Refresh outputs** — Re-query `gh pr view` for `state`, `mergeCommit`, `mergedAt`; set `outputs.prState: merged`, `outputs.mergeSha`, `outputs.mergedAt`, `outputs.shipPhase: pr-merged`, `outputs.rowStatus: open`.
+6. **Refresh outputs** — Run [Post-merge ship mechanics script](#post-merge-ship-mechanics-script-binding) with `--hosting-root "$HOSTING_ROOT"` and `--pr-number <n>` (verify-only). Parse stdout JSON into `outputs` (`prState`, `mergeSha`, `mergedAt`, `shipPhase`, `mainPullStatus`). **Forbidden:** ad-hoc **`gh pr view`** prose duplicate when the script succeeds.
 7. **§8 sync** — Re-emit **`mission_control_send_agent_result`** with §8 fields (`targetPlanPath`, `shipPhase`, `rowStatus`, `prUrl`, `prNumber`) per § *Mission Control section 8 sync*.
 8. **Continue ship chain** — On **next** turn under Checkpoint trust, run [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding) **without** a turn-end modal between merge and the first After deploy manual step. **Forbidden:** re-opening [Post-create-pr handoff gate](#post-create-pr-handoff-gate) or a standalone After deploy recap modal before inline **`deploy-walk`** presents step 1. When Checkpoint trust does **not** apply, run [Post-merge workspace cleanup](#post-merge-workspace-cleanup) **auto-apply**, then [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff) per existing rules.
 

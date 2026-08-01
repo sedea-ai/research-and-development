@@ -302,6 +302,7 @@ Under Checkpoint trust, after **`outputs.prState: merged`** (or merge confirmed 
 
 **Auto-advance order (happy path — no turn-end modal between steps):**
 
+0. When **`outputs.prNumber`** is known, run [Post-merge ship mechanics script](../docs/coding-session-ship-chain.md#post-merge-ship-mechanics-script-binding) with **`--apply`** after merge consent on this chain; merge JSON into `outputs` before cleanup.
 1. [Post-merge workspace cleanup](#post-merge-workspace-cleanup) **`--apply`** when ownership preconditions pass.
 2. Inline **`promote-submodule-pin`** when cleanup JSON **`nextAction: promote-pin-required`** (agent-owned handoff — no spawn, no modal per that skill). **Default on for every hosting-repo submodule** — including built-in **`sedea`** — per [`.sedea/centers/sedea/skills/promote-submodule-pin/SKILL.md`](.sedea/centers/sedea/skills/promote-submodule-pin/SKILL.md). **Forbidden:** treating built-in **`sedea`** as **`skipped` / `not-applicable`** without running the skill when drift or cleanup hint applies.
 3. [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff) — inline **`deploy-walk`** for **`### After deploy`** only.

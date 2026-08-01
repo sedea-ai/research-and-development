@@ -760,15 +760,15 @@ Normative ship order on the spawned implementation lane — cut-point through §
 | 9 Ship chain entry | § *Ship chain after implementation* |
 | Cut-point / commit | § *Ship cut-point gate* |
 | Pre-PR / create-pr | § *Pre-PR review handoff* · § *Inline create-pr* |
-| Post-create / review / merge | § *Post-create-pr handoff gate* · § *Agent-delegated PR approve and merge* |
-| Post-merge / §8 sync | § *Post-merge workspace cleanup* · § *§8 host sync* |
+| Post-create / review / merge | § *Post-create-pr handoff gate* · § *Agent-delegated PR approve and merge* · § *Post-merge ship mechanics script* |
+| Post-merge / §8 sync | § *Post-merge ship mechanics script* · § *Post-merge workspace cleanup* · § *§8 host sync* |
 | Terminal MCP result | § *Implementation handoff result* |
 
 **Checkpoint gates during ship:** After loading ship-chain doc, load checkpoint UX doc at each `USER_CHECKPOINT` named in the ship-chain section you are executing.
 
 ## Stale worktree detection (detect-only)
 
-Post-merge **worktree removal**, **`HOSTING_ROOT` `git pull origin main`**, and **local worktree name ref cleanup** run on this lane in [Post-merge workspace cleanup](#post-merge-workspace-cleanup) **after PR merge and before** [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff). **`plan-reconcile`** §5 is an **idempotent fallback** when cleanup was skipped, deferred, or no stale paths remained at post-merge time.
+Post-merge **worktree removal**, **`HOSTING_ROOT` `git pull origin main`**, and **local worktree name ref cleanup** run on this lane in [Post-merge workspace cleanup](#post-merge-workspace-cleanup) **after PR merge and before** [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff). **Mechanical** merge verify, ff-only pull, and §8 field extraction use binding **`post-merge-ship-mechanics.mjs`** per [ship-chain doc § Post-merge ship mechanics script](../../docs/coding-session-ship-chain.md#post-merge-ship-mechanics-script-binding) — **forbidden** ad-hoc shell duplicate when the script applies.
 
 | Rule | Behavior |
 |------|----------|
