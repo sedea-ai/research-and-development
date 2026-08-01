@@ -3,7 +3,7 @@ name: brainstorm-research
 description: >-
   Optional free-form research session on a spawned child lane. Produces a
   brainstorm report under `.sedea/operations/.../docs/` for downstream PRD,
-  Ad-Hoc PRD, quick-fix planning, or debug handover. Invoked from R&D mission
+  Ad-Hoc PRD, quick-fix planning, or debug handover. Invoked from Software Development mission
   intake when the developer selects brainstorm-first.
 designation:
   allowed: Research, synthesize, and write brainstorm report under operations docs; approval gate
@@ -48,7 +48,7 @@ warmUpRules:
 
 Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Definitive `laneRules`*. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. **Invoker `warmUpRules` override (binding):** merge skill frontmatter **`warmUpRules`** but **add** the **invoking mission `plan.mdc`** (§§1–2.5) — **not** full plan-and-deliver unless that mission is the invoker.
 
-### `bootstrapRules` — host-resolved (R&D layer)
+### `bootstrapRules` — host-resolved (Software Development center layer)
 
 | Path | Purpose |
 |------|---------|
