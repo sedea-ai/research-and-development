@@ -99,7 +99,9 @@ node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verif
 
 Exit **0** when every **plan and deliver** lane role's manifest **`effectiveWarmUp`** covers today's legacy baseline (**sedea `alwaysApply` scan ∪ skill `warmUpRules`**). **`--bootstrap slim`** is the **§5.3 `alwaysApply` flip merge gate** (single bootstrap rule only). Hosting-repo CI: **`./scripts/verify-center-governance.sh`** (runs skill manifest + parity **full** + parity **slim** + warm-up/parity integration tests).
 
-**Center governance CI (hosting repo).** GitHub Actions workflow **`.github/workflows/center-governance.yml`** runs on every PR and push to **`main`**. The job checks out the hosting repo with **recursive submodules**, installs script dependencies, then runs **`./scripts/verify-center-governance.sh`**.
+**Center governance CI (software-development center repo).** GitHub Actions workflow **`.github/workflows/center-governance.yml`** runs on every PR and push to **`main`** on **`sedea-centers/software-development`**. The job checks out the center repo, installs script dependencies under **`missions/plan-and-deliver/scripts/`**, then runs **`verify-skill-manifest.mjs`**, **`verify-checkpoint-steps.mjs`**, and **`verify-no-legacy-wire-tokens.mjs`**. Phase A excludes **`verify-lane-warmup-parity.mjs`** (Phase B fixture) and **`--enforce-spawn-byte-budget`** (WARN-only until post-flip manifest trimming).
+
+**Center governance CI (hosting repo).** GitHub Actions workflow **`.github/workflows/center-governance-verify.yml`** runs on every PR and push to **`main`**. The job checks out the hosting repo with **recursive submodules**, installs script dependencies, then runs **`./scripts/verify-center-governance.sh`**.
 
 | Variable / secret | Where | Purpose |
 |-------------------|-------|---------|

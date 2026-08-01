@@ -15,7 +15,8 @@
  * - coding-session must not document notify caller paths
  * - skills/README.md — N1–N8 notify preflight + v1 child receive table
  *
- * Run from hosting repo root (directory containing .sedea/):
+ * Run from hosting repo root (directory containing `.sedea/centers/sedea/`) or from the
+ * software-development center repo root (standalone clone / center-repo CI):
  *
  *   node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
  *
@@ -26,6 +27,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
+import {
+  mapWarmUpPath,
+  resolveGovernanceContext,
+} from './resolve-governance-root.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CENTER_ROOT = path.resolve(__dirname, '../../..');
@@ -111,21 +116,6 @@ function normalizeRepoPath(p) {
 function skillNameFromRel(repoRelativePath) {
   const m = repoRelativePath.match(/missions\/[^/]+\/skills\/([^/]+)\/SKILL\.md$/);
   return m ? m[1] : undefined;
-}
-
-async function resolveHostingRoot() {
-  let dir = process.cwd();
-  for (let depth = 0; depth < 32; depth += 1) {
-    try {
-      await fs.access(path.join(dir, '.sedea/centers/sedea'));
-      return dir;
-    } catch {
-      const parent = path.dirname(dir);
-      if (parent === dir) break;
-      dir = parent;
-    }
-  }
-  die('could not resolve hosting repo root — run from HOSTING_ROOT');
 }
 
 async function listSkillFilesOnDisk() {
@@ -246,10 +236,12 @@ function dedupeOrderedPaths(paths) {
   return out;
 }
 
-async function combinedWarmUpBytes(hostingRoot, paths) {
+async function combinedWarmUpBytes(ctx, paths) {
   let total = 0;
   for (const rel of dedupeOrderedPaths(paths)) {
-    const st = await fs.stat(path.join(hostingRoot, rel));
+    const abs = mapWarmUpPath(ctx, rel);
+    if (!abs) continue;
+    const st = await fs.stat(abs);
     total += st.size;
   }
   return total;
@@ -271,11 +263,13 @@ function diffSets(label, frontmatter, table, repoRelativePath) {
   return lines.join('\n');
 }
 
-async function assertPathsExist(hostingRoot, paths, repoRelativePath, label) {
+async function assertPathsExist(ctx, paths, repoRelativePath, label) {
   const missing = [];
   for (const rel of paths) {
+    const abs = mapWarmUpPath(ctx, rel);
+    if (!abs) continue;
     try {
-      await fs.access(path.join(hostingRoot, rel));
+      await fs.access(abs);
     } catch {
       missing.push(rel);
     }
@@ -290,7 +284,7 @@ function manifestKind(body) {
   return 'none';
 }
 
-async function validateWarmUpManifest(repoRelativePath, hostingRoot) {
+async function validateWarmUpManifest(repoRelativePath, ctx) {
   if (!repoRelativePath.startsWith(PLAN_AND_DELIVER_PREFIX)) return [];
 
   const abs = path.join(CENTER_ROOT, repoRelativePath);
@@ -380,14 +374,14 @@ async function validateWarmUpManifest(repoRelativePath, hostingRoot) {
     }
 
     const pathErrWarmUp = await assertPathsExist(
-      hostingRoot,
+      ctx,
       warmUpFm,
       repoRelativePath,
       'warmUpRules',
     );
     if (pathErrWarmUp) errors.push(pathErrWarmUp);
     const pathErrLane = await assertPathsExist(
-      hostingRoot,
+      ctx,
       laneRulesFm,
       repoRelativePath,
       'laneRules',
@@ -396,7 +390,7 @@ async function validateWarmUpManifest(repoRelativePath, hostingRoot) {
 
     if (!errors.length) {
       const mergedPaths = dedupeOrderedPaths([...warmUpFm, ...laneRulesFm]);
-      const bytes = await combinedWarmUpBytes(hostingRoot, mergedPaths);
+      const bytes = await combinedWarmUpBytes(ctx, mergedPaths);
       byteBudgetReports.push({ repoRelativePath, bytes });
       if (bytes > WARM_UP_BYTE_CAP) {
         process.stderr.write(
@@ -747,7 +741,7 @@ async function validateNullableParentSpawnWire(hostingRoot, repoRelativePaths) {
 
 async function main() {
   ({ enforceSpawnByteBudget } = parseMainArgs(process.argv));
-  const hostingRoot = await resolveHostingRoot();
+  const ctx = await resolveGovernanceContext({ scriptDir: __dirname });
   const yamlText = await fs.readFile(CENTER_YAML, 'utf8');
   const listed = parseSkillEntriesFromYaml(yamlText);
   const disk = await listSkillFilesOnDisk();
@@ -757,7 +751,7 @@ async function main() {
   for (const rel of disk) {
     const err = await validateSkillFrontmatter(rel);
     if (err) frontmatterErrors.push(err);
-    const warmErrs = await validateWarmUpManifest(rel, hostingRoot);
+    const warmErrs = await validateWarmUpManifest(rel, ctx);
     warmUpErrors.push(...warmErrs);
   }
 
@@ -773,15 +767,16 @@ async function main() {
     process.exit(1);
   }
 
-  const sedeaPlannerSkills = await listSedeaPlannerSkillFiles(hostingRoot);
+  const sedeaPlannerSkills = ctx.hostingRoot
+    ? await listSedeaPlannerSkillFiles(ctx.hostingRoot)
+    : [];
   const rdPlannerSkills = [...disk].filter((rel) =>
     /\/skills\/master-planner\/SKILL\.md$/.test(rel),
   );
   const spawnWirePaths = [...rdPlannerSkills, ...sedeaPlannerSkills];
-  const spawnWireErrors = await validateNullableParentSpawnWire(
-    hostingRoot,
-    spawnWirePaths,
-  );
+  const spawnWireErrors = ctx.hostingRoot
+    ? await validateNullableParentSpawnWire(ctx.hostingRoot, spawnWirePaths)
+    : await validateNullableParentSpawnWire(ctx.centerRoot, rdPlannerSkills);
   if (spawnWireErrors.length) {
     process.stderr.write('nullable-parent spawn wire lint failed:\n');
     for (const e of spawnWireErrors) process.stderr.write(`  ${e}\n`);
@@ -807,6 +802,7 @@ async function main() {
         `notify emit/receive governance lint passed (${NOTIFY_EMIT_SKILL_NAMES.length} emit + ${NOTIFY_RECEIVE_SKILL_NAMES.length} receive skills); ` +
         `spawn byte budget smoke: ${overCap.length} skill(s) over ${WARM_UP_BYTE_CAP} bytes` +
         (enforceSpawnByteBudget ? ' (--enforce-spawn-byte-budget)' : '') +
+        (ctx.mode === 'center' ? '; center-repo-only mode (sedea warm-up paths skipped)' : '') +
         `\n`,
     );
     process.exit(0);
