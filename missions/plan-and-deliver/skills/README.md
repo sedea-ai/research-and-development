@@ -580,10 +580,10 @@ Each spawned ship skill documents its manifest in **`SKILL.md`** § *Warm-up man
 | **`author-prd`** | `plan.mdc` (in **`laneRules`**), `development-process.md` | **`plan.mdc`** via **`laneRules`**; **`development-process.md`** at named steps |
 | **`ad-hoc-prd`**, **`quick-fix-plan`** | `development-process.md` | Named protocol steps **`Read`** **`development-process.md`** when cadence/templates apply |
 | **`pre-pr-review`** | `plan.mdc`, `development-process.md` | Step 3 reads **`development-process.md`**; Step 4 loads **`inputs.targetPlanPath`** (PR plan, not Squad Leader **`plan.mdc`**) |
-| **`coding-session`** | rule **30** only | Explicit **`Read`** of rule **30** when resolving ambiguous `.sedea` paths |
+| **`coding-session`** | rule **30** only; assigned **`SKILL.md`** in **`laneRules`** for parity — **excluded** from spawn byte budget (host **`skillPath`** inject) | Explicit **`Read`** of rule **30** when resolving ambiguous `.sedea` paths; on-demand ship docs via step-bound **`Read`** |
 | **`deploy-walk`**, **`plan-reconcile`** | All frontmatter warm-up keys (inline-only) | Inherit **`coding-session`** **`effectiveWarmUp`** — see each skill § *Warm-up manifest (inline)* |
 
-Do **not** re-add omitted paths to **`pre-pr-review`** frontmatter without re-checking combined warm-up size — spawn rejects with **`warm-up-too-large`** when frontmatter + merged run-request rules exceed the host cap (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Run-request line*).
+Do **not** re-add omitted paths to **`pre-pr-review`** frontmatter without re-checking combined warm-up size — spawn rejects with **`warm-up-too-large`** when frontmatter + merged run-request rules exceed the host cap (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Run-request line*). **`verify-skill-manifest.mjs`** excludes the assigned skill's own **`SKILL.md`** from byte-budget totals when it appears in **`laneRules`** / **`warmUpRules`** — host always injects **`skillPath`** at spawn (lane-manifest-contract § *Spawn cap*).
 
 **`pr-review`** and **`create-pr`** are inline-only — **no** frontmatter **`warmUpRules`**; they run **only** on the active **`coding-session`** lane (which includes this README and rule **20**). Do not dispatch **`pr-review`** or **`create-pr`** as standalone skill sessions.
 

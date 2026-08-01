@@ -15,6 +15,10 @@
  * - coding-session must not document notify caller paths
  * - skills/README.md — N1–N8 notify preflight + v1 child receive table
  *
+ * Spawn byte budget: sums warmUpRules ∪ laneRules path bodies; excludes assigned skill
+ * SKILL.md when listed (host skillPath inject — lane-manifest-contract § Spawn cap).
+ * --enforce-spawn-byte-budget: strict cap for planning + coding-session spawn roles.
+ *
  * Run from hosting repo root (directory containing `.sedea/centers/sedea/`) or from the
  * software-development center repo root (standalone clone / center-repo CI):
  *
@@ -30,6 +34,7 @@ import { parse as parseYaml } from 'yaml';
 import {
   mapWarmUpPath,
   resolveGovernanceContext,
+  SD_CENTER_PREFIX,
 } from './resolve-governance-root.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -69,8 +74,8 @@ const LANE_RULES_HEADING = '### `laneRules` — frontmatter `laneRules`';
 /** Host spawn cap — `.sedea/centers/sedea/rules/4_mission.mdc` § Spawned execution */
 const WARM_UP_BYTE_CAP = 384 * 1024;
 
-/** Planning spawn skills — strict byte-budget enforce when `--enforce-spawn-byte-budget` (Phase A). Ship skills stay WARN-only until Phase B. */
-const PLANNING_SPAWN_BYTE_BUDGET_ENFORCE_SKILLS = new Set([
+/** Spawn skills — strict byte-budget enforce when `--enforce-spawn-byte-budget` (Phase A planning; Phase B adds coding-session). */
+const SPAWN_BYTE_BUDGET_ENFORCE_SKILLS = new Set([
   'master-planner',
   'phase-planner',
   'pr-plan',
@@ -80,6 +85,7 @@ const PLANNING_SPAWN_BYTE_BUDGET_ENFORCE_SKILLS = new Set([
   'author-prd',
   'ad-hoc-prd',
   'quick-fix-plan',
+  'coding-session',
 ]);
 
 /** Definitive laneRules rows from skills/README.md § Definitive laneRules (spawn preflight row 11). */
@@ -249,6 +255,21 @@ function dedupeOrderedPaths(paths) {
   return out;
 }
 
+/** Repo-relative warm-up path for the assigned skill body (host injects via skillPath — lane-manifest-contract § Spawn cap). */
+function assignedSkillBodyWarmUpPath(skillName) {
+  if (!skillName) return undefined;
+  return normalizeRepoPath(
+    `${SD_CENTER_PREFIX}missions/plan-and-deliver/skills/${skillName}/SKILL.md`,
+  );
+}
+
+/** Paths counted toward the 384 KiB spawn budget — excludes assigned skill body when listed in laneRules / warmUpRules. */
+function pathsForSpawnByteBudget(skillName, mergedPaths) {
+  const assigned = assignedSkillBodyWarmUpPath(skillName);
+  if (!assigned) return mergedPaths;
+  return mergedPaths.filter((p) => normalizeRepoPath(p) !== assigned);
+}
+
 async function combinedWarmUpBytes(ctx, paths) {
   let total = 0;
   for (const rel of dedupeOrderedPaths(paths)) {
@@ -402,20 +423,25 @@ async function validateWarmUpManifest(repoRelativePath, ctx) {
     if (pathErrLane) errors.push(pathErrLane);
 
     if (!errors.length) {
+      const skillName = skillNameFromRel(repoRelativePath);
       const mergedPaths = dedupeOrderedPaths([...warmUpFm, ...laneRulesFm]);
-      const bytes = await combinedWarmUpBytes(ctx, mergedPaths);
+      const budgetPaths = pathsForSpawnByteBudget(skillName, mergedPaths);
+      const bytes = await combinedWarmUpBytes(ctx, budgetPaths);
       byteBudgetReports.push({ repoRelativePath, bytes });
       if (bytes > WARM_UP_BYTE_CAP) {
+        const assignedExcluded =
+          budgetPaths.length < mergedPaths.length
+            ? ' (assigned skill body excluded per lane-manifest-contract § Spawn cap)'
+            : '';
         process.stderr.write(
-          `WARN: ${repoRelativePath}: frontmatter warmUpRules ∪ laneRules is ${bytes} bytes (host spawn cap ${WARM_UP_BYTE_CAP}) — trim frontmatter or use README cap exceptions before --enforce-spawn-byte-budget\n`,
+          `WARN: ${repoRelativePath}: spawn byte budget paths total ${bytes} bytes (host spawn cap ${WARM_UP_BYTE_CAP})${assignedExcluded} — trim frontmatter or use README cap exceptions before --enforce-spawn-byte-budget\n`,
         );
-        const skillName = skillNameFromRel(repoRelativePath);
         if (
           enforceSpawnByteBudget &&
-          PLANNING_SPAWN_BYTE_BUDGET_ENFORCE_SKILLS.has(skillName)
+          SPAWN_BYTE_BUDGET_ENFORCE_SKILLS.has(skillName)
         ) {
           errors.push(
-            `${repoRelativePath}: frontmatter warmUpRules ∪ laneRules is ${bytes} bytes (cap ${WARM_UP_BYTE_CAP})`,
+            `${repoRelativePath}: spawn byte budget paths total ${bytes} bytes (cap ${WARM_UP_BYTE_CAP})${assignedExcluded}`,
           );
         }
       }

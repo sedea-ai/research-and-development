@@ -34,7 +34,7 @@ jobs:
       - name: Verify skill manifest
         run: node missions/plan-and-deliver/scripts/verify-skill-manifest.mjs
 
-      - name: Verify skill manifest (planning spawn byte budget)
+      - name: Verify skill manifest (spawn byte budget enforce)
         run: node missions/plan-and-deliver/scripts/verify-skill-manifest.mjs --enforce-spawn-byte-budget
 
       - name: Verify checkpoint steps
