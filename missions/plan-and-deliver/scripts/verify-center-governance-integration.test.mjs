@@ -77,6 +77,17 @@ test('verify-checkpoint-steps.mjs warn-only exits 0 (phase 1 scaffold)', () => {
   assert.equal(code, 0);
 });
 
+test('verify-submodule-ship-attestation.mjs exits 0 for aligned software-development pin', () => {
+  const out = runScript('verify-submodule-ship-attestation.mjs', [
+    '--hosting-root',
+    hostingRoot,
+    '--center-slug',
+    'software-development',
+  ]);
+  assert.match(out, /"allPass": true/);
+  assert.match(out, /"centerSlug": "software-development"/);
+});
+
 test('lane-manifest-contract.md documents PRD §5.6 L1–L5 sunset gates', async () => {
   const docPath = path.join(
     hostingRoot,

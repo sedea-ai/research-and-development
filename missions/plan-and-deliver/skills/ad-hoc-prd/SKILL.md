@@ -258,6 +258,8 @@ USER_CHECKPOINT — approve, revise, or resolve open items on this Ad-Hoc PRD be
 
 ## Completion (spawned)
 
+**Spawn-ack (invoker context — binding):** Invokers (**`single-phase`** §3, **`debug-and-fix`** §5c) emit **`mission_control_spawn_agent`** for this lane on a **spawn-only turn** per [`.sedea/centers/sedea/rules/4_mission.mdc`](.sedea/centers/sedea/rules/4_mission.mdc) § *Spawn-ack semantics (binding)* — ack ≠ host spawn success; **forbidden** parallel spawn + wait modal on that turn. Cross-reference only; do **not** duplicate the full block here. This child lane owns PRD approval gates and terminal **`mission_control_send_agent_result`** — not invoker external-wait narration from **`transcriptOnly`** ack alone.
+
 ### MCP result preflight (`mission_control_send_agent_result`)
 
 | Step | Check |

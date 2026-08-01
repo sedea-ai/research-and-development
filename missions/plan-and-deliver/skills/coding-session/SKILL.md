@@ -1677,7 +1677,7 @@ When the **committed hosting diff** for this PR touches a **submodule gitlink** 
    - **Strict SHA (binding):** hosting gitlink must target **submodule `defaultBranch` tip** — no content-equivalence heuristic in v1.
    - **If the tip is only on a feature branch:** **stop** the ship chain. Open and merge (or verify already merged) the **center-repo PR** on the submodule source repository **before** hosting **`create-pr`**. Pushing a submodule feature branch is **not** shippable — merge to submodule **`defaultBranch`** first.
 3. **Inline `promote-submodule-pin`** — After step 2 passes for **each** affected center, load [`.sedea/centers/sedea/skills/promote-submodule-pin/SKILL.md`](.sedea/centers/sedea/skills/promote-submodule-pin/SKILL.md) and run it **inline on this lane** with **`centerSlug`** (direct entry). **Default on for every hosting-repo submodule** — **forbidden:** built-in **`sedea`** N/A skip. The skill updates the hosting gitlink to submodule **`defaultBranch`** tip in **`WORKTREE_ROOT`** (or confirms already aligned).
-4. **Record outputs** — Set `outputs.submoduleMergeGateStatus: complete` when all affected centers pass steps 2–3. Append per-center results to `outputs.promoteSubmodulePinOutcomes` (array of `{ centerSlug, sourceOnMainVerified, promoteStatus }`). These outputs feed **honest deploy attestation** — PR 3 **`deploy-walk`** expands After deploy step 1; until then, record outcomes here and in plan **§7** when manually attesting.
+4. **Record outputs** — Set `outputs.submoduleMergeGateStatus: complete` when all affected centers pass steps 2–3. Append per-center results to `outputs.promoteSubmodulePinOutcomes` (array of `{ centerSlug, sourceOnMainVerified, promoteStatus }`). These outputs feed **honest deploy attestation** — inline **`deploy-walk`** § *Submodule ship attestation* runs **`verify-submodule-ship-attestation.mjs`** on After deploy step 1; record outcomes here during the ship chain and pass through to **`deploy-walk`** inline context.
 
 **Checkpoint — auto-advance (binding):**
 
@@ -1702,7 +1702,7 @@ Call **`mission_control_present_structured_choice`** when source is not on **`de
 | `defer-ship` | Defer hosting PR | Keep `continuationStatus: active`; no **`create-pr`** |
 | `more-details` | More details for option _ | Elaborate; re-ask |
 
-**Honest attestation hook (binding):** Do **not** mark deploy steps complete or report submodule integration success when **`promote-submodule-pin`** was skipped, failed, or conflated with N/A. Record actual outcomes in `outputs.promoteSubmodulePinOutcomes` for downstream **`deploy-walk`** (PR 3).
+**Honest attestation hook (binding):** Do **not** mark deploy steps complete or report submodule integration success when **`promote-submodule-pin`** was skipped, failed, or conflated with N/A. Record actual outcomes in `outputs.promoteSubmodulePinOutcomes` and pass them to inline **`deploy-walk`** — After deploy attestation uses **`verify-submodule-ship-attestation.mjs`** (strict SHA + outcome cross-check).
 
 ### Inline create-pr (auto on clean go)
 
@@ -2134,6 +2134,7 @@ Run from [Act after post-create-pr pick](#act-after-post-create-pr-pick) when th
 | `targetPlanPath` / `targetPlanSlug` | From coding-session state when plan-anchored |
 | `worktreePath`, `worktreeName` | From worktree / git |
 | `prUrl`, `prNumber`, `mergeSha`, `mergedAt`, `repoUrl` | From coding-session `outputs` after inline **`create-pr`** when present |
+| `promoteSubmodulePinOutcomes` | From coding-session `outputs` after submodule merge gate — for **`deploy-walk`** attestation cross-check |
 | `ledgerParent` | From coding-session ledger when present |
 | `upstreamSkill` | `"coding-session"` |
 
