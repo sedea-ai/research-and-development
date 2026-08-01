@@ -69,6 +69,19 @@ const LANE_RULES_HEADING = '### `laneRules` — frontmatter `laneRules`';
 /** Host spawn cap — `.sedea/centers/sedea/rules/4_mission.mdc` § Spawned execution */
 const WARM_UP_BYTE_CAP = 384 * 1024;
 
+/** Planning spawn skills — strict byte-budget enforce when `--enforce-spawn-byte-budget` (Phase A). Ship skills stay WARN-only until Phase B. */
+const PLANNING_SPAWN_BYTE_BUDGET_ENFORCE_SKILLS = new Set([
+  'master-planner',
+  'phase-planner',
+  'pr-plan',
+  'pr-breakdown',
+  'delivery-phases',
+  'new-plan',
+  'author-prd',
+  'ad-hoc-prd',
+  'quick-fix-plan',
+]);
+
 /** Definitive laneRules rows from skills/README.md § Definitive laneRules (spawn preflight row 11). */
 const DEFINITIVE_LANE_RULES_BY_SKILL = {
   'author-prd': [
@@ -396,7 +409,11 @@ async function validateWarmUpManifest(repoRelativePath, ctx) {
         process.stderr.write(
           `WARN: ${repoRelativePath}: frontmatter warmUpRules ∪ laneRules is ${bytes} bytes (host spawn cap ${WARM_UP_BYTE_CAP}) — trim frontmatter or use README cap exceptions before --enforce-spawn-byte-budget\n`,
         );
-        if (enforceSpawnByteBudget) {
+        const skillName = skillNameFromRel(repoRelativePath);
+        if (
+          enforceSpawnByteBudget &&
+          PLANNING_SPAWN_BYTE_BUDGET_ENFORCE_SKILLS.has(skillName)
+        ) {
           errors.push(
             `${repoRelativePath}: frontmatter warmUpRules ∪ laneRules is ${bytes} bytes (cap ${WARM_UP_BYTE_CAP})`,
           );

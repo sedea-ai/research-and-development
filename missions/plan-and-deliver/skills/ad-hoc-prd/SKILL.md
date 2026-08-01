@@ -45,7 +45,6 @@ laneRules:
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
 warmUpRules:
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/software-development/docs/development-process.md"
   - ".sedea/centers/software-development/rules/10_plan-naming-convention.mdc"
 ---
 
@@ -53,7 +52,7 @@ warmUpRules:
 
 ## Warm-up manifest (spawned)
 
-Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up*. Spawned from **`single-phase`** §3 or **`debug-and-fix`** §5c — **not** plan-and-deliver §3 (which uses **`author-prd`**). Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table. **No `alwaysApply` frontmatter flip.**
+Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up*. Spawned from **`single-phase`** §3 or **`debug-and-fix`** §5c — **not** plan-and-deliver §3 (which uses **`author-prd`**). Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table. **384 KiB cap:** frontmatter omits **`development-process.md`** — explicit **`Read`** at named protocol steps. **No `alwaysApply` frontmatter flip.**
 
 **Invoker `warmUpRules` override (binding):** On **`mission_control_spawn_agent`**, invokers merge skill frontmatter **`warmUpRules`** but **must add** the **invoking mission `plan.mdc`** — **`.sedea/centers/software-development/missions/single-phase/plan.mdc`** (§§1–3) or **`.sedea/centers/software-development/missions/debug-and-fix/plan.mdc`** (post-fix step **5c**) — **instead of** `plan-and-deliver/plan.mdc`. See **`../README.md`** § *Definitive `laneRules`* and each mission's spawn step.
 
@@ -69,8 +68,9 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 |------|---------|
 | *(invoker-supplied on spawn)* **Invoking mission `plan.mdc`** — **`single-phase/plan.mdc`** (§§1–3) or **`debug-and-fix/plan.mdc`** (§5c) | Mission protocol for this spawn — **not** `plan-and-deliver/plan.mdc` |
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
-| `.sedea/centers/software-development/docs/development-process.md` | Ad-hoc vs Master Plan routing |
 | `.sedea/centers/software-development/rules/10_plan-naming-convention.mdc` | Ad-hoc PRD filename slug |
+
+**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `development-process.md` — load at named protocol steps.
 
 ### `laneRules` — frontmatter `laneRules`
 

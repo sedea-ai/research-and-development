@@ -66,9 +66,7 @@ laneRules:
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/pr-plan/SKILL.md"
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
 warmUpRules:
-  - ".sedea/centers/software-development/missions/plan-and-deliver/plan.mdc"
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/software-development/docs/development-process.md"
   - ".sedea/centers/software-development/rules/30_planning-target-resolution.mdc"
 ---
 
@@ -86,7 +84,7 @@ The procedure below is a hard contract — do **not** skip steps or start drafti
 
 ## Warm-up manifest (spawned)
 
-Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up*. Normative **inline** on invoker lane; manifest applies when standalone spawned or warm-up replay. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. **No `alwaysApply` frontmatter flip.**
+Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Default warm-up*. Normative **inline** on invoker lane; manifest applies when standalone spawned or warm-up replay. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. **384 KiB cap:** frontmatter omits **`plan.mdc`**, **`development-process.md`** — explicit **`Read`** at named protocol steps. **No `alwaysApply` frontmatter flip.**
 
 ### `bootstrapRules` — host-resolved (Software Development center layer)
 
@@ -98,10 +96,10 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` | Squad Leader ledger, spawn/wait |
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
-| `.sedea/centers/software-development/docs/development-process.md` | NFD process templates |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
+
+**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md` — load at named protocol steps.
 
 ### `laneRules` — frontmatter `laneRules`
 

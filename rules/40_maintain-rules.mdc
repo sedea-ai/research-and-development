@@ -1,15 +1,17 @@
 ---
 description: >-
   Routing only: when to edit hosting-repo .cursor/rules vs software-development center rules.
-  Loaded as a Software Development always-apply rule; procedures target .cursor/rules on the hosting repo.
-alwaysApply: true
+  On-demand rule — load when hosting-repo .cursor/rules routing vs center rules is needed.
+alwaysApply: false
 ---
 
 # Maintain repo cursor rules (`.cursor/rules/`)
 
 ## How this rule is loaded
 
-This file lives under **`.sedea/centers/software-development/rules/`** and is **`alwaysApply: true`** on every **software-development** dispatch so agents see the routing table below. It does **not** author Sedea center governance under **`.sedea/centers/<centerSlug>/`**.
+**On-demand rule.** Mission Control warm-up loads [`.sedea/centers/software-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole Software Development `alwaysApply: true` bootstrap. Read **this file** when you need hosting-repo **`.cursor/rules/*.mdc`** routing vs center rules — not on every dispatch warm-up.
+
+This file lives under **`.sedea/centers/software-development/rules/`** and is **`alwaysApply: false`** (SD §5.4 on-demand flip). It does **not** author Sedea center governance under **`.sedea/centers/<centerSlug>/`**.
 
 **Apply the procedures in this document only** when the task changes **hosting-repo** navigation or codebase conventions in **`.cursor/rules/*.mdc`** on the repo that ships code (the active **hosting repo** or a **hosting repo worktree**). For software-development delivery process, edit **`.sedea/centers/software-development/rules/*.mdc`** and mission assets via **`improve center rules`** / **`improve mission`** — not via this file’s edit loop alone.
 

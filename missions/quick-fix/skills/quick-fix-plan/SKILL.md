@@ -43,7 +43,6 @@ laneRules:
 warmUpRules:
   - ".sedea/centers/software-development/missions/quick-fix/plan.mdc"
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/software-development/docs/development-process.md"
   - ".sedea/centers/software-development/rules/10_plan-naming-convention.mdc"
 ---
 
@@ -55,7 +54,7 @@ warmUpRules:
 
 ## Warm-up manifest (spawned)
 
-Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md). Spawned from **`quick-fix`** §3 only. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table.
+Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md). Spawned from **`quick-fix`** §3 only. Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table. **384 KiB cap:** frontmatter omits **`development-process.md`** — explicit **`Read`** at named protocol steps.
 
 **Invoker `warmUpRules` override (binding):** On **`mission_control_spawn_agent`**, merge skill frontmatter **`warmUpRules`** and ensure **`quick-fix/plan.mdc`** is present — **not** `plan-and-deliver/plan.mdc`.
 
@@ -71,8 +70,9 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 |------|---------|
 | `.sedea/centers/software-development/missions/quick-fix/plan.mdc` | Mission protocol §§3–5 |
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, inline **`new-plan`** / **`pr-plan`** |
-| `.sedea/centers/software-development/docs/development-process.md` | Cadence |
 | `.sedea/centers/software-development/rules/10_plan-naming-convention.mdc` | Plan naming |
+
+**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `development-process.md` — load at named protocol steps.
 
 ### `laneRules` — frontmatter `laneRules`
 

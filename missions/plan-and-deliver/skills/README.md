@@ -555,13 +555,15 @@ Every **spawned** plan-and-deliver skill lists the paths below in frontmatter **
 
 **All spawned skills** (planning + ship):
 
-- `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` — Squad Leader §§1–7 ledger, spawn/wait; ship skills also use §8 via dev-process / bubble-up
 - `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` — spawn contracts, inline vs spawned shapes, **terminal stop (normative)**
-- `.sedea/centers/software-development/docs/development-process.md`
 
-**Planning skills** also include:
+**Planning skills** also include (frontmatter **`warmUpRules`**):
 
-- `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc`
+- `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` — plan-and-deliver planning roles (`master-planner`, `phase-planner`, `pr-plan`, `pr-breakdown`, `delivery-phases`, `new-plan`)
+- `.sedea/centers/software-development/rules/10_plan-naming-convention.mdc` — **`ad-hoc-prd`**, **`quick-fix-plan`**
+- `.sedea/centers/software-development/missions/quick-fix/plan.mdc` — **`quick-fix-plan`** only
+
+**Squad Leader** and other lanes that need full mission protocol load **`plan.mdc`** and **`development-process.md`** via **`laneRules`** or explicit spawn **`warmUpRules`** — not via trimmed planning-skill frontmatter.
 
 **Ship skills** also include:
 
@@ -572,8 +574,11 @@ Every **spawned** plan-and-deliver skill lists the paths below in frontmatter **
 
 Each spawned ship skill documents its manifest in **`SKILL.md`** § *Warm-up manifest (spawned)* or § *Warm-up manifest (inline)*. Frontmatter must match the documented table — **`verify-skill-manifest.mjs`** enforces table ↔ frontmatter parity, spawn preflight row **11** for definitive **`laneRules`** roles, and plan-change notify emit/receive governance lint (see § *Adding or removing a skill*).
 
-| Skill | Frontmatter omits (vs table above) | Runtime reads remain |
-|-------|-----------------------------------|----------------------|
+| Skill | Frontmatter omits (vs default warm-up) | Runtime reads remain |
+|-------|----------------------------------------|----------------------|
+| **`master-planner`**, **`phase-planner`**, **`pr-plan`**, **`pr-breakdown`**, **`delivery-phases`**, **`new-plan`** | `plan.mdc`, `development-process.md` | Named protocol steps **`Read`** **`plan.mdc`** / **`development-process.md`** per each **`SKILL.md`** |
+| **`author-prd`** | `plan.mdc` (in **`laneRules`**), `development-process.md` | **`plan.mdc`** via **`laneRules`**; **`development-process.md`** at named steps |
+| **`ad-hoc-prd`**, **`quick-fix-plan`** | `development-process.md` | Named protocol steps **`Read`** **`development-process.md`** when cadence/templates apply |
 | **`pre-pr-review`** | `plan.mdc`, `development-process.md` | Step 3 reads **`development-process.md`**; Step 4 loads **`inputs.targetPlanPath`** (PR plan, not Squad Leader **`plan.mdc`**) |
 | **`coding-session`** | rule **30** only | Explicit **`Read`** of rule **30** when resolving ambiguous `.sedea` paths |
 | **`deploy-walk`**, **`plan-reconcile`** | All frontmatter warm-up keys (inline-only) | Inherit **`coding-session`** **`effectiveWarmUp`** — see each skill § *Warm-up manifest (inline)* |
