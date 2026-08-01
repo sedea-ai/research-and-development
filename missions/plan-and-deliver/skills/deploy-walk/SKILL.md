@@ -62,6 +62,13 @@ inputs:
       `### Before deploy` while Status stays `drafted`; do not run After deploy or
       `deploy-walk deployed`. Omit for full post-merge walk (typical After-deploy inline).
     required: false
+  promoteSubmodulePinOutcomes:
+    type: array
+    description: >-
+      Per-center submodule merge gate results from coding-session
+      (`{ centerSlug, sourceOnMainVerified, promoteStatus }`) — passed through for
+      honest After deploy attestation; not a substitute for verify script SHA checks.
+    required: false
 ---
 
 # Deploy walk-through
@@ -383,6 +390,7 @@ Run **without** an **AskQuestion** approval gate **before each agent-executable 
 |----------|--------|
 | Unit / integration tests (`npm test`, `node --test`, `go test`, `cargo test`, …) | Run in the worktree; exit 0 = pass |
 | Center governance scripts (`node .sedea/centers/sedea/scripts/*.mjs`, `node …/plan-and-deliver/scripts/*.mjs`) | From **`HOSTING_ROOT`** per rule **20** § *Hosting repo cwd* |
+| **`verify-submodule-ship-attestation.mjs`** | Submodule After deploy step 1 — strict SHA gitlink vs center **`defaultBranch`** tip; optional **`promoteSubmodulePinOutcomes`** cross-check |
 | Repo scripts (`./scripts/verify-*.sh`, `make test`, documented package scripts) | Read script first when non-obvious |
 | `curl` / `wget` / HTTP checks to **localhost**, staging URLs, or endpoints documented in the step when credentials/env are already available in the session | Do **not** invent secrets; if env vars are missing, treat as manual or **block** |
 | File / config assertions (`test -f`, grep, read expected artifact) | |
@@ -420,6 +428,29 @@ Run **without** an **AskQuestion** approval gate **before each agent-executable 
 | **GitHub CLI** | `gh pr view`, `gh api`, `gh run list` / `view` when `gh` auth works in the shell |
 | **Mission Control MCP** | `sedea_get_current_user`; `sedea_add_worktree_folder` / `sedea_remove_worktree_folder` when worktree lifecycle applies; `mission_control_update_lane_display` on **own** slot only |
 | **Parse / verify** | Read JSON, YAML, Markdown plan sections; compare output to expected shape; count matches; exit codes — **agent parses**, not developer |
+
+### Submodule ship attestation (After deploy — binding)
+
+When the anchored PR plan's **`### After deploy`** step text references **submodule source merged**, **`promote-submodule-pin`**, **honest attestation**, **`verify-submodule-ship-attestation`**, or **dual-repo ship gate** attestation, classify the step **agent-executable** and run this procedure **before** flipping the checkbox.
+
+**Preconditions:**
+
+1. **`HOSTING_ROOT`** resolves (inline context may omit **`worktreePath`** post-merge — attestation runs from hosting root, not session worktree).
+2. Inline context may include **`promoteSubmodulePinOutcomes`** from parent **`coding-session`** — use for cross-check only; **forbidden:** treating N/A, skipped, or failed promote outcomes as pass.
+
+**Procedure:**
+
+1. From **`HOSTING_ROOT`**, run:
+   ```bash
+   node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verify-submodule-ship-attestation.mjs \
+     --hosting-root "$HOSTING_ROOT"
+   ```
+   When **`promoteSubmodulePinOutcomes`** is non-empty, write a temp JSON array and pass **`--outcomes-json <path>`** (or embed in a wrapper object with key **`promoteSubmodulePinOutcomes`**).
+2. **On exit 0:** flip the step **`[x]`** with dated note citing script exit **0**, each in-scope **`centerSlug`**, matching **`gitlinkSha`** / **`remoteTip`**, and promote outcome status when provided.
+3. **On exit 1:** do **not** flip. Report failing **`centerSlug`** rows from stdout JSON; offer **`deploy-walk <N> block: …`** or assist debug. **Forbidden:** hand-waving promote N/A, *hosting gitlink already at feature SHA*, or *promote skipped for built-in sedea* as attestation pass.
+4. **Distinction (binding):** **Center source merged to `defaultBranch`** and **`promote-submodule-pin` success** are separate obligations — both must appear in evidence. Strict SHA: hosting gitlink must equal center **`defaultBranch`** tip, not merely a fetchable feature-branch commit.
+
+**Deferred §7 steps from prior PRs:** When step text explicitly defers attestation to this PR (for example PR 1–2 After deploy carryover), run this procedure as the fulfillment path — do not re-mark deferred steps on prior plans from this lane unless those plans are the active anchor.
 
 **Agent-executable verification examples (binding)** — when a step names `dispatch.yaml`, dispatch bundle JSON, plan sidecars, YAML/JSON fields, before/after mutations, or plan-body checkboxes/status, the agent uses tools (`Read`, `Grep`, `Glob`, `Shell`) before flipping `[ ]` → `[x]`. Done notes cite the tool result: path, command, exit code, or quoted field values. Developer chat confirmation alone is **not** evidence for agent-executable work.
 
