@@ -239,7 +239,7 @@ The Squad Leader **§8** ship ledger updates via Mission Control **host sync** w
 
 | # | Gate (all required before skill file deletion) |
 |---|-----------------------------------------------|
-| **D1** | Phase 2 consumer wiring merged — **`coding-session`** and **`promote-center-submodule-pin`** call center setup + MCP attach/detach on the default path |
+| **D1** | Phase 2 consumer wiring merged — **`coding-session`** and **`promote-submodule-pin`** call center setup + MCP attach/detach on the default path |
 | **D2** | This deprecation PR merged — spawn table redirect, **`coding-session`** spawn-by-default removal, deprecate banner on **`worktree-bootstrap/SKILL.md`** |
 | **D3** | Phase 4 docs sweep merged — **`development-process.md`**, rule **20**, and related prose no longer treat **`worktree-bootstrap`** as normative |
 | **D4** | **Zero** open Mission Control dispatches with active **`worktree-bootstrap`** child lanes (in-flight sessions drained) |

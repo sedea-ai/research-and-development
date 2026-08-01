@@ -652,7 +652,7 @@ Under Checkpoint trust, after **`outputs.prState: merged`** (or merge confirmed 
 **Auto-advance order (happy path — no turn-end modal between steps):**
 
 1. [Post-merge workspace cleanup](#post-merge-workspace-cleanup) **`--apply`** when ownership preconditions pass.
-2. Inline **`promote-center-submodule-pin`** when cleanup JSON **`nextAction: promote-pin-required`** (agent-owned handoff — no spawn, no modal per that skill).
+2. Inline **`promote-submodule-pin`** when cleanup JSON **`nextAction: promote-pin-required`** (agent-owned handoff — no spawn, no modal per that skill).
    - **Built-in fast path:** When path validation resolves **`centerSlug: sedea`**, treat the skill's built-in-center rejection as terminal **`skipped` / `not-applicable`** for this inline step. Do **not** run gitlink, submodule, registry, remote-tip, or alignment inspection after that decisive classification. Continue immediately to step **3** in the **same assistant turn**.
 3. [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff) — inline **`deploy-walk`** for **`### After deploy`** only.
 4. When **`deployStatus: done`** and **`deployTodoStatus: done`**, auto-run [Post–After deploy remainder inventory](#post-after-deploy-remainder-inventory) steps (**`plan-reconcile`** then **`pr-ship-complete`**) without [Post–After deploy remainder authorization](#post-after-deploy-remainder-authorization) batch modal when reconcile requires no developer picks.
