@@ -159,7 +159,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop, cap exceptions |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Slim spawn contracts, terminal stop |
 | `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc` | Worktree naming, ship chain, bootstrap |
 
 **Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md`, `docs/coding-session-ship-chain.md`, `docs/coding-session-checkpoint-ux.md` — load via **`inputs.targetPlanPath`** and explicit **`Read`** when ship-chain or procedure steps require them.
@@ -169,8 +169,12 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Load when |
 |------|-----------|
+| `.sedea/centers/software-development/missions/plan-and-deliver/docs/spawn-ship-contracts.md` | Before terminal emit with ship-complete or parent follow-up notify fields |
 | `.sedea/centers/software-development/missions/plan-and-deliver/docs/coding-session-ship-chain.md` | Ship chain step **9** entry; resume incomplete ship chain |
 | `.sedea/centers/software-development/missions/plan-and-deliver/docs/coding-session-checkpoint-ux.md` | Before any `USER_CHECKPOINT`; Yield gate; developer-await turns |
+
+
+**Step-bound Read (binding):** Before emitting terminal outputs with ship-complete or parent follow-up notify fields, `Read` [`docs/spawn-ship-contracts.md`](../../docs/spawn-ship-contracts.md) in full.
 
 ### `laneRules` — frontmatter `laneRules`
 

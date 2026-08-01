@@ -68,6 +68,10 @@ const NOTIFY_RECEIVE_OPTION_IDS = [
 
 const SKILLS_README_REL =
   'missions/plan-and-deliver/skills/README.md';
+const SKILLS_SPAWN_SHIP_REL =
+  'missions/plan-and-deliver/docs/spawn-ship-contracts.md';
+/** PRD C1 — slim README core warm-up target (bytes). */
+const SKILLS_README_BYTE_CAP = 25 * 1024;
 
 const SKILL_WARMUP_HEADING = '### `skillWarmUp` — frontmatter `warmUpRules`';
 const LANE_RULES_HEADING = '### `laneRules` — frontmatter `laneRules`';
@@ -585,9 +589,9 @@ async function validateNotifyEmitSkill(skillName) {
     ),
     assertContains(
       raw,
-      '§ *MCP notify preflight* (rows N1–N8)',
+      'spawn-ship-contracts.md',
       rel,
-      'README notify preflight cross-ref',
+      'spawn-ship-contracts notify preflight cross-ref',
     ),
     assertContains(
       raw,
@@ -680,40 +684,68 @@ async function validateCodingSessionNotifyCallerForbidden() {
   return errors;
 }
 
+async function validateSkillsReadmeSlimSplit() {
+  const errors = [];
+  const readmeAbs = path.join(CENTER_ROOT, SKILLS_README_REL);
+  const spawnAbs = path.join(CENTER_ROOT, SKILLS_SPAWN_SHIP_REL);
+  const readmeRaw = await fs.readFile(readmeAbs, 'utf8');
+  const readmeBytes = Buffer.byteLength(readmeRaw, 'utf8');
+  if (readmeBytes > SKILLS_README_BYTE_CAP) {
+    errors.push(
+      `${SKILLS_README_REL}: ${readmeBytes} bytes exceeds slim core cap ${SKILLS_README_BYTE_CAP} (25 KiB)`,
+    );
+  }
+  try {
+    await fs.access(spawnAbs);
+  } catch {
+    errors.push(`${SKILLS_SPAWN_SHIP_REL}: missing on-demand spawn/ship contracts doc`);
+  }
+  return errors;
+}
+
 async function validateNotifyReadmeCoverage() {
   const rel = SKILLS_README_REL;
+  const spawnRel = SKILLS_SPAWN_SHIP_REL;
   const abs = path.join(CENTER_ROOT, rel);
+  const spawnAbs = path.join(CENTER_ROOT, spawnRel);
   const raw = await fs.readFile(abs, 'utf8');
+  let spawnRaw = '';
+  try {
+    spawnRaw = await fs.readFile(spawnAbs, 'utf8');
+  } catch {
+    return [`${spawnRel}: missing — required for notify governance after README slim split`];
+  }
+  const corpus = `${raw}\n${spawnRaw}`;
   const errors = [];
 
-  const notifySection = extractSection(raw, '### MCP notify preflight (`mission_control_notify_child_lanes`)');
+  const notifySection = extractSection(corpus, '### MCP notify preflight (`mission_control_notify_child_lanes`)');
   if (!notifySection) {
-    errors.push(`${rel}: missing § MCP notify preflight (N1–N8)`);
+    errors.push(`${rel} + ${spawnRel}: missing § MCP notify preflight (N1–N8)`);
   } else {
     const missing = NOTIFY_PREFLIGHT_STEPS.filter((step) => !notifySection.includes(`| ${step} |`));
     if (missing.length) {
-      errors.push(`${rel}: MCP notify preflight missing row(s): ${missing.join(', ')}`);
+      errors.push(`${spawnRel}: MCP notify preflight missing row(s): ${missing.join(', ')}`);
     }
   }
 
   const receiveAnchor = '**Child delivery checkpoint (receive) — binding:**';
-  const receiveStart = raw.indexOf(receiveAnchor);
+  const receiveStart = corpus.indexOf(receiveAnchor);
   if (receiveStart === -1) {
-    errors.push(`${rel}: missing § Child delivery checkpoint (receive)`);
+    errors.push(`${rel} + ${spawnRel}: missing § Child delivery checkpoint (receive)`);
   } else {
-    const receiveEnd = raw.indexOf('### Lane title prefix', receiveStart);
+    const receiveEnd = corpus.indexOf('### Lane title prefix', receiveStart);
     const receiveSection =
-      receiveEnd === -1 ? raw.slice(receiveStart) : raw.slice(receiveStart, receiveEnd);
+      receiveEnd === -1 ? corpus.slice(receiveStart) : corpus.slice(receiveStart, receiveEnd);
     for (const skillName of NOTIFY_RECEIVE_SKILL_NAMES) {
       const tableRowNeedle = '| **`' + skillName;
       if (!receiveSection.includes(tableRowNeedle)) {
-        errors.push(`${rel}: child receive table missing skill \`${skillName}\``);
+        errors.push(`${spawnRel}: child receive table missing skill \`${skillName}\``);
       }
     }
   }
 
-  if (!raw.includes('sedea.features.plan-change-notification')) {
-    errors.push(`${rel}: missing plan-change-notification feature flag reference`);
+  if (!corpus.includes('sedea.features.plan-change-notification')) {
+    errors.push(`${spawnRel}: missing plan-change-notification feature flag reference`);
   }
 
   for (const skillName of NOTIFY_EMIT_SKILL_NAMES) {
@@ -739,6 +771,7 @@ async function validateNotifyGovernance() {
     errors.push(...(await validateNotifyReceiveSkill(skillName)));
   }
   errors.push(...(await validateCodingSessionNotifyCallerForbidden()));
+  errors.push(...(await validateSkillsReadmeSlimSplit()));
   errors.push(...(await validateNotifyReadmeCoverage()));
   return errors;
 }

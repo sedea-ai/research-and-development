@@ -80,7 +80,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Slim spawn contracts, terminal stop |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
 
 **Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md` — load at named protocol steps.
@@ -92,7 +92,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice, AskQuestion |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-breakdown/SKILL.md` | This skill procedure |
-| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight M1–M9, definitive `laneRules` |
 
 ## Agent messaging (MCP)
 
@@ -107,7 +107,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 **Binding:**
 
 - Run **`../README.md`** § *MCP spawn preflight* (rows M1–M8) before every MCP spawn; **forbidden** host-resolved identity keys in MCP args (`correlationId`, `dispatchId`, `slotId`, … — see README § *Host-resolved identity*).
-- Run **`../README.md`** § *MCP notify preflight* (rows N1–N8) before every **`mission_control_notify_child_lanes`** call — cross-ref **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notify protocol*.
+- `Read` **`docs/spawn-ship-contracts.md`** § *MCP notify preflight* (rows N1–N8) — then run notify preflight before every **`mission_control_notify_child_lanes`** call — cross-ref **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notify protocol*.
 - Inline skills on this mission stay **inline-only** — no spawn wire change unless the protocol step explicitly spawns a child lane.
 - **Relevant Links (post-write):** After each Write/StrReplace that **materially edits** the target plan’s dual-title / **`### PR list`** (or assessment) block, call MCP **`mission_control_update_relevant_documents`** with the absolute plan path (`kind: plan`) — same turn preferred. **Skip** read-only loads and unchanged already-registered paths. See **`../README.md`** § *Relevant Links — post-write registration*.
 
@@ -506,7 +506,7 @@ When the **developer** chooses hand off or populate children in standalone use, 
 
 1. Append each item to the **target master or phase plan** **`## Follow-ups`** (resolved from **`targetPlanPath`** on this skill or bubbled **`parentPlanPath`**).
 2. Track **`pendingParentFollowUps[]`** on this lane's ledger — **do not** treat follow-ups as **`expand-eligible`** or auto-expand the next **`### PR list`** row.
-3. **Re-emit updated** terminal or **`## Completion (inline)`** with merged follow-up **`outputs`** per **`../README.md`** § *Upstream parent follow-up notification*.
+3. **Re-emit updated** terminal or **`## Completion (inline)`** with merged follow-up **`outputs`** per `docs/spawn-ship-contracts.md` § *Upstream parent follow-up notification*.
 
 **Standalone spawned `new-plan`:** When Mission Control delivers a child result from a spawned **`new-plan`** lane:
 

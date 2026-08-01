@@ -83,7 +83,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Slim spawn contracts, terminal stop |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
 
 **Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md` — load at named protocol steps.
@@ -95,7 +95,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice, AskQuestion |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/phase-planner/SKILL.md` | This skill procedure |
-| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight M1–M9, definitive `laneRules` |
 
 ## Agent messaging (MCP)
 
@@ -110,7 +110,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 **Binding:**
 
 - Run **`../README.md`** § *MCP spawn preflight* (rows M1–M8) before every MCP spawn; **forbidden** host-resolved identity keys in MCP args (`correlationId`, `dispatchId`, `slotId`, … — see README § *Host-resolved identity*).
-- Run **`../README.md`** § *MCP notify preflight* (rows N1–N8) before every **`mission_control_notify_child_lanes`** call — cross-ref **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notify protocol*.
+- `Read` **`docs/spawn-ship-contracts.md`** § *MCP notify preflight* (rows N1–N8) — then run notify preflight before every **`mission_control_notify_child_lanes`** call — cross-ref **`.sedea/centers/sedea/rules/4_mission.mdc`** § *MCP notify protocol*.
 - **`laneRules`:** rely on this skill's frontmatter **`laneRules`**; MCP spawn schema omits **`laneRules`** on the wire (Phase 1 stub).
 - Inline skills (**`delivery-phases`**, **`pr-breakdown`**, inline **`pr-plan`**, inline **`new-plan`**) stay **inline-only** — no spawn wire change.
 - **Relevant Links (post-write):** After each Write/StrReplace that **creates or materially edits** this phase plan (or child ops plans written on this lane), call MCP **`mission_control_update_relevant_documents`** with absolute path(s) (`kind: plan`) — same turn preferred. **Skip** read-only loads, warm-up paths, and unchanged already-registered paths. Does **not** replace terminal plan path outputs. See **`../README.md`** § *Relevant Links — post-write registration*.
@@ -640,8 +640,8 @@ When Mission Control delivers a child result from **`phase-planner`** or **`codi
 1. Match it by correlation id first, then by `outputs.targetPlanPath` / `outputs.targetPlanSlug`.
 2. Copy downstream `spawnedPlans`, `activeLanes`, `openLedgerEntries`, and `remainingTasks` into this skill's result. When inline **`new-plan`** / **`pr-plan`** reports a new child plan, append `{ planPath, planSlug }` to **`outputs.spawnedPlans`** on the next terminal re-emit so Mission Control lane documents include PR plans created inline on this lane.
 3. When result carries **`outputs.prShipComplete: true`**: record the PR index on this phase; when **every** PR plan under this phase (per **`### PR list`** on this file or inline **`pr-breakdown`** subtree) is **`ship-complete`**, set **`outputs.phaseShipComplete: true`**, **`outputs.shipPhase: done`**, **`outputs.rowStatus: closed`** for this phase plan.
-3a. When result carries **`outputs.parentPlanningFollowUpNotification: "sent"`** with non-empty **`parentPlanningFollowUps`**: append each item to the **phase plan** or bubbled **`parentPlanPath`** **`## Follow-ups`** (create section at EOF if missing); track **`pendingParentFollowUps[]`** on this lane's ledger. **Do not** expand next PR/phase index — scheduling stays on a later turn. Bubble merged fields upstream via **re-emit updated** terminal or **`## Completion (inline)`** per **`../README.md`** § *Upstream parent follow-up notification*.
-4. **Re-emit updated terminal** (standalone spawned) or **`## Completion (inline)`** (when invoker runs this skill inline) with **`phaseShipComplete`** and **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from spawn **`inputs`** — so **`delivery-phases`** / **`master-planner`** can offer **`expand-next-eligible`** per **`../README.md`** § *Upstream ship-complete notification*.
+3a. When result carries **`outputs.parentPlanningFollowUpNotification: "sent"`** with non-empty **`parentPlanningFollowUps`**: append each item to the **phase plan** or bubbled **`parentPlanPath`** **`## Follow-ups`** (create section at EOF if missing); track **`pendingParentFollowUps[]`** on this lane's ledger. **Do not** expand next PR/phase index — scheduling stays on a later turn. Bubble merged fields upstream via **re-emit updated** terminal or **`## Completion (inline)`** per `docs/spawn-ship-contracts.md` § *Upstream parent follow-up notification*.
+4. **Re-emit updated terminal** (standalone spawned) or **`## Completion (inline)`** (when invoker runs this skill inline) with **`phaseShipComplete`** and **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from spawn **`inputs`** — so **`delivery-phases`** / **`master-planner`** can offer **`expand-next-eligible`** per `docs/spawn-ship-contracts.md` § *Upstream ship-complete notification*.
 5. If downstream status is `success` and `continuationStatus: "terminal"`, this phase-planner lane may return `terminal` — unless **`phaseShipComplete`** should bubble upstream while **`continuationStatus: active`** on the parent decomposition lane.
 6. If downstream status is `success` or `partial` with active lanes or remaining tasks, return `active`.
 7. If downstream status is `failure`, `aborted`, or `abandoned`, return the same status upstream and include downstream errors.
@@ -683,7 +683,7 @@ When Step **5e** aggregates a **`coding-session`** child terminal (MCP **`missio
 
 **Forbidden:** blocking next PR index or phase expand until rules PR merges; separate **`shipRows`** sub-row; adding rules lane to **`pendingByParent`**.
 
-Normative overview: **`../README.md`** § *Parallel **`hosting-repo-rules`** fork (fire-and-forget)* and **`hosting-repo-rules/SKILL.md`** § *Spawn trigger*.
+Normative overview: `docs/spawn-ship-contracts.md` § *Parallel **`hosting-repo-rules`** fork* and **`hosting-repo-rules/SKILL.md`** § *Spawn trigger*.
 
 ## Step 5f — Implementation handoff after inline pr-plan skip (binding)
 

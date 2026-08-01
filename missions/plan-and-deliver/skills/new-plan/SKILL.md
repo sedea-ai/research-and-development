@@ -88,7 +88,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Slim spawn contracts, terminal stop |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
 
 **Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md` — load at named protocol steps.
@@ -100,7 +100,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 | `.sedea/centers/sedea/rules/2_ask-question-instructions.mdc` | Structured choice, AskQuestion |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Planning target resolution (role minimum) |
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/new-plan/SKILL.md` | This skill procedure |
-| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight, definitive `laneRules` |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn preflight M1–M9, definitive `laneRules` |
 
 ## Agent messaging (MCP)
 
@@ -498,7 +498,7 @@ USER_CHECKPOINT — approve child stub and populator handoff before inline pr-pl
  2. Merge child `activeLanes`, `openLedgerEntries`, and `remainingTasks` into this skill’s ledger.
  3. Continue inline **`pr-plan`** §5e semantics on this lane (summarize for the developer; re-offer handoff when appropriate).
  4. When child **`outputs.prShipComplete`** is **`true`**: set **`outputs.prShipComplete: true`**, echo **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from this skill’s indexed spawn **`inputs`** (and child when present); merge **`shipPhase`**, **`rowStatus`**, **`mainPullStatus`**, **`archivedSlugs`**. Report these in **`## Completion (inline)`** to the invoker (**`pr-breakdown`** / **`phase-planner`** / standalone **`new-plan`** parent).
- 4a. When child **`outputs.parentPlanningFollowUpNotification`** is **`"sent"`**: merge **`parentPlanningFollowUps`** into **`outputs`**; propagate in **`## Completion (inline)`** or re-emit so **`pr-breakdown`** / **`phase-planner`** / **`master-planner`** can append to parent plan **`## Follow-ups`** per **`../README.md`** § *Upstream parent follow-up notification*.
+ 4a. When child **`outputs.parentPlanningFollowUpNotification`** is **`"sent"`**: merge **`parentPlanningFollowUps`** into **`outputs`**; propagate in **`## Completion (inline)`** or re-emit so **`pr-breakdown`** / **`phase-planner`** / **`master-planner`** can append to parent plan **`## Follow-ups`** per `docs/spawn-ship-contracts.md` § *Upstream parent follow-up notification*.
  5. **Re-emit / propagate:** **Inline** under **`pr-breakdown`** or **`phase-planner`**: return **`## Completion (inline)`** with ship fields so the decomposition skill marks **`childRows[N].status: ship-complete`** and may offer **`expand-eligible`** on the next turn. **Standalone spawned `new-plan`:** re-emit **`mission_control_send_agent_result`** (same **`correlationId`**) with merged **`outputs`** before stopping.
  6. Return `partial` or `active` while the child lane is open; `terminal` only when inline **`pr-plan`** handoff is complete and no **`coding-session`** child remains open — **`prShipComplete`** may still leave the invoker **`active`** until upstream expand runs.
 
