@@ -126,6 +126,7 @@ This pass complements, and does not replace, the later GitHub-surface **reviewer
 - Run **`../README.md`** § *MCP spawn preflight* (rows M1–M8) before every MCP spawn; **forbidden** host-resolved identity keys in MCP args (`correlationId`, `dispatchId`, `slotId`, … — see README § *Host-resolved identity*).
 - Inline skills on this mission stay **inline-only** — no spawn wire change unless the protocol step explicitly spawns a child lane.
 
+**Spawn-only lane (binding):** **`pre-pr-review`** runs on a **fresh spawned child lane** from parent **`coding-session`** only — **forbidden** inline on the coding lane. Parent **`coding-session`** owns spawn turn sequencing, Yield / #external-wait resume, and external-wait gates per [`.sedea/centers/sedea/rules/4_mission.mdc`](.sedea/centers/sedea/rules/4_mission.mdc) § *Spawn-ack semantics (binding)* and **`coding-session/SKILL.md`** § *Pre-PR spawn turn sequencing* — cross-reference only; do **not** duplicate the full block here.
 
 ## Structured choice (Mission Control)
 
@@ -135,7 +136,7 @@ This skill does not own approval modals — **`coding-session`** collects develo
 
 Under Checkpoint trust (`trustLevel: checkpoint`), auto-advance scripted happy-path steps; emit structured choice only at **USER_CHECKPOINT** markers in this section, implicit external-wait surfaces, or exception paths. **No cross-skill inheritance** — gate defaults here apply only to **`pre-pr-review`**; invoker missions **`plan-and-deliver`**, **`single-phase`**, **`quick-fix`**, and **`debug-and-fix`** document their own **`coding-session`** ship gates — see **`coding-session/SKILL.md`** § *Checkpoint turn UX* for Review feedback approval and Create-PR handoff.
 
-**Parent yield gate:** After this child spawns (or while the parent awaits terminal result), **`coding-session`** must close the wait turn with a next-step resume modal per **`coding-session/SKILL.md`** § [Yield gate (Checkpoint — binding)](../coding-session/SKILL.md#yield-gate-checkpoint--binding). This skill’s Step **8** auto-emit does **not** waive that parent Yield obligation.
+**Parent yield gate:** After parent **`coding-session`** emits **`mission_control_spawn_agent`** for this lane (spawn-only turn per rule **4** § *Spawn-ack semantics (binding)* — cross-reference only), the parent must close the **next** turn with a next-step resume modal per **`coding-session/SKILL.md`** § [Yield gate (Checkpoint — binding)](../coding-session/SKILL.md#yield-gate-checkpoint--binding). **Forbidden:** batching spawn with that modal on the same turn. This skill’s Step **8** auto-emit does **not** waive the parent Yield obligation.
 
 **Real-dispatch test loop (binding):** After merge, run one full **`pre-pr-review`** spawn on a Checkpoint dispatch through Step **8** — verify Steps **1–7** auto-advance and Step **8** **always** auto-emits terminal + parent refocus (including **`no-go`**) without a modal; the **`coding-session`** parent receives the bubble-up and owns next-step gates before the parent phase advances the next ship-chain skill PR — per **Phase 2 — software-development center audit** § *Single-concern strategy*.
 

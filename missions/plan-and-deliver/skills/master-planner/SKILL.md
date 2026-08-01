@@ -201,6 +201,8 @@ See [`.sedea/centers/software-development/rules/50_mission-control-display-metad
 
 Cross-check every spawn against **`.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md`** § *MCP spawn preflight* before calling the tool.
 
+**Spawn-ack semantics (binding):** MCP **`mission_control_spawn_agent`** returns **`transcriptOnly`** acknowledgment — **not** host spawn success. Before external-wait, yield, or narrating *"spawned child"*, follow [`.sedea/centers/sedea/rules/4_mission.mdc`](.sedea/centers/sedea/rules/4_mission.mdc) § *Spawn-ack semantics (binding)* — ack ≠ success, no parallel spawn + wait modal on the same turn, verify host-visible child lane before wait. Cross-reference only; do **not** duplicate the full block here.
+
 ### Inbound — Squad Leader → **master-planner** (`plan and deliver` §5)
 
 The **Squad Leader** must pass **`inputs`** keys that match this skill’s frontmatter **exactly** (see **`plan.mdc`** §5 *Spawn preflight* for the §4 seed → **`inputs`** map).
