@@ -443,6 +443,7 @@ Full table: rule **4** § *Host-resolved identity*.
 | M6 | **`skillPath`** resolves under the correct center (Software Development skills under **`.sedea/centers/software-development/`**) |
 | M7 | On tool validation failure: stop, fix the failing row, retry spawn — new successful spawn mints a **new** host **`correlationId`** |
 | M8 | **`name`** / **`description`** — **lane title prefix** + semantic title per [rule **50**](../../../../rules/50_mission-control-display-metadata-discipline.mdc) § *Lane title prefix conventions* and § *Lane title prefix (spawn `name`)* below; refresh stale child tab via **`mission_control_update_lane_display`** |
+| M9 | **Spawn-ack semantics** — MCP response with **`transcriptOnly: true`** / **`hostMirrorRequired: true`** is **transcript acknowledgment only**, not host spawn success, child lane open, or **`correlationId`** delivery proof; spawn turn emits **`mission_control_spawn_agent` alone** — **forbidden** parallel spawn + wait modal on the same turn; verify host-visible child before external-wait narration — see [`.sedea/centers/sedea/rules/4_mission.mdc`](.sedea/centers/sedea/rules/4_mission.mdc) § *Spawn-ack semantics (binding)* |
 
 Child terminal: use § *MCP result preflight* in the spawned skill’s **`## Completion (spawned)`** — call **`mission_control_send_agent_result`** at terminal (host resolves **`correlationId`**; omit host-resolved identity keys from MCP args).
 
