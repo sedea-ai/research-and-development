@@ -5,7 +5,7 @@
  * preflight row 11 — README § Definitive laneRules for author-prd, master-planner,
  * coding-session).
  *
- * Also lints mission_control_spawn_agent spawn examples on master-planner skills (R&D and Sedea
+ * Also lints mission_control_spawn_agent spawn examples on master-planner skills (Software Development and Sedea
  * maintenance copies): when frontmatter declares inputs.parent.type: string, JSON
  * null for parent is forbidden — wire encoding must use "parent":"null".
  *
