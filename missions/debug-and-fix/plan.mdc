@@ -76,12 +76,12 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 |------------|---------------------|------|
 | **§1** Infer intent | Auto-advance when phrase matches | USER_CHECKPOINT — confirm mission intent on mismatch |
 | **§2** Collect issue context | **Gate** — first developer-pick on leader | USER_CHECKPOINT — pick intake mode or provide issue summary |
-| **§2.5** Brainstorm (optional) | **Waiting** after spawn; auto-chain §3 on approved report | **#external-wait** before turn end; USER_CHECKPOINT on failure/partial |
-| **§3** Debug and fix spawn | **Waiting** — child owns fix loop | **#external-wait** after spawn; confirmed exits auto-route (§5/§5c/§6/abandon); USER_CHECKPOINT only on partial/missing |
+| **§2.5** Brainstorm (optional) | **Waiting** after spawn; auto-chain §3 on approved report | **Spawn turn:** spawn alone (rule **4**); **next turn:** **#external-wait**; USER_CHECKPOINT on failure/partial |
+| **§3** Debug and fix spawn | **Waiting** — child owns fix loop | **Spawn turn:** spawn alone; **next turn:** **#external-wait**; confirmed exits auto-route (§5/§5c/§6/abandon); USER_CHECKPOINT only on partial/missing |
 | **§4** Post-fix exit selection | **Auto-advance** when §3 child confirmed any exit (`exitRecommendation` or abandon) | USER_CHECKPOINT — pick exactly one post-fix exit path when recommendation missing or developer override on leader |
-| **§5** PR plan anchor spawn | **Waiting** — child owns planning + **`pr-plan` §5d** **`coding-session`** spawn | **#external-wait** after spawn; USER_CHECKPOINT when blocked |
+| **§5** PR plan anchor spawn | **Waiting** — child owns planning + **`pr-plan` §5d** **`coding-session`** spawn | **Spawn turn:** spawn alone; **next turn:** **#external-wait**; USER_CHECKPOINT when blocked |
 | **§5b** Code promotion oversight | **Waiting** — track planning→ship child terminals (SL does **not** spawn **`coding-session`**) | **#external-wait** / resume on bubbled terminals; resume per **`coding-session`** gates |
-| **§5c** Ad-Hoc PRD spawn | **Waiting** — child owns PRD approval | **#external-wait** after spawn |
+| **§5c** Ad-Hoc PRD spawn | **Waiting** — child owns PRD approval | **Spawn turn:** spawn alone; **next turn:** **#external-wait** |
 | **§6** Findings report | Auto-advance recap when inputs present | — |
 | **§7** Dispatch resolution | **Gate** — developer approves closure | USER_CHECKPOINT — approve dispatch resolution |
 
@@ -105,9 +105,18 @@ flowchart TD
 
 ### Spawn, wait, and parent resume
 
-This subsection is the **Squad Leader** contract for §§2.5, 3, 5, 5b, and 5c. Sedea host behavior is defined in **`.sedea/centers/sedea/rules/4_mission.mdc`** (spawn invocation, agent session closure). Child lanes use each skill's **`## Completion (spawned)`**; the Squad Leader consumes terminal results before continuing. **§5b is oversight only** — the §5 planning child owns **`coding-session`** spawn via **`pr-plan` §5d**; the Squad Leader **must not** emit that spawn.
+This subsection is the **Squad Leader** contract for §§2.5, 3, 5, 5b, and 5c. Sedea host behavior is defined in **`.sedea/centers/sedea/rules/4_mission.mdc`** (spawn invocation, agent session closure). Cross-reference rule **4** § *Spawn-ack semantics (binding)* — do **not** duplicate the full block here. Child lanes use each skill's **`## Completion (spawned)`**; the Squad Leader consumes terminal results before continuing. **§5b is oversight only** — the §5 planning child owns **`coding-session`** spawn via **`pr-plan` §5d**; the Squad Leader **must not** emit that spawn.
 
-**Host vs "wait."** Mission Control does **not** block the parent turn while a child runs. **Wait** means: emit **`mission_control_spawn_agent`**, announce that you are waiting for a child result, then **stop** further protocol work on the leader lane until Mission Control delivers a silent UserSend that begins with **`Mission Control: agent-result-response delivered.`** When that stop ends the assistant turn, open a **next-step resume** structured choice (**#external-wait**) naming resume paths before ending the turn per [`.sedea/centers/sedea/skills/README.md`](../../../sedea/skills/README.md) § *Concurrency contract* — do not prose-only announce wait. Follow the response-protocol footer in the delivered message before the next protocol step or another spawn.
+**Host vs "wait."** Mission Control does **not** block the parent turn while a child runs. **Wait** spans two turns per **Squad Leader spawn turn sequencing** below: the **spawn turn** emits **`mission_control_spawn_agent` alone**; the **next turn** opens **#external-wait** after host-visible confirmation. Until **`Mission Control: agent-result-response delivered.`** arrives, stop further protocol work on the leader lane. Follow the response-protocol footer in the delivered message before the next protocol step or another spawn.
+
+### Squad Leader spawn turn sequencing (binding)
+
+Per rule **4** § *Spawn-ack semantics (binding)*:
+
+| Turn | Obligation |
+|------|------------|
+| **Spawn turn** | Emit exactly one **`mission_control_spawn_agent`** with preflight-valid **`inputs`** — **alone**. Optional one-line ack: *Spawn request recorded — host mirror pending* — **forbidden:** *Spawned … child lane*, *Child is running*, or *Waiting for child result* before host-visible child confirmation. **Forbidden:** **`mission_control_present_structured_choice`**, **AskQuestion**, or external-wait prose on this turn. |
+| **Next turn** | After host-visible spawn confirmation (child lane/tab visible or host success signal), open **next-step resume** structured choice (**#external-wait**) naming resume paths before StreamFinal per [`.sedea/centers/sedea/skills/README.md`](../../../sedea/skills/README.md) § *Concurrency contract* — **forbidden:** prose-only *waiting for child* StreamFinal. Then stop until **`mission_control_send_agent_result`** or developer resume pick. |
 
 **§3 resume (Debug and Fix agent).** After each `mission_control_send_agent_result` for §3:
 
@@ -116,8 +125,8 @@ This subsection is the **Squad Leader** contract for §§2.5, 3, 5, 5b, and 5c. 
 | Check | Action |
 |-------|--------|
 | `outputs.abandonMission: true` **or** MCP result `status: abandoned` / `aborted` | **Auto-advance dispatch abandon** — call MCP **`mission_control_propose_dispatch_resolution`** with status **`abandoned`** (skip §4–§6; no repeat exit modal) |
-| `outputs.fixStatus: verified` + `outputs.exitRecommendation: code-promotion` | **Auto-advance §5** — post-fix exit auto-resolved as code promotion; spawn **`new-plan`** + **`pr-plan`** (**#external-wait**) |
-| `outputs.fixStatus: verified` + `outputs.exitRecommendation: ad-hoc-prd` | **Auto-advance §5c** — spawn **`ad-hoc-prd`** (**#external-wait**) |
+| `outputs.fixStatus: verified` + `outputs.exitRecommendation: code-promotion` | **Auto-advance §5** — post-fix exit auto-resolved as code promotion; **spawn turn** emit **`new-plan`** + **`pr-plan`** planning child alone; **next turn** **#external-wait** |
+| `outputs.fixStatus: verified` + `outputs.exitRecommendation: ad-hoc-prd` | **Auto-advance §5c** — **spawn turn** emit **`ad-hoc-prd`** alone; **next turn** **#external-wait** |
 | `outputs.fixStatus: verified` + `outputs.exitRecommendation: findings-report-only` | **Auto-advance §6** findings report → auto-advance §7 |
 | `outputs.fixStatus: verified` + `outputs.exitRecommendation: blocked` | **Auto-advance §6** findings report → auto-advance §7 |
 | `outputs.fixStatus: verified` + missing or ambiguous `outputs.exitRecommendation` | USER_CHECKPOINT — **§4** post-fix exit selection on the leader lane |
@@ -191,7 +200,7 @@ USER_CHECKPOINT — pick intake mode or provide issue summary before spawning th
 
 USER_CHECKPOINT — pick next step when brainstorm child reports failure or partial.
 
-**Procedure:** Emit spawn with **`warmUpRules`** including **`debug-and-fix/plan.mdc`**; announce that the **Squad Leader** is waiting for the child lane; open a **next-step resume** structured choice (**#external-wait**) before ending the turn; on approved report continue §3 without repeat §2 USER_CHECKPOINT.
+**Procedure:** **Spawn turn:** emit exactly one **`mission_control_spawn_agent`** with **`warmUpRules`** including **`debug-and-fix/plan.mdc`** — **alone** per **Squad Leader spawn turn sequencing**. **Next turn:** after host-visible spawn confirmation, open **next-step resume** structured choice (**#external-wait**) before StreamFinal. On approved report continue §3 without repeat §2 USER_CHECKPOINT.
 
 ### 3. Debug and fix (spawned skill)
 
@@ -207,8 +216,8 @@ USER_CHECKPOINT — pick next step when brainstorm child reports failure or part
   - `warmUpRules` — skill frontmatter defaults plus mission context paths when needed.
   - `initiatingPrompt` — protocol step, symptom, and any user decisions from step 2.
 - `expected output`: Child **`mission_control_send_agent_result`** with `outputs.fixStatus`, `outputs.worktreePath`, `outputs.worktreeName`, `outputs.hostingRoot`, `outputs.exitRecommendation` (`code-promotion` | `ad-hoc-prd` | `findings-report-only` | `blocked`), optional `outputs.abandonMission`, `outputs.fixSummary`, `outputs.testEvidence`.
-- `next-step resolution`: Emit spawn → **#external-wait** before turn end; on child terminal apply **§3 resume** (confirmed exits are binding auto-approval: abandon → propose **`abandoned`**; `code-promotion` → §5; `ad-hoc-prd` → §5c; `findings-report-only` / `blocked` / `failed` → §6; USER_CHECKPOINT only when `partial` or verified with missing exit).
-- **Agent session closure**: Child emits one parseable **`mission_control_send_agent_result`** line per skill **`## Completion (spawned)`**. Squad Leader waits for host delivery before continuing (**#external-wait**).
+- `next-step resolution`: **Spawn turn** → spawn alone; **next turn** → **#external-wait** after host-visible confirmation; on child terminal apply **§3 resume** (confirmed exits are binding auto-approval: abandon → propose **`abandoned`**; `code-promotion` → §5; `ad-hoc-prd` → §5c; `findings-report-only` / `blocked` / `failed` → §6; USER_CHECKPOINT only when `partial` or verified with missing exit).
+- **Agent session closure**: Child emits one parseable **`mission_control_send_agent_result`** line per skill **`## Completion (spawned)`**. Squad Leader waits for host delivery before continuing (**#external-wait** on the turn after spawn ack).
 
 USER_CHECKPOINT — pick next step when debug child reports partial status.
 - **Dispatch resolution**: Remains Squad Leader responsibility — child does not call MCP **`mission_control_propose_dispatch_resolution`**.
@@ -254,8 +263,8 @@ USER_CHECKPOINT — pick exactly one post-fix exit path when `exitRecommendation
   - **`### After deploy`** — list those same debug-verified manual scenarios as **post-merge retests** (plus any production-only checks). Do **not** drop them from the plan entirely.
   - **Forbidden:** copying debug-session manual test gates unchanged into Before deploy so **`coding-session`** / **`deploy-walk`** re-run them as pre-PR manual waits.
 - `expected output`: Child terminal or aggregate output with `outputs.targetPlanPath`, `outputs.targetPlanSlug`, `outputs.readyForImplementation: true`, optional `outputs.implementationHandoffStatus` / `outputs.spawnCorrelationId` / ship fields after **`pr-plan` §5d–§5e**, and any `outputs.remainingTasks` from **`new-plan`** / **`pr-plan`**.
-- `next-step resolution`: After spawn, the planning child continues through **`pr-plan` handoff + §5d** **`coding-session`** spawn; Squad Leader enters §5b **oversight wait** (**#external-wait**) — **ack only**, do **not** emit a leader **`coding-session`** spawn when §5 resume reports ready. If the planning child reports unresolved plan target, missing parent topology that blocks standalone population, approval gaps, or terminates without §5d and without explicit defer, USER_CHECKPOINT gate below.
-- **Agent session closure** and **Dispatch resolution**: Same as step 3 — emit spawn → **#external-wait** before turn end; child terminal only; Squad Leader continues protocol.
+- `next-step resolution`: After **spawn turn** (spawn alone), the planning child continues through **`pr-plan` handoff + §5d** **`coding-session`** spawn; Squad Leader enters §5b **oversight wait** — **next turn** **#external-wait** after host-visible confirmation — **ack only**, do **not** emit a leader **`coding-session`** spawn when §5 resume reports ready. If the planning child reports unresolved plan target, missing parent topology that blocks standalone population, approval gaps, or terminates without §5d and without explicit defer, USER_CHECKPOINT gate below.
+- **Agent session closure** and **Dispatch resolution**: **Spawn turn** → spawn alone; **next turn** → **#external-wait** before StreamFinal; child terminal only; Squad Leader continues protocol.
 
 USER_CHECKPOINT — revise planning anchor, retry, or switch exits when PR plan creation is blocked.
 
@@ -282,8 +291,8 @@ USER_CHECKPOINT — revise planning anchor, retry, or switch exits when PR plan 
 - `inputs`: `createIntent: true`, `title` from fix summary, `details` from child `outputs.fixSummary` from Mission Control, optional `sourceSummary` referencing debug dispatch and test evidence, and **`operationsDocsDirectory`** from lane identity when supplied.
 - `spawn run-request fields`: `inputs`, `warmUpRules` per target skill frontmatter, `initiatingPrompt` with debug handover and the selected Ad-Hoc PRD-only exit.
 - `expected output`: Child terminal with `outputs.prdPath`, `outputs.prdRef`, `outputs.prdTitle`, `outputs.developerApprovedPrd` after PRD approval flow inside **`ad-hoc-prd`** skill — per **`ad-hoc-prd/SKILL.md`** **`## Completion (spawned)`**.
-- `next-step resolution`: Continue to step 7 after child terminal (**#external-wait** after spawn); do not spawn **`coding-session`** from this branch unless the developer later selects code promotion and step 5's planning child creates a PR plan anchor and runs **`pr-plan` §5d**.
-- **Agent session closure** and **Dispatch resolution**: Same as step 3 — emit spawn → **#external-wait** before turn end; child terminal only; Squad Leader continues protocol.
+- `next-step resolution`: Continue to step 7 after child terminal; **spawn turn** spawn alone, **next turn** **#external-wait** after host-visible confirmation; do not spawn **`coding-session`** from this branch unless the developer later selects code promotion and step 5's planning child creates a PR plan anchor and runs **`pr-plan` §5d**.
+- **Agent session closure** and **Dispatch resolution**: Same as step 3 — **spawn turn** spawn alone; **next turn** **#external-wait** before StreamFinal; child terminal only; Squad Leader continues protocol.
 
 ### 6. Debug session findings report
 

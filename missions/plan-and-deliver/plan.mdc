@@ -246,9 +246,18 @@ flowchart TD
 
 ### Spawn, wait, and parent resume
 
-This subsection is the **Squad Leader** contract for §§3, 5, 6, and 7. Sedea host behavior is defined in **`.sedea/centers/sedea/rules/4_mission.mdc`** (spawn invocation, agent session closure). **Planning** child lanes use each skill’s **`## Completion (spawned)`**; **ship** lanes use the same terminal line with field lists in domain sections (see **`missions/plan-and-deliver/skills/README.md`** § Planning spawn, § Ship spawn, § Inline-only).
+This subsection is the **Squad Leader** contract for §§2.5, 3, 5, 6, and 7. Sedea host behavior is defined in **`.sedea/centers/sedea/rules/4_mission.mdc`** (spawn invocation, agent session closure). Cross-reference rule **4** § *Spawn-ack semantics (binding)* — do **not** duplicate the full block here. **Planning** child lanes use each skill’s **`## Completion (spawned)`**; **ship** lanes use the same terminal line with field lists in domain sections (see **`missions/plan-and-deliver/skills/README.md`** § Planning spawn, § Ship spawn, § Inline-only).
 
-**Host vs “wait.”** Mission Control does **not** block the parent turn while a child runs. **Wait** means: emit **`mission_control_spawn_agent`**, announce that you are waiting for a child result, then **stop** further protocol work on the leader lane until Mission Control delivers a silent UserSend that begins with **`Mission Control: agent-result-response delivered.`** When that stop ends the assistant turn, open a **next-step resume** structured choice (**#external-wait**) naming resume paths before ending the turn per [`.sedea/centers/sedea/skills/README.md`](../../sedea/skills/README.md) § *Concurrency contract* — do not prose-only announce wait. Follow the response-protocol footer in the delivered message before §6, §7, or another spawn.
+**Host vs “wait.”** Mission Control does **not** block the parent turn while a child runs. **Wait** spans two turns per **Squad Leader spawn turn sequencing** below: the **spawn turn** emits **`mission_control_spawn_agent` alone**; the **next turn** opens **#external-wait** after host-visible confirmation. Until **`Mission Control: agent-result-response delivered.`** arrives, stop further protocol work on the leader lane. Follow the response-protocol footer in the delivered message before §6, §7, or another spawn.
+
+### Squad Leader spawn turn sequencing (binding)
+
+Per rule **4** § *Spawn-ack semantics (binding)*:
+
+| Turn | Obligation |
+|------|------------|
+| **Spawn turn** | Emit exactly one **`mission_control_spawn_agent`** with preflight-valid **`inputs`** — **alone**. Optional one-line ack: *Spawn request recorded — host mirror pending* — **forbidden:** *Spawned … child lane*, *Child is running*, or *Waiting for child result* before host-visible child confirmation. **Forbidden:** **`mission_control_present_structured_choice`**, **AskQuestion**, or external-wait prose on this turn. |
+| **Next turn** | After host-visible spawn confirmation (child lane/tab visible or host success signal), open **next-step resume** structured choice (**#external-wait**) naming resume paths before StreamFinal per [`.sedea/centers/sedea/skills/README.md`](../../sedea/skills/README.md) § *Concurrency contract* — **forbidden:** prose-only *waiting for child* StreamFinal. Then stop until **`mission_control_send_agent_result`** or developer resume pick. |
 
 **§3 resume (Author PRD agent).** After each `mission_control_send_agent_result` for §3:
 
@@ -334,10 +343,10 @@ Marker syntax: [`.sedea/centers/sedea/docs/user-checkpoint-marker-syntax.md`](.s
 |------------|---------------------|------|
 | **§1** Open dispatch | Auto-advance when phrase matches | — |
 | **§2** Collect PRD intake | **Gate** — first developer-pick on leader | USER_CHECKPOINT — pick intake mode or confirm PRD intake summary |
-| **§2.5** Brainstorm (optional) | **Waiting** after spawn; auto-chain §3 on approved report | **#external-wait** before turn end; USER_CHECKPOINT on failure/partial |
-| **§3** Author PRD spawn | **Waiting** — child owns PRD approval | **#external-wait** after spawn; §3 resume table for terminal failures |
+| **§2.5** Brainstorm (optional) | **Waiting** after spawn; auto-chain §3 on approved report | **Spawn turn:** spawn alone (rule **4**); **next turn:** **#external-wait**; USER_CHECKPOINT on failure/partial |
+| **§3** Author PRD spawn | **Waiting** — child owns PRD approval | **Spawn turn:** spawn alone; **next turn:** **#external-wait**; §3 resume table for terminal failures |
 | **§4** Collect planning seed | Auto-advance when seed complete; approved §3 auto-chains | USER_CHECKPOINT — collect feature title when missing |
-| **§5** Master Plan spawn | **Waiting** — child owns planning lane | **#external-wait** after spawn; USER_CHECKPOINT on spawn failure |
+| **§5** Master Plan spawn | **Waiting** — child owns planning lane | **Spawn turn:** spawn alone; **next turn:** **#external-wait**; USER_CHECKPOINT on spawn failure |
 | **§6** Acknowledge Master Plan | Auto-advance status ack only | USER_CHECKPOINT on Master Plan failure |
 | **§7** Planning ledger | Auto-advance ledger merges and acks | USER_CHECKPOINT on child failure / abandon |
 | **§8** Ship ledger + resolution | Auto-advance ack while ship rows stay open | USER_CHECKPOINT — planning-only vs active ship; dispatch resolution |
@@ -436,9 +445,9 @@ USER_CHECKPOINT — pick next step when brainstorm child reports failure or part
 
 **Procedure**
 
-1. Emit **`mission_control_spawn_agent`** for **`brainstorm-research`** with **`warmUpRules`** including **`plan-and-deliver/plan.mdc`** (§§1–2.5).
-2. Open **next-step resume** structured choice (**#external-wait**) before ending the turn.
-3. On terminal **`developerApprovedReport: true`**, compile §3 **`author-prd`** **`inputs`** from report outputs and emit §3 spawn without re-collecting §2 fields on the leader lane.
+1. **Spawn turn:** Emit exactly one **`mission_control_spawn_agent`** for **`brainstorm-research`** with **`warmUpRules`** including **`plan-and-deliver/plan.mdc`** (§§1–2.5) — **alone** per **Squad Leader spawn turn sequencing**.
+2. **Next turn:** After host-visible spawn confirmation, open **next-step resume** structured choice (**#external-wait**) before StreamFinal.
+3. On terminal **`developerApprovedReport: true`**, compile §3 **`author-prd`** **`inputs`** from report outputs and emit §3 spawn (spawn turn alone) without re-collecting §2 fields on the leader lane.
 4. On **`abandonMission: true`**, propose dispatch resolution — do not spawn §3.
 
 ### 3. Author PRD via agent
@@ -450,15 +459,15 @@ USER_CHECKPOINT — pick next step when brainstorm child reports failure or part
 - **Assigned skill:** `.sedea/centers/software-development/missions/plan-and-deliver/skills/author-prd/SKILL.md`
 - **Required rule context:** Sedea center always-apply rules, this mission plan, `development-process.md`, and the `author-prd` skill.
 - **Expected output:** Child agent result per **`author-prd`** **`## Completion (spawned)`** — including `outputs.prdPath`, `outputs.prdRef`, `outputs.prdTitle`, `outputs.developerApprovedPrd`, `outputs.continuationOwner`, `outputs.continuationStatus`, and planning-readiness fields.
-- **Next-step resolution:** Emit spawn → **#external-wait** before turn end; on child terminal apply **§3 resume** (auto-chain §4→§5 when `developerApprovedPrd: true`).
+- **Next-step resolution:** **Spawn turn** → spawn alone; **next turn** → **#external-wait** after host-visible confirmation; on child terminal apply **§3 resume** (auto-chain §4→§5 when `developerApprovedPrd: true` — §5 emit is a new spawn turn alone).
 
 **Procedure**
 
 1. Compile child **`inputs`** from §2: `prdTitle`, `prdDescription`, `operation`, `targetPath` when set, `sourceMaterials`, optional `sectionPolicy`, `existingPrdBody` when **`manage`**, and **`operationsDocsDirectory`** from lane identity / spawn preamble.
 2. Set **`initiatingPrompt`** with the user's description and numbered source list; instruct the child to extend the source ledger and **not** invent scope from title alone.
 3. Run **`skills/README.md`** § *Universal spawn preflight* (including display metadata). Set **`name`** to `PRD-{prdTitle}` and **`description`** from PRD scope — not generic child placeholders (rule **50** § *Lane title prefix conventions*).
-4. Emit exactly one **`mission_control_spawn_agent`** for **`author-prd`** with a new `correlationId`, dispatch-unique `slug`, and preflight **`inputs`**.
-5. Announce that the **Squad Leader** is waiting for the child lane; open a **next-step resume** structured choice (**#external-wait**) before ending the turn.
+4. **Spawn turn:** Emit exactly one **`mission_control_spawn_agent`** for **`author-prd`** with a new `correlationId`, dispatch-unique `slug`, and preflight **`inputs`** — **alone** per **Squad Leader spawn turn sequencing**.
+5. **Next turn:** After host-visible spawn confirmation, open **next-step resume** structured choice (**#external-wait**) before StreamFinal — optional one-line ack only; **forbidden:** *Spawned Author PRD child* from **`transcriptOnly`** ack alone.
 6. Stop until Mission Control delivers **`mission_control_send_agent_result`** for the same `correlationId`.
 7. Apply **§3 resume**. The **Author PRD agent** owns recap, approval, and revision at **`author-prd`** step **10** USER_CHECKPOINT (open-item + **Approve PRD** / **Revise PRD** co-present per **`author-prd/SKILL.md`** **`## Checkpoint turn UX (skill-local)`**) — **do not** duplicate approval on the leader lane.
 8. Continue to §4 only when `continuationStatus: terminal`, `developerApprovedPrd: true`, and `prdRef` is readable. When those hold, **do not end the leader turn** until §5 **`master-planner`** spawn is emitted or a §4 data-gap **AskQuestion** blocks spawn preflight.
@@ -548,12 +557,12 @@ USER_CHECKPOINT — retry master-planner spawn, revise seed, or abandon when spa
 
    Set **`name`** to `MP-{featurePlanningTitle}` (or PRD title) and **`description`** to a one-line Master Plan drafting summary — not generic "Planner" / "Child agent" placeholders alone (README § *Universal spawn preflight*; rule **50** § *Lane title prefix conventions*).
 
-3. Emit exactly one `mission_control_spawn_agent` request for the **Master Plan agent** using the `master-planner` skill path, a **new** `correlationId`, dispatch-unique `slug`, topic-specific **`name`** / **`description`**, and the preflight **`inputs`** from step 2. See **`planner/SKILL.md`** § *Spawn contract* for a valid example line and failure modes.
-4. Emit **`mission_control_spawn_agent`**, announce that the **Squad Leader** is waiting because later protocol steps need the produced plan path and complexity result, and open a **next-step resume** structured choice (**#external-wait**) before ending the turn.
-5. Stop protocol execution until Mission Control delivers `mission_control_send_agent_result` for the same `correlationId`.
+3. **Spawn turn:** Emit exactly one **`mission_control_spawn_agent`** request for the **Master Plan agent** using the `master-planner` skill path, a **new** `correlationId`, dispatch-unique `slug`, topic-specific **`name`** / **`description`**, and the preflight **`inputs`** from step 2 — **alone** per **Squad Leader spawn turn sequencing**. See **`planner/SKILL.md`** § *Spawn contract* for a valid example line and failure modes.
+4. **Next turn:** After host-visible spawn confirmation, open **next-step resume** structured choice (**#external-wait**) before StreamFinal.
+5. Stop protocol execution until Mission Control delivers **`mission_control_send_agent_result`** for the same `correlationId`.
 6. Validate that returned outputs include a readable Master Plan path, complexity band, continuation owner/status, and ledger-shaped arrays (`activeLanes`, `openLedgerEntries`, `spawnedPlans`, `remainingTasks`) before continuing.
 
-- **Next-step resolution:** After spawn emit → **#external-wait** before turn end; on child terminal auto-advance §6 ack when result is usable, else USER_CHECKPOINT gate above.
+- **Next-step resolution:** **Spawn turn** → spawn alone; **next turn** → **#external-wait** after host-visible confirmation; on child terminal auto-advance §6 ack when result is usable, else USER_CHECKPOINT gate above.
 
 ### 6. Acknowledge Master Plan status
 
