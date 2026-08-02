@@ -689,7 +689,9 @@ flowchart TB
 |------------|-----------------|--------------|
 | **1 — PR created** | **`coding-session`** (inline **`create-pr`**) | [Post-create-pr handoff gate](skills/coding-session/SKILL.md#post-create-pr-handoff-gate) opens same turn |
 | **2 — Reviewers review** | Developer + GitHub reviewers (automated reviewers such as CodeRabbit, humans) | External — not a Sedea spawn |
-| **3 — Run `pr-review`** | **`coding-session`** (inline) | Developer picks **`start-pr-review`** at post-create-pr gate, or explicit *triage PR comments* on the lane |
+| **3 — Run `pr-review`** | **`coding-session`** (inline) | Developer picks **`start-pr-review`** or **`start-pr-review-delegate-merge`** at post-create-pr gate, or explicit *triage PR comments* on the lane |
+
+**Checkpoint CI-only path (binding):** When merge inspect blocks on CI only and the developer picks **`start-pr-review-delegate-merge`**, **`coding-session`** + inline **`pr-review`** run **`fix-ci-only`** as a same-turn remediation loop — no disposition stop **2** mid-fix per **`pr-review/SKILL.md`** § *`fix-ci-only` same-turn loop* and **`coding-session-ship-chain.md`** § *Post-create-pr handoff gate*.
 | **4 — No actionable comments** | Developer | **`pr-review`** skip-only path: **`skip-reject`** → Step 5 GitHub reconciliation. **Merge is on GitHub** — there is no **Merge PR** modal in `pr-review` or `coding-session`. After merge, pick **`check-pr-status`** or **`spawn-after-deploy-walk`** at post-create-pr gate |
 | **5 — Push fixes** | **`coding-session`** + inline **`pr-review`** | Disposition gate → approved edits → commit/push gate (rule **6**) → **`pr-review`** Step 5 (reply, resolve, minimize, re-request automated reviewer when **CHANGES_REQUESTED**) |
 | **6 — Loop to step 2** | Developer + reviewers | After Step 5, **`coding-session`** re-opens [Post-create-pr handoff gate](skills/coding-session/SKILL.md#post-create-pr-handoff-gate). When new comments land, pick **`start-pr-review`** again. **`continuationStatus: active`** until comments are resolved, skipped, follow-up-captured, or deferred |

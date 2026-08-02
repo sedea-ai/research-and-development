@@ -765,6 +765,8 @@ Normative ship order on the spawned implementation lane — cut-point through §
 | Cut-point / commit | § *Ship cut-point gate* |
 | Pre-PR / create-pr | § *Pre-PR review handoff* · § *Inline create-pr* |
 | Post-create / review / merge | § *Post-create-pr handoff gate* · § *Agent-delegated PR approve and merge* · § *Post-merge ship mechanics script* |
+
+**CI-only merge block (Checkpoint):** Post-create **`start-pr-review-delegate-merge`** and inline **`pr-review`** **`fix-ci-only`** loops — [coding-session-ship-chain.md § Post-create-pr handoff gate](../../docs/coding-session-ship-chain.md#post-create-pr-handoff-gate) + [pr-review/SKILL.md § `fix-ci-only` same-turn loop](../pr-review/SKILL.md).
 | Post-merge / §8 sync | § *Post-merge ship mechanics script* · § *Post-merge workspace cleanup* · § *§8 host sync* |
 | Terminal MCP result | § *Implementation handoff result* |
 

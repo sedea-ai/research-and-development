@@ -734,6 +734,8 @@ When inline **`create-pr`** completes with a PR URL/number (or the developer ret
 
 USER_CHECKPOINT — pick next ship action after PR creation on this lane.
 
+**CI-only merge block → fix-through-merge-ready (Checkpoint — binding):** When merge inspect fails on **CI only** (no review blockers) and the developer picks **`start-pr-review-delegate-merge`**, treat the pick as **`fix-ci-only` authorization through merge-ready** — not classify-only. Under Checkpoint, **Act same turn** per **`pr-review`** § *`fix-ci-only` same-turn loop*; **forbidden** re-opening merge or disposition modals until CI passes or explicit **`defer-ci`**.
+
 ### Checkpoint — default `approve-merge-pr` (binding)
 
 Under Checkpoint trust, set **`defaultOptionId: approve-merge-pr`** on the post-create-pr modal when **all** hold:
@@ -748,7 +750,7 @@ Under Checkpoint trust, set **`defaultOptionId: approve-merge-pr`** on the post-
 
 **Forbidden on Checkpoint clean path:** auto-running [Inline PR review after PR creation](#inline-pr-review-after-pr-creation) or [Merge procedure](#merge-procedure) on the **`create-pr`** completion turn without the post-create-pr modal; prose-only *Next: inline pr-review* substitutes; unconditional **`gh pr merge`** or **`gh pr review --approve`** without the post-create-pr pick and rule **6** inspect.
 
-**Exception — gate required:** When **`prState: merged`**, CI is failing and needs a disposition pick, or the developer named a non-default path in the **same** message, still emit the post-create-pr modal (adjust **`defaultOptionId`** / option order per inspect).
+**Exception — gate required:** When **`prState: merged`**, CI is failing and needs a disposition pick, or the developer named a non-default path in the **same** message, still emit the post-create-pr modal (adjust **`defaultOptionId`** / option order per inspect). When required CI is **failing**, **omit `approve-merge-pr`**; set **`defaultOptionId: start-pr-review-delegate-merge`** (label **Fix CI failures in worktree — merge when checks pass**) unless the developer named a review-only path.
 
 ### Non-Checkpoint and exception modal (binding)
 
@@ -763,7 +765,7 @@ When Checkpoint **`defaultOptionId`** criteria do **not** apply, or non-Checkpoi
 |-----------|---------------|--------------|
 | `approve-merge-pr` | Approve and Merge PR | Set `outputs.mergeDelegationAuthorized: true`; on **next** turn run rule **6** § *Merge inspect procedure* (`gh pr view` minimum fields) then [Merge procedure](#merge-procedure) when inspect passes — **forbidden** unconditional **`gh pr merge`** / **`gh pr review --approve`** |
 | `merged-pr-proceed` | PR merged — proceed with cleanup | § *Merged-forward act* — verify merge via `gh pr view`; when **`merged`**, run [Post-merge workspace cleanup](#post-merge-workspace-cleanup) **auto-apply** on **next** turn |
-| `start-pr-review-delegate-merge` | Start PR review — agent approve + merge when clean | Set `outputs.mergeDelegationAuthorized: true`; run [Inline PR review after PR creation](#inline-pr-review-after-pr-creation) on **next** turn; when **`mergeDelegationReady`**, open [Pre-merge authorization gate](#pre-merge-authorization-gate) |
+| `start-pr-review-delegate-merge` | Fix CI failures in worktree — merge when checks pass | Set `outputs.mergeDelegationAuthorized: true`; run [Inline PR review after PR creation](#inline-pr-review-after-pr-creation) on **next** turn; when **`mergeDelegationReady`**, open [Pre-merge authorization gate](#pre-merge-authorization-gate) |
 | `start-pr-review` | Start inline PR review only | Run [Inline PR review after PR creation](#inline-pr-review-after-pr-creation) on **next** turn — **you** merge on GitHub when ready |
 | `reconcile-github-only` | Reconcile GitHub only (Step 5) | Run **`pr-review`** Step 5 only — when triage already ran and push landed without reconciliation |
 | `submit-manual-review` | Submit manual review on GitHub | [Manual review submission (developer-input)](#manual-review-submission-developer-input) — open structured choice; developer submits Approve / Comment / Request changes on GitHub |
@@ -801,7 +803,7 @@ When Checkpoint **`defaultOptionId`** criteria do **not** apply, or non-Checkpoi
           },
           {
             "id": "start-pr-review-delegate-merge",
-            "label": "Start PR review — agent approve + merge when clean"
+            "label": "Fix CI failures in worktree — merge when checks pass"
           },
           {
             "id": "start-pr-review",
@@ -878,7 +880,7 @@ Run when the developer picks **`submit-manual-review`** at [Post-create-pr hando
 | `merged-pr-proceed` | PR merged — proceed with cleanup | Verify merge via `gh pr view`; re-open [Post-create-pr handoff gate](#post-create-pr-handoff-gate) or run cleanup when **`merged`** |
 | `manual-review-done-check-status` | Manual review submitted — refresh PR status | Refresh `prState` / `reviewState` via `gh pr view`; re-open [Post-create-pr handoff gate](#post-create-pr-handoff-gate) |
 | `start-pr-review` | Run inline pr-review (triage comments) | [Inline PR review after PR creation](#inline-pr-review-after-pr-creation) |
-| `start-pr-review-delegate-merge` | Agent triage + delegate merge when clean | Set `outputs.mergeDelegationAuthorized: true`; [Inline PR review after PR creation](#inline-pr-review-after-pr-creation) |
+| `start-pr-review-delegate-merge` | Fix CI failures in worktree — merge when checks pass | Set `outputs.mergeDelegationAuthorized: true`; [Inline PR review after PR creation](#inline-pr-review-after-pr-creation) |
 | `defer-ship` | Defer next ship step | `continuationStatus: active` |
 | `more-details` | More details for option _ | Elaborate; re-open resume modal |
 
