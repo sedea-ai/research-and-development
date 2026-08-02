@@ -70,7 +70,7 @@ test('verify-lane-warmup-parity.mjs --bootstrap slim exits 0 (§5.3 merge gate)'
   assert.match(out, /bootstrap=slim/);
 });
 
-test('verify-skill-manifest.mjs --enforce-spawn-byte-budget exits 0 (D4)', () => {
+test('verify-skill-manifest.mjs --enforce-spawn-byte-budget exits 0', () => {
   const out = runScript('verify-skill-manifest.mjs', ['--enforce-spawn-byte-budget']);
   assert.match(out, /spawn byte budget smoke:/);
   assert.match(out, /--enforce-spawn-byte-budget/);
@@ -90,7 +90,7 @@ test('verify-warmup-bytes.mjs --table exits 0 with planning and ship role rows (
   assert.match(out, /\| master-planner \| planning \|/);
 });
 
-test('verify-warmup-bytes.mjs --table --enforce-spawn-byte-budget exits 0 (D4)', () => {
+test('verify-warmup-bytes.mjs --table --enforce-spawn-byte-budget exits 0', () => {
   const out = runScript('verify-warmup-bytes.mjs', [
     '--table',
     '--hosting-root',

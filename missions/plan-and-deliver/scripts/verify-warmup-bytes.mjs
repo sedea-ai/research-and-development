@@ -14,7 +14,7 @@
  *   node .../verify-warmup-bytes.mjs --table --bootstrap slim
  *
  * Exit 0 after printing the table (informational — WARN rows do not fail unless
- * --enforce-spawn-byte-budget is passed; center CI and hosting verify pass enforce after D4).
+ * --enforce-spawn-byte-budget is passed).
  */
 
 import fs from 'node:fs/promises';
