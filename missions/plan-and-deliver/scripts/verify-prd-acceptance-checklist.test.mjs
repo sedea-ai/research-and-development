@@ -14,13 +14,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { resolveProductPath } from '../../../../../../scripts/lib/resolveProductPath.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPTS = __dirname;
 const hostingRoot = process.env.HOSTING_ROOT
   ? path.resolve(process.env.HOSTING_ROOT)
   : path.resolve(SCRIPTS, '../../../../../..');
+const appRoot = path.join(hostingRoot, 'app');
 
 /** PRD §2 high-level acceptance → automated test mapping (traceability for phase 4 PR 3). */
 const PRD_ACCEPTANCE_MAP = [
@@ -55,15 +55,7 @@ const PRD_ACCEPTANCE_MAP = [
 ];
 
 function resolveAppProductPath(relativePath) {
-  const result = resolveProductPath({
-    hostingRoot,
-    assemblyKind: 'app',
-    relativePath,
-  });
-  if (result.missing) {
-    throw new Error(`missing app assembly path: ${relativePath}`);
-  }
-  return result.path;
+  return path.join(appRoot, relativePath);
 }
 
 async function readUtf8(relPath) {
@@ -82,12 +74,12 @@ async function pathExists(relPath) {
       return false;
     }
   }
-  const result = resolveProductPath({
-    hostingRoot,
-    assemblyKind: 'app',
-    relativePath: relPath,
-  });
-  return !result.missing;
+  try {
+    await fs.access(path.join(appRoot, relPath));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function quoteShellArg(arg) {
