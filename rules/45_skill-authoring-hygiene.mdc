@@ -26,5 +26,4 @@ The **384 KiB** cap applies to deduped frontmatter **`warmUpRules` ∪ `laneRule
 ## Related
 
 - Lane manifest contract: `.sedea/centers/sedea/docs/lane-manifest-contract.md`
-- Dogfood attestation before global CI enforce: `docs/warmup-byte-budget-dogfood-attestation.md`
 - Warm-up cap exceptions: `missions/plan-and-deliver/skills/README.md` § *Warm-up cap exceptions*

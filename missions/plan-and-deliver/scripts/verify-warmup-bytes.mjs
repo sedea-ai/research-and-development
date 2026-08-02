@@ -4,8 +4,8 @@
  *
  * Scope: roles under `missions/plan-and-deliver/skills/` only (planning + ship
  * categories in SPAWN_ROLE_CATEGORY). Optional spawn roles outside that tree
- * (for example `quick-fix-plan` under `missions/quick-fix/skills/`) are attested
- * separately per `docs/warmup-byte-budget-dogfood-attestation.md`.
+ * (for example `quick-fix-plan` under `missions/quick-fix/skills/`) are not
+ * included in this table — attest separately when those roles change.
  *
  * Run from hosting repo root or software-development center repo root:
  *
