@@ -163,7 +163,7 @@ Normative minimum **`laneRules`** paths per lane role — merged into **`effecti
 **Spawn binding exceptions** (`ad-hoc-prd`, **`quick-fix-plan`** mission `plan.mdc`) — [`spawn-ship-contracts.md`](../docs/spawn-ship-contracts.md) § *Default warm-up*.
 
 
-**Parity / verify:** **`verify-lane-warmup-parity.mjs --bootstrap full`** (and **`--bootstrap slim`** before alwaysApply flip). Roles, sign-off, and spawn **`warmUpRules`** binding detail — [`docs/spawn-ship-contracts.md`](../docs/spawn-ship-contracts.md) § *Default warm-up — cap exceptions and maintenance*.
+**Parity / verify:** **`verify-lane-warmup-parity.mjs --bootstrap full`** (and **`--bootstrap slim`** before alwaysApply flip); **`verify-warmup-bytes.mjs --table`** for per-role spawn byte CI (PRD D1). Roles, sign-off, and spawn **`warmUpRules`** binding detail — [`docs/spawn-ship-contracts.md`](../docs/spawn-ship-contracts.md) § *Default warm-up — cap exceptions and maintenance*.
 
 ## Universal spawn preflight (all plan-and-deliver spawners)
 

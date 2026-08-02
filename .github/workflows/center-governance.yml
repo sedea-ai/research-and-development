@@ -37,6 +37,9 @@ jobs:
       - name: Verify skill manifest (spawn byte budget enforce)
         run: node missions/plan-and-deliver/scripts/verify-skill-manifest.mjs --enforce-spawn-byte-budget
 
+      - name: Per-role spawn warm-up byte table (D1 — WARN-only)
+        run: node missions/plan-and-deliver/scripts/verify-warmup-bytes.mjs --table
+
       - name: Verify checkpoint steps
         run: node missions/plan-and-deliver/scripts/verify-checkpoint-steps.mjs
 

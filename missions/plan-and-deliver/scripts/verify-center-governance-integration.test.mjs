@@ -70,6 +70,18 @@ test('verify-lane-warmup-parity.mjs --bootstrap slim exits 0 (§5.3 merge gate)'
   assert.match(out, /bootstrap=slim/);
 });
 
+test('verify-warmup-bytes.mjs --table exits 0 with planning and ship role rows (D1)', () => {
+  const out = runScript('verify-warmup-bytes.mjs', [
+    '--table',
+    '--hosting-root',
+    hostingRoot,
+  ]);
+  assert.match(out, /OK: spawn warm-up byte table/);
+  assert.match(out, /planning \d+, ship \d+/);
+  assert.match(out, /\| coding-session \| ship \|/);
+  assert.match(out, /\| master-planner \| planning \|/);
+});
+
 test('verify-checkpoint-steps.mjs warn-only exits 0 (phase 1 scaffold)', () => {
   const out = runScript('verify-checkpoint-steps.mjs');
   assert.match(out, /verify-checkpoint-steps:/);
