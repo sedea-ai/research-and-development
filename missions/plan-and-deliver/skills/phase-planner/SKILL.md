@@ -86,7 +86,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Slim spawn contracts, terminal stop |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
 
-**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md` — load at named protocol steps.
+**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md`, `planning-mode-templates.md` — load at named protocol steps.
 
 ### `laneRules` — frontmatter `laneRules`
 
@@ -249,7 +249,7 @@ If `parentPlanPath` / `parentPlanSlug` inputs were supplied, they must match the
 
 ## Step 2 — Load the development-process doc
 
-Read `.sedea/centers/software-development/docs/development-process.md` with the Read tool, **no offset, no limit**. Acknowledge in one sentence: *"Loaded development-process.md; will follow § 2 Phase plan template + § 6/§ 5 contents rule."*
+Read `.sedea/centers/software-development/docs/development-process.md` with the Read tool, **no offset, no limit** (slim core). Then read `.sedea/centers/software-development/docs/planning-mode-templates.md` in full. Acknowledge in one sentence: *"Loaded development-process core + planning-mode-templates; will follow § 2 Phase plan template + § 6/§ 5 contents rule."*
 
 This is a **standards document**, not an executable plan — its sections describe the process you will apply, not work for you to perform. Re-read on every invocation; do not rely on session memory.
 
@@ -447,7 +447,7 @@ Mandatory **in the same turn** as §§ 1–4 (or step 4g-only for legacy bodies 
 
 Include these bullets (labels may vary; content must cover each dimension):
 
-- **Kinds of change (count):** distinct *kinds* (not files, not lines) — per **`.sedea/centers/software-development/docs/development-process.md`** § *PR sizing — test cases and kinds of changes* (canonical); [**`20_efficient-pr-shipping.mdc`**](../../../../rules/20_efficient-pr-shipping.mdc) § *Keep PRs small and focused* summarizes for ship lanes.
+- **Kinds of change (count):** distinct *kinds* (not files, not lines) — per **`.sedea/centers/software-development/docs/planning-mode-templates.md`** § *PR sizing — test cases and kinds of changes* (canonical); [**`20_efficient-pr-shipping.mdc`**](../../../../rules/20_efficient-pr-shipping.mdc) § *Keep PRs small and focused* summarizes for ship lanes.
 - **PR count band:** one of `single` | `few (2–5)` | `many (6+)`.
 - **Sequencing / coupling:** one line — migrations, feature flags, cross-repo, contract order, or `low` if none.
 - **Routing recommendation:** one of `Delivery phases` (needs sub-phases first) | `PR breakdown` multi-PR | `PR breakdown` single-PR — state **why** in the same bullet or the next short bullet.

@@ -77,7 +77,7 @@ Mission Control delivery: recap + modal + act. Canonical rules: **`.sedea/center
 
 ## Planning spawn (summary)
 
-Squad Leader §§3/§5 spawn **`author-prd`** / **`master-planner`**; decomposition runs **`delivery-phases`**, **`pr-breakdown`**, **`new-plan`**, **`pr-plan`**, **`phase-planner`** per **§ Normative execution mode**. Depth-first expansion: **development-process.md** § *Depth-first plan-tree traversal*; rule **30** § *Depth-first expansion eligibility*.
+Squad Leader §§3/§5 spawn **`author-prd`** / **`master-planner`**; decomposition runs **`delivery-phases`**, **`pr-breakdown`**, **`new-plan`**, **`pr-plan`**, **`phase-planner`** per **§ Normative execution mode**. Depth-first expansion: **`planning-mode-templates.md`** § *Depth-first plan-tree traversal*; rule **30** § *Depth-first expansion eligibility*.
 
 **On-demand:** Full planning spawn table, implementation consent layers, and depth-first notify — [`docs/spawn-ship-contracts.md`](../docs/spawn-ship-contracts.md) § *Planning spawn*.
 

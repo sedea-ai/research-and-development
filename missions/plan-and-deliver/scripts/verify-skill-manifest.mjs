@@ -72,6 +72,10 @@ const SKILLS_SPAWN_SHIP_REL =
   'missions/plan-and-deliver/docs/spawn-ship-contracts.md';
 /** PRD C1 — slim README core warm-up target (bytes). */
 const SKILLS_README_BYTE_CAP = 25 * 1024;
+const DEV_PROCESS_REL = 'docs/development-process.md';
+const PLANNING_MODE_TEMPLATES_REL = 'docs/planning-mode-templates.md';
+/** PRD C2 — slim development-process core warm-up target (bytes). */
+const DEV_PROCESS_BYTE_CAP = 60 * 1024;
 
 const SKILL_WARMUP_HEADING = '### `skillWarmUp` — frontmatter `warmUpRules`';
 const LANE_RULES_HEADING = '### `laneRules` — frontmatter `laneRules`';
@@ -703,6 +707,30 @@ async function validateSkillsReadmeSlimSplit() {
   return errors;
 }
 
+async function validateDevelopmentProcessSlimSplit() {
+  const errors = [];
+  const devProcAbs = path.join(CENTER_ROOT, DEV_PROCESS_REL);
+  const templatesAbs = path.join(CENTER_ROOT, PLANNING_MODE_TEMPLATES_REL);
+  const devProcRaw = await fs.readFile(devProcAbs, 'utf8');
+  const devProcBytes = Buffer.byteLength(devProcRaw, 'utf8');
+  if (devProcBytes > DEV_PROCESS_BYTE_CAP) {
+    errors.push(
+      `${DEV_PROCESS_REL}: ${devProcBytes} bytes exceeds slim core cap ${DEV_PROCESS_BYTE_CAP} (60 KiB)`,
+    );
+  }
+  if (!devProcRaw.includes('planning-mode-templates.md')) {
+    errors.push(
+      `${DEV_PROCESS_REL}: missing on-demand pointer to ${PLANNING_MODE_TEMPLATES_REL}`,
+    );
+  }
+  try {
+    await fs.access(templatesAbs);
+  } catch {
+    errors.push(`${PLANNING_MODE_TEMPLATES_REL}: missing on-demand planning mode templates doc`);
+  }
+  return errors;
+}
+
 async function validateNotifyReadmeCoverage() {
   const rel = SKILLS_README_REL;
   const spawnRel = SKILLS_SPAWN_SHIP_REL;
@@ -772,6 +800,7 @@ async function validateNotifyGovernance() {
   }
   errors.push(...(await validateCodingSessionNotifyCallerForbidden()));
   errors.push(...(await validateSkillsReadmeSlimSplit()));
+  errors.push(...(await validateDevelopmentProcessSlimSplit()));
   errors.push(...(await validateNotifyReadmeCoverage()));
   return errors;
 }

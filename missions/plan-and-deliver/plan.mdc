@@ -326,7 +326,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 | Spawn step | Override |
 |------------|----------|
 | §3 **`author-prd`** | Skill frontmatter defaults — includes **this** `plan.mdc` |
-| §5 **`master-planner`** | Skill frontmatter defaults — includes **this** `plan.mdc` + **`development-process.md`** |
+| §5 **`master-planner`** | Skill frontmatter defaults — **`plan.mdc`** §§5–6 via step-bound **`Read`**; slim **`development-process.md`** + on-demand **`planning-mode-templates.md`** at template steps |
 | Planning / ship children | Skill frontmatter **`warmUpRules`** per **`skills/README.md`** spawn table |
 
 Child spawns must satisfy the same README table for the target skill role (skill frontmatter **`laneRules`** or run-request **`laneRules`**).

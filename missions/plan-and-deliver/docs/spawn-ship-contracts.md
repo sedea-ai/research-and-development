@@ -327,8 +327,9 @@ Each spawned ship skill documents its manifest in **`SKILL.md`** § *Warm-up man
 
 | Skill | Frontmatter omits (vs default warm-up) | Runtime reads remain |
 |-------|----------------------------------------|----------------------|
-| **`master-planner`**, **`phase-planner`**, **`pr-plan`**, **`pr-breakdown`**, **`delivery-phases`**, **`new-plan`** | `plan.mdc`, `development-process.md` | Named protocol steps **`Read`** **`plan.mdc`** / **`development-process.md`** per each **`SKILL.md`** |
-| **`author-prd`** | `plan.mdc` (in **`laneRules`**), `development-process.md` | **`plan.mdc`** via **`laneRules`**; **`development-process.md`** at named steps |
+| **`master-planner`**, **`phase-planner`**, **`pr-plan`**, **`pr-breakdown`**, **`delivery-phases`** | `plan.mdc`, `development-process.md`, `planning-mode-templates.md` | Step-bound **`Read`**: slim **`development-process.md`** core; **`planning-mode-templates.md`** before template drafting; **`plan.mdc`** only §§ relevant to handoff (see each **`SKILL.md`**) — **not** full §§1–8 on every planning child |
+| **`new-plan`** | `plan.mdc`, `development-process.md`, `planning-mode-templates.md` | Indexed-child **stub only** — intentionally **no** **`planning-mode-templates.md`** **`Read`**; inline **`pr-plan`** populator owns template reads when drafting |
+| **`author-prd`** | `plan.mdc` (in **`laneRules`** §§1–3), `development-process.md` | **`plan.mdc`** via **`laneRules`**; slim **`development-process.md`** at named steps |
 | **`ad-hoc-prd`**, **`quick-fix-plan`** | `development-process.md` | Named protocol steps **`Read`** **`development-process.md`** when cadence/templates apply |
 | **`pre-pr-review`** | `plan.mdc`, `development-process.md` | Step 3 reads **`development-process.md`**; Step 4 loads **`inputs.targetPlanPath`** (PR plan, not Squad Leader **`plan.mdc`**) |
 | **`coding-session`** | rule **30** only; assigned **`SKILL.md`** in **`laneRules`** for parity — **excluded** from spawn byte budget (host **`skillPath`** inject) | Explicit **`Read`** of rule **30** when resolving ambiguous `.sedea` paths; on-demand ship docs via step-bound **`Read`** |
@@ -483,8 +484,9 @@ Each spawned ship skill documents its manifest in **`SKILL.md`** § *Warm-up man
 
 | Skill | Frontmatter omits (vs default warm-up) | Runtime reads remain |
 |-------|----------------------------------------|----------------------|
-| **`master-planner`**, **`phase-planner`**, **`pr-plan`**, **`pr-breakdown`**, **`delivery-phases`**, **`new-plan`** | `plan.mdc`, `development-process.md` | Named protocol steps **`Read`** **`plan.mdc`** / **`development-process.md`** per each **`SKILL.md`** |
-| **`author-prd`** | `plan.mdc` (in **`laneRules`**), `development-process.md` | **`plan.mdc`** via **`laneRules`**; **`development-process.md`** at named steps |
+| **`master-planner`**, **`phase-planner`**, **`pr-plan`**, **`pr-breakdown`**, **`delivery-phases`** | `plan.mdc`, `development-process.md`, `planning-mode-templates.md` | Step-bound **`Read`**: slim **`development-process.md`** core; **`planning-mode-templates.md`** before template drafting; **`plan.mdc`** only §§ relevant to handoff (see each **`SKILL.md`**) — **not** full §§1–8 on every planning child |
+| **`new-plan`** | `plan.mdc`, `development-process.md`, `planning-mode-templates.md` | Indexed-child **stub only** — intentionally **no** **`planning-mode-templates.md`** **`Read`**; inline **`pr-plan`** populator owns template reads when drafting |
+| **`author-prd`** | `plan.mdc` (in **`laneRules`** §§1–3), `development-process.md` | **`plan.mdc`** via **`laneRules`**; slim **`development-process.md`** at named steps |
 | **`ad-hoc-prd`**, **`quick-fix-plan`** | `development-process.md` | Named protocol steps **`Read`** **`development-process.md`** when cadence/templates apply |
 | **`pre-pr-review`** | `plan.mdc`, `development-process.md` | Step 3 reads **`development-process.md`**; Step 4 loads **`inputs.targetPlanPath`** (PR plan, not Squad Leader **`plan.mdc`**) |
 | **`coding-session`** | rule **30** only; assigned **`SKILL.md`** in **`laneRules`** for parity — **excluded** from spawn byte budget (host **`skillPath`** inject) | Explicit **`Read`** of rule **30** when resolving ambiguous `.sedea` paths; on-demand ship docs via step-bound **`Read`** |

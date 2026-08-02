@@ -82,7 +82,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Slim spawn contracts, terminal stop |
 | `.sedea/centers/software-development/rules/30_planning-target-resolution.mdc` | Target resolution, depth-first gates |
 
-**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md` — load at named protocol steps.
+**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md`, `planning-mode-templates.md` — load at named protocol steps.
 
 ### `laneRules` — frontmatter `laneRules`
 
@@ -283,13 +283,17 @@ There is **no required model tier** for this skill: proceed to Step 2 either way
 
 - **Next-step resolution:** Auto-advance to Step **2** after the optional model line — no `USER_CHECKPOINT` on this step.
 
-## Step 2 — Load the development-process doc, in full
+## Step 2 — Load development-process core and planning templates
 
-Read `.sedea/centers/software-development/docs/development-process.md` with the Read tool, **no offset, no limit**. The whole file. This is a **standards document**, not an executable plan — its sections describe the process you will apply, not work for you to perform. Acknowledge in one sentence that you have it loaded and that you will follow the **Master Plan template** for sections 4 and 5.
+1. Read `.sedea/centers/software-development/docs/development-process.md` with the Read tool, **no offset, no limit** (slim warm-up core — Strategy, Development tools index, Cadence reference). Acknowledge in one sentence that you have the core loaded.
 
-If the file has changed since you last knew it, the in-file template is the source of truth — not your memory.
+2. Before drafting Master Plan §§ 4–6 from templates, read `.sedea/centers/software-development/docs/planning-mode-templates.md` in full (**no offset, no limit**). Acknowledge: *"Loaded planning-mode-templates.md; will follow Master Plan template for §§ 4–6."*
 
-- **Next-step resolution:** Auto-advance to Step **3** after one-line acknowledgment — no `USER_CHECKPOINT` on this step.
+3. Read `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` §§ **5–6** only (spawn handover + decomposition ack — **not** full §§1–8 unless a step explicitly requires another section).
+
+If either doc changed since you last knew it, the on-disk file is the source of truth — not your memory.
+
+- **Next-step resolution:** Auto-advance to Step **3** after acknowledgments — no `USER_CHECKPOINT` on this step.
 
 ## Step 3 — Identify the target repo(s) and load architectural rules
 
