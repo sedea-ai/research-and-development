@@ -421,6 +421,8 @@ node .sedea/centers/software-development/missions/plan-and-deliver/scripts/verif
 
 **`--bootstrap full`** — today's host scan (must pass on manifest table changes). **`--bootstrap slim`** — §5.3 merge gate before **`alwaysApply` frontmatter flip** (expected fail until phase 5 bootstrap + flip).
 
+**Spawn byte CI:** **`verify-warmup-bytes.mjs --table`** for per-role totals; **`--enforce-spawn-byte-budget`** when CI enforce is enabled.
+
 ## Universal spawn preflight (all plan-and-deliver spawners)
 
 Run the checklist **before every child spawn** on any lane (Squad Leader §§3/§5, **master-planner** Step 7, **pr-plan** §5d, ship-chain spawns). Host behavior is in **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Agent-to-agent spawn protocol* (MCP-only, host-resolved identity); this section is the **plan-and-deliver** operator checklist.

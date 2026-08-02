@@ -36,7 +36,7 @@ Same as plan-and-deliver — [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.
 
 ### Post-PR review inheritance (binding)
 
-Detached **`coding-session`** ship chains reuse plan-and-deliver mechanics — this wrapper does **not** own PR review-cycle steps. After **`create-pr`**, the inline **`pr-review`** / **`pr-review.mjs`** boundary from [plan-and-deliver/plan.mdc § Post-PR handoff](.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc) applies unchanged. Do **not** restate the review procedure here; when the developer picks **`start-pr-review`**, load [plan-and-deliver `pr-review/SKILL.md`](.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-review/SKILL.md) via [Post-create-pr handoff gate](.sedea/centers/software-development/missions/plan-and-deliver/skills/coding-session/SKILL.md#post-create-pr-handoff-gate).
+Detached **`coding-session`** ship chains reuse plan-and-deliver mechanics — this wrapper does **not** own PR review-cycle steps. After **`create-pr`**, the inline **`pr-review`** / **`pr-review.mjs`** boundary from [plan-and-deliver/plan.mdc § Post-PR handoff](.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc) applies unchanged — including Checkpoint **`fix-ci-only`** same-turn loop from plan-and-deliver **`pr-review/SKILL.md`**. Do **not** restate the review procedure here; when the developer picks **`start-pr-review`**, load [plan-and-deliver `pr-review/SKILL.md`](.sedea/centers/software-development/missions/plan-and-deliver/skills/pr-review/SKILL.md) via [Post-create-pr handoff gate](.sedea/centers/software-development/missions/plan-and-deliver/skills/coding-session/SKILL.md#post-create-pr-handoff-gate).
 
 ### Repo rules ship inheritance (binding)
 

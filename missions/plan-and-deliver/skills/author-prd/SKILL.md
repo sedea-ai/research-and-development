@@ -43,16 +43,14 @@ laneRules:
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/author-prd/SKILL.md"
   - ".sedea/centers/software-development/missions/plan-and-deliver/plan.mdc"
 warmUpRules:
-  - ".sedea/centers/software-development/missions/plan-and-deliver/plan.mdc"
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
-  - ".sedea/centers/software-development/docs/development-process.md"
 ---
 
 # Skill: author-prd
 
 ## Warm-up manifest (spawned)
 
-Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Definitive `laneRules`* (**`author-prd` child** row). Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table; spawners may omit run-request **`laneRules`** when identical (README spawn preflight row 11). **No `alwaysApply` frontmatter flip.**
+Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea/docs/lane-manifest-contract.md) and **`../README.md`** § *Definitive `laneRules`* (**`author-prd` child** row). Host merge: `effectiveWarmUp = dedupe(bootstrapRules → laneRules → skillWarmUp)`. Frontmatter matches this table; spawners may omit run-request **`laneRules`** when identical (README spawn preflight row 11). **384 KiB cap:** frontmatter omits **`plan.mdc`** (loaded via **`laneRules`**) and **`development-process.md`** — explicit **`Read`** at named protocol steps. **No `alwaysApply` frontmatter flip.**
 
 ### `bootstrapRules` — host-resolved (Software Development center layer)
 
@@ -64,9 +62,9 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/missions/plan-and-deliver/plan.mdc` | Squad Leader §§1–3 PRD intake |
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop |
-| `.sedea/centers/software-development/docs/development-process.md` | PRD templates, planning readiness |
+
+**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc` (in **`laneRules`**), `development-process.md` — load at named protocol steps.
 
 ### `laneRules` — frontmatter `laneRules`
 

@@ -79,13 +79,23 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 
 | Path | Purpose |
 |------|---------|
-| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop, parallel fork |
+| `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Slim spawn contracts, terminal stop, parallel fork |
 | `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc` | Worktree naming, ship chain, bootstrap |
 | `.sedea/centers/sedea/skills/worktree-setup/SKILL.md` | Center worktree setup (inline on this lane) |
 | `.sedea/centers/sedea/skills/pr-review/SKILL.md` | Inline PR review cycles |
 | `.sedea/centers/sedea/skills/worktree-cleanup/SKILL.md` | Post-merge worktree cleanup |
 
 **Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md` — load via **`inputs.targetPlanPath`** and explicit **`Read`** when ship-chain or procedure steps require them.
+
+
+### On-demand docs — spawn/ship contracts (runtime `Read`)
+
+| Path | Load when |
+|------|-----------|
+| `.sedea/centers/software-development/missions/plan-and-deliver/docs/spawn-ship-contracts.md` | Before merging child terminals, parallel hosting-repo-rules fork, or MCP notify preflight N1-N8 detail |
+
+**Step-bound Read (binding):** Before acting on spawn-chain merge rules in this skill, `Read` [`docs/spawn-ship-contracts.md`](../../docs/spawn-ship-contracts.md) in full (no offset/limit).
+
 
 ### `laneRules` — frontmatter `laneRules`
 
