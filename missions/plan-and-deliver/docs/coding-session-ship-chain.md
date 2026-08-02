@@ -4,6 +4,8 @@
 
 Cross-ref checkpoint UX: [`coding-session-checkpoint-ux.md`](coding-session-checkpoint-ux.md).
 
+**Deploy-done emit guard:** Normative owner [`coding-session/SKILL.md`](../skills/coding-session/SKILL.md) § *Deploy-done emit guard* — after After deploy **`deployStatus: done`**, forbid success terminal without **`prShipComplete`**; auto-run post-after-deploy tail with zero modals on Checkpoint clean path. Calibration: `incident_pr_ship_complete_tail_skipped_2026-08-02.agent-incident-report.md`.
+
 ---
 
 ## Deploy test plan confirmations

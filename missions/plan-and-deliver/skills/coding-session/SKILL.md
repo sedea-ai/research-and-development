@@ -678,6 +678,28 @@ Under Checkpoint trust, after **`outputs.prState: merged`** (or merge confirmed 
 
 **Exception paths (modal OK):** post-merge cleanup partial failure; **`promote-submodule-pin`** hard stop for any eligible center (including built-in **`sedea`**); **`deploy-walk`** block/skip paths; plan-reconcile inventory requiring explicit picks (flagged archive, follow-ups triage when unchecked bullets remain, Non-Checkpoint / exception reconcile gates); **`return-to-implementation-new-worktree`** from deploy manual gate.
 
+### Deploy-done emit guard (binding)
+
+When inline **`deploy-walk`** sets **`deployStatus: done`** and **`deployTodoStatus: done`**, the agent **must not** call **`mission_control_send_agent_result`** with **`status: success`** and **`prShipComplete` absent** unless the developer explicitly picked **`defer-tail`** on this pass.
+
+**Required (Checkpoint clean path):** Same turn or **immediate next turn** — auto-run [Post–After deploy remainder inventory](#post-after-deploy-remainder-inventory) (**`plan-reconcile`** → **`pr-ship-complete`**) with **zero** turn-end modals between deploy closure and terminal emit. Inline **`plan-reconcile`** must honor its Checkpoint auto-advance rows — **forbidden:** stopping on *start reconcile now vs defer*, **`approve-reconcile-mutations`**, own-plan archive pick, or **`confirm-inline-closure`** modals when clean criteria pass.
+
+**Forbidden terminal shapes** on spawned **`pr-plan`** lanes:
+
+| Shape | Why |
+|-------|-----|
+| `shipPhase: deploy-verified` + `rowStatus: open` + `status: success` as **final** child terminal | Parent cannot unlock next PR index — **`prShipComplete`** missing |
+| Success terminal after deploy done when [remainder inventory](#post-after-deploy-remainder-inventory) is non-empty and tail not run | Deploy checklist ≠ spawn-chain terminal |
+
+**Terminal output checklist:**
+
+| Precondition | Required output |
+|--------------|-----------------|
+| Deploy done + merged + reconcile complete | `prShipComplete: true`, `shipPhase: done`, `rowStatus: closed`, `parentPlanPath`, `parentPlanSlug`, `parentIndex` when spawn supplied them |
+| Deploy done only (tail pending) | `shipPhase: deploy-verified`, `continuationStatus: active` — **not** terminal |
+
+**Calibration reference:** `incident_pr_ship_complete_tail_skipped_2026-08-02.agent-incident-report.md` (post-after-deploy tail skipped — **`prShipComplete`** never set).
+
 ## Pre-worktree validation (plan completeness)
 
 **Worktree validation** (see **`pr-plan`** §5b and **development-process.md** § *Planning readiness vs worktree completeness*). Independent of layer 1 **`readyForImplementation`**. **`readyForImplementation: true` does not skip this script** — run it unless validation is skipped or the user message already contains **`override incomplete plan`**.
