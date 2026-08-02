@@ -244,9 +244,21 @@ When **`detect-stale-workspaces`** returns no candidates, **skip** this gate —
 
 Do **not** trigger on the word **`plan`** alone — too generic.
 
-When **`deploy-walk`** just finished and the user expects archive, open structured choice once per [Plan-reconcile handoff (inline)](../coding-session/SKILL.md#plan-reconcile-handoff-inline): start **`plan-reconcile`** inline now vs defer. Merge + deploy verification are still required for inline reconcile from **`coding-session`** when plan-anchored on the ship chain.
+**Forbidden on Checkpoint ship chain (binding):** When **`coding-session`** auto-runs [Post–After deploy remainder inventory](../coding-session/SKILL.md#post-after-deploy-remainder-inventory) after deploy done, **do not** open a *start **`plan-reconcile`** inline now vs defer* structured-choice gate. Auto-advance per Checkpoint rows in this skill — **forbidden:** treating deploy-walk completion alone as a developer-input reconcile start.
+
+Structured choice to start reconcile vs defer applies only when the developer explicitly invokes reconcile **outside** the post-after-deploy auto chain, or on Non-Checkpoint / exception paths (flagged archive, follow-ups triage with unchecked bullets, missing preconditions).
 
 Detail: **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** § *deploy-walk vs plan-reconcile (not chained)*; **`.sedea/centers/software-development/docs/development-process.md`** § *Plan reconcile triggers*.
+
+### Archive readiness when sidecar `prs: []` (binding)
+
+When the anchored PR plan sidecar has empty **`prs: []`**, dry-run **`reconcile`** may classify the plan under **`skipped`** — **`list-candidates`** is the non-PR archive path.
+
+| Requirement | Action |
+|-------------|--------|
+| Plan frontmatter todo **`pr-plan-populated: done`** | Set before **`list-candidates`** can surface the anchored plan reliably |
+| Sidecar **`prs: []`** after merge + deploy done | Use explicit **`plan-state.mjs archive --slug <targetPlanSlug> --signal "<merged PR ref>"`** when own-plan Checkpoint auto-archive criteria pass but PR-tracked reconcile did not move files |
+| Recovery friction | Document in recap when archive used **`--slug`** fallback — do not block **`pr-ship-complete`** on empty **`prs: []`** alone when merge and deploy verification are complete |
 
 **Inline gate (ship chain):** if any required field is missing, stop with `partial`, keep `continuationStatus: "active"` on **`coding-session`**, and report what is missing. Do not archive before merge and deploy verification are complete.
 

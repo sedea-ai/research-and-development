@@ -868,6 +868,7 @@ When run inline on **`coding-session`**, report these fields in prose via **`## 
 - `outputs.rowStatus` — `open` while steps remain; `closed` when `deployStatus` and `deployTodoStatus` are both `done`; `blocked` when a deploy step is blocked
 - `outputs.blockedReason` — when `rowStatus` is `blocked` (name the blocked step)
 - `outputs.returnToImplementation` — **`true`** when the developer chose **`return-to-implementation-new-worktree`** at a deploy gate; parent **`coding-session`** opens a new worktree (see [Return to implementation from deploy walk](#return-to-implementation-from-deploy-walk-inline-handback))
+- `outputs.requiresShipTail` — **`true`** when `upstreamSkill` is **`coding-session`**, scope is post-merge **After deploy** (not `before-deploy-only`), and **`deployStatus: done`** with **`deployTodoStatus: done`** — parent owns [Post–After deploy remainder inventory](../coding-session/SKILL.md#post-after-deploy-remainder-inventory); this skill does **not** emit **`prShipComplete`**
 
 ## Return to implementation from deploy walk (inline handback)
 
@@ -887,5 +888,7 @@ Stop when a **manual** step is presented and awaiting developer input, when the 
 ## Completion (inline)
 
 Report the fields from **## Inline result contract** in prose to the invoker on the **same lane**. Do **not** emit `mission_control_spawn_agent`, `mission_control_send_agent_result`, or `mission_control_propose_dispatch_resolution`. Do **not** add a **MCP result** (see **`.sedea/centers/sedea/rules/4_mission.mdc`** § *Inline completion* and **`.sedea/centers/sedea/skills/README.md`** § *Completion (inline)*).
+
+When `upstreamSkill` is **`coding-session`** and the walk completes post-merge After deploy with **`deployStatus: done`** and **`deployTodoStatus: done`**, set **`requiresShipTail: true`** in inline outputs and include one handback line: *Deploy checklist closed — coding-session owns plan-reconcile tail.*
 
 Normally invoked inline from **`coding-session`** (Before deploy, pre-merge, or After deploy post-merge). Deploy phrases on the active coding-session lane use the same procedure body.
