@@ -1,12 +1,14 @@
 # Warm-up byte budget — dogfood attestation checklist (PRD D3)
 
-Final dogfood gate **before** enabling global **`--enforce-spawn-byte-budget`** in center governance CI (PR 2 / D4). Complete **one full Mission Control spawn per row** after the pinned center submodule includes Phase D PR 1 (per-role byte table + this doc).
+Dogfood gate **before** enabling global **`--enforce-spawn-byte-budget`** in center governance CI (PR 2 / D4). Complete **one full Mission Control spawn per row** after the pinned center submodule includes Phase D PR 1 (per-role byte table + this doc).
+
+**After PR 2 (D4) lands:** center CI and hosting **`verify-center-governance.sh`** run **`--enforce-spawn-byte-budget`** on both **`verify-skill-manifest.mjs`** and **`verify-warmup-bytes.mjs --table`** (with **`--hosting-root`** on hosting verify). Over-cap spawn rows fail CI instead of WARN-only.
 
 ## Prerequisites
 
 - Phase D PR 1 merged to **`software-development`** center **`main`** and hosting pin promoted.
 - `./scripts/verify-center-governance.sh` from **`HOSTING_ROOT`** prints the per-role byte table stage and exits **0**.
-- Center CI **`.github/workflows/center-governance.yml`** runs **`verify-warmup-bytes.mjs --table`** (WARN-only — global enforce still deferred).
+- Center CI **`.github/workflows/center-governance.yml`** runs **`verify-warmup-bytes.mjs --table`** and **`--enforce-spawn-byte-budget`** (D4 — merge blockers on over-cap roles).
 
 ## Attestation table (binding)
 

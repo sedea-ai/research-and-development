@@ -82,7 +82,7 @@ const LANE_RULES_HEADING = '### `laneRules` — frontmatter `laneRules`';
 /** Host spawn cap — `.sedea/centers/sedea/rules/4_mission.mdc` § Spawned execution */
 const WARM_UP_BYTE_CAP = 384 * 1024;
 
-/** Spawn skills — strict byte-budget enforce when `--enforce-spawn-byte-budget` (Phase A planning; Phase B adds coding-session). */
+/** Spawn skills — strict byte-budget enforce when `--enforce-spawn-byte-budget` (planning + ship roles; D4 global CI enforce). */
 const SPAWN_BYTE_BUDGET_ENFORCE_SKILLS = new Set([
   'master-planner',
   'phase-planner',
