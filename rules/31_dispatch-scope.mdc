@@ -7,7 +7,7 @@ alwaysApply: false
 
 # Dispatch scope (supersedes operations user id)
 
-**On-demand rule.** Mission Control warm-up loads [`.sedea/centers/software-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole software-development `alwaysApply: true` bootstrap. Read **this file** when you need **`dispatchId`**, **`operationsDocsDirectory`**, or DbOnly terminal dispatch binding — not on every dispatch warm-up.
+**On-demand rule.** Mission Control warm-up loads [`.sedea/centers/software-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole Software Development `alwaysApply: true` bootstrap. Read **this file** when you need **`dispatchId`**, **`operationsDocsDirectory`**, or DbOnly terminal dispatch binding — not on every dispatch warm-up.
 
 Normative hosting layout: [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § **Operations storage phases**, § **Dispatch persistence (DbOnly terminal)**, and § **Plans (dispatch-scoped discovery)**.
 

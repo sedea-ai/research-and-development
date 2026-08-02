@@ -5,7 +5,7 @@ alwaysApply: false
 
 # Plan & PR naming
 
-**On-demand rule.** Mission Control warm-up loads [`.sedea/centers/software-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole software-development `alwaysApply: true` bootstrap. Read **this file** when you need plan/PR/worktree naming and forbidden-word policy — not on every dispatch warm-up.
+**On-demand rule.** Mission Control warm-up loads [`.sedea/centers/software-development/rules/bootstrap.mdc`](bootstrap.mdc) as the sole Software Development `alwaysApply: true` bootstrap. Read **this file** when you need plan/PR/worktree naming and forbidden-word policy — not on every dispatch warm-up.
 
 Applies to **plan filenames and headings**, **worktree names** (`-b` on `git worktree add`), **PR titles and descriptions**, **chat titles**, and **commit messages** across all repos.
 
