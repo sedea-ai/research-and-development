@@ -14,6 +14,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
+import { resolveProductPath } from '../../../../../../scripts/lib/resolveProductPath.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPTS = __dirname;
@@ -53,17 +54,40 @@ const PRD_ACCEPTANCE_MAP = [
   },
 ];
 
+function resolveAppProductPath(relativePath) {
+  const result = resolveProductPath({
+    hostingRoot,
+    assemblyKind: 'app',
+    relativePath,
+  });
+  if (result.missing) {
+    throw new Error(`missing app assembly path: ${relativePath}`);
+  }
+  return result.path;
+}
+
 async function readUtf8(relPath) {
-  return fs.readFile(path.join(hostingRoot, relPath), 'utf8');
+  if (relPath.startsWith('.sedea/') || relPath.startsWith('./scripts/')) {
+    return fs.readFile(path.join(hostingRoot, relPath.replace(/^\.\//, '')), 'utf8');
+  }
+  return fs.readFile(resolveAppProductPath(relPath), 'utf8');
 }
 
 async function pathExists(relPath) {
-  try {
-    await fs.access(path.join(hostingRoot, relPath));
-    return true;
-  } catch {
-    return false;
+  if (relPath.startsWith('.sedea/') || relPath.startsWith('./scripts/')) {
+    try {
+      await fs.access(path.join(hostingRoot, relPath.replace(/^\.\//, '')));
+      return true;
+    } catch {
+      return false;
+    }
   }
+  const result = resolveProductPath({
+    hostingRoot,
+    assemblyKind: 'app',
+    relativePath: relPath,
+  });
+  return !result.missing;
 }
 
 function quoteShellArg(arg) {
@@ -85,7 +109,7 @@ function runNpm(args, cwd) {
 }
 
 function runVitest(packageDir, testPattern) {
-  const pkgRoot = path.join(hostingRoot, packageDir);
+  const pkgRoot = resolveAppProductPath(packageDir);
   // CI center-governance workflow only npm ci's scripts/; install extension deps here.
   runNpm(['ci'], pkgRoot);
   runNpm(['test', '--', '--run', testPattern], pkgRoot);
