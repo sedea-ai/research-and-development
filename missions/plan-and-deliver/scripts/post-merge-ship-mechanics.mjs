@@ -52,6 +52,7 @@ function parseFlags(argv) {
     apply: false,
     hostingRoot: null,
     prNumber: null,
+    prNumbers: null,
     defaultBranch: 'main',
     repo: null,
   };
@@ -66,7 +67,7 @@ function parseFlags(argv) {
       continue;
     }
     if (a === '--help' || a === '-h') {
-      process.stdout.write(`Usage: post-merge-ship-mechanics.mjs [--dry-run] [--hosting-root PATH] [--pr-number N] [--repo ORG/REPO] [--default-branch main] [--apply]
+      process.stdout.write(`Usage: post-merge-ship-mechanics.mjs [--dry-run] [--hosting-root PATH] [--pr-number N] [--pr-numbers N,N,...] [--repo ORG/REPO] [--default-branch main] [--apply]
 
   --dry-run              Smoke/fixture mode — emit sample §8 JSON without gh/git mutations.
   --hosting-root PATH    Hosting repo root (directory containing .sedea/centers/sedea/).
@@ -95,6 +96,9 @@ function parseFlags(argv) {
     }
     if (key === 'hosting-root') out.hostingRoot = path.resolve(String(value));
     else if (key === 'pr-number') out.prNumber = Number(value);
+    else if (key === 'pr-numbers') {
+      out.prNumbers = String(value).split(',').map((s) => Number(s.trim())).filter((n) => Number.isFinite(n));
+    }
     else if (key === 'repo') out.repo = String(value);
     else if (key === 'default-branch') out.defaultBranch = String(value);
     else die(`unknown flag: --${key}`);
@@ -284,7 +288,7 @@ function mapPrStateToShipPhase(prState, mainPullStatus) {
 async function main() {
   const flags = parseFlags(process.argv.slice(2));
 
-  if (flags.dryRun && !flags.hostingRoot && flags.prNumber == null) {
+  if (flags.dryRun && !flags.hostingRoot && flags.prNumber == null && flags.prNumbers == null) {
     process.stdout.write(`${JSON.stringify(DRY_RUN_FIXTURE)}\n`);
     process.exit(0);
   }
@@ -300,20 +304,41 @@ async function main() {
   if (flags.prNumber != null && !Number.isFinite(flags.prNumber)) {
     die('invalid --pr-number');
   }
+  if (flags.prNumbers != null && flags.prNumbers.length === 0) {
+    die('invalid --pr-numbers');
+  }
 
-  if (flags.prNumber != null) {
-    const pr = await queryPr(orgRepo, flags.prNumber);
-    if (!pr.ok) die(pr.error);
-    prState = pr.prState;
-    mergeSha = pr.mergeSha;
-    mergedAt = pr.mergedAt;
-    if (!flags.dryRun && prState !== 'merged') {
-      die(`PR #${flags.prNumber} state is ${prState}, expected merged`, 1, {
-        prState,
-        mergeSha,
-        mergedAt,
-        shipPhase: mapPrStateToShipPhase(prState, 'skipped'),
-      });
+  const prNumbersToQuery = flags.prNumbers ?? (flags.prNumber != null ? [flags.prNumber] : []);
+  let batchResults = null;
+
+  if (prNumbersToQuery.length > 0) {
+    batchResults = [];
+    for (const n of prNumbersToQuery) {
+      const pr = await queryPr(orgRepo, n);
+      if (!pr.ok) die(pr.error);
+      batchResults.push({ prNumber: n, prState: pr.prState, mergeSha: pr.mergeSha, mergedAt: pr.mergedAt, prUrl: pr.prUrl });
+      if (!flags.dryRun && pr.prState !== 'merged') {
+        die(`PR #${n} state is ${pr.prState}, expected merged`, 1, {
+          prState: pr.prState,
+          mergeSha: pr.mergeSha,
+          mergedAt: pr.mergedAt,
+          shipPhase: mapPrStateToShipPhase(pr.prState, 'skipped'),
+          batchResults,
+        });
+      }
+    }
+    const last = batchResults[batchResults.length - 1];
+    prState = last.prState;
+    mergeSha = last.mergeSha;
+    mergedAt = last.mergedAt;
+    if (flags.dryRun) {
+      const fixture = {
+        ...DRY_RUN_FIXTURE,
+        ...(batchResults.length > 1 ? { batch: true, batchResults } : {}),
+        dryRun: true,
+      };
+      process.stdout.write(`${JSON.stringify(fixture)}\n`);
+      process.exit(0);
     }
   } else if (flags.dryRun) {
     Object.assign(DRY_RUN_FIXTURE, { dryRun: true });
@@ -347,6 +372,7 @@ async function main() {
     nextAction,
     centerPinDriftPaths,
     promotePinRequired,
+    ...(batchResults && batchResults.length > 1 ? { batch: true, batchResults } : {}),
     ...(flags.dryRun ? { dryRun: true } : {}),
   };
 

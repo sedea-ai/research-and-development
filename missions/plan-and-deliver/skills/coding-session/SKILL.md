@@ -127,6 +127,12 @@ inputs:
       When true with upstreamSkill capture-release-note, run Release-note fragment ship profile
       — auto-advance commit through merge and cleanup without further developer gates.
     required: false
+  batchShipProfile:
+    type: boolean
+    description: >-
+      When true (from pr-plan / master-planner spawn when §5 PR list has ≥2 parallel rows with
+      submodule or cross-repo scope), track openPrBatch[] and use batch ship Checkpoint profile.
+    required: false
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
   - ".sedea/centers/sedea/rules/6_git-commit-push-gate.mdc"
@@ -623,9 +629,9 @@ Under Checkpoint trust, **happy-path protocol steps may auto-advance when this l
 
 | Situation | Normative gate | Checkpoint |
 |-----------|----------------|------------|
-| PR opened — next ship action (review, merge check, defer) | [Post-create-pr handoff gate](#post-create-pr-handoff-gate) | **Checkpoint gate** — post-create-pr stop **1** |
+| PR opened — next ship action (review, merge check, defer) | [Post-create-pr handoff gate](#post-create-pr-handoff-gate) | **Checkpoint gate** — post-create-pr stop **1** (**skip** when `openPrBatch.length > 1` — [Batch ship authorization gate](#batch-ship-authorization-gate)) |
 | Developer submits own GitHub review — resume triage | [Manual review submission (developer-input)](#manual-review-submission-developer-input) | Auto-advance **`start-pr-review-delegate-merge`** when triage was requested |
-| Inline **`pr-review`** — triage disposition / fix scope | **`pr-review`** Step **3b** / Step **4** disposition gates | **Checkpoint gate** — PR review stop |
+| Inline **`pr-review`** — triage disposition / fix scope | **`pr-review`** Step **3b** / Step **4** disposition gates | **Checkpoint gate** — PR review stop (**skip** when **`batchShipAuthorized`**) |
 | Before / After deploy — manual §7 verification | **`deploy-walk`** [Manual step await gate](../deploy-walk/SKILL.md#manual-step-await-gate-binding) | **Checkpoint gate** — deploy manual stop |
 | After deploy checklist fully satisfied — Status `deployed → done` | **`deploy-walk`** [Deploy closure approval gate](../deploy-walk/SKILL.md#deploy-closure-approval-gate-binding) | Auto-advance **`approve-deploy-closure`** **same turn** — **no** modal on clean path |
 | Pre-PR findings after child returns | [Review feedback approval gate](#review-feedback-approval-gate) | Auto-advance **`fix-now-session`** **same turn** — **no** `USER_CHECKPOINT` / modal on clean path |
@@ -636,7 +642,7 @@ Under Checkpoint trust, **happy-path protocol steps may auto-advance when this l
 
 **Checkpoint auto-advance does not apply** when a row in § *Every developer-await turn* names a gate and no clean auto-advance criterion in the Checkpoint table passes — including **manual After deploy** presentation: auto-advance stops **at** presentation; the **same turn** must emit **`deploy-walk`** Manual step await gate.
 
-**Checkpoint three-stop model exception (binding):** [Release-note fragment ship profile](#release-note-fragment-ship-profile-checkpoint--binding) **does not** open stops **1–3** — parent **`approve-fragment`** is the sole developer consent surface for fragment promotion.
+**Checkpoint three-stop model exception (binding):** [Release-note fragment ship profile](#release-note-fragment-ship-profile-checkpoint--binding) **does not** open stops **1–3** — parent **`approve-fragment`** is the sole developer consent surface for fragment promotion. [Batch ship (Checkpoint — binding)](#batch-ship-checkpoint--binding) **does not** open stops **1–2** when **`openPrBatch.length > 1`** — **`approve-ship-batch`** is the consolidated consent surface; stop **3** (manual deploy) unchanged.
 
 | Step | Checkpoint behavior | Gate |
 |------|---------------------|------|
@@ -783,6 +789,54 @@ Single-concern **docs-only** promotion of one approved unreleased fragment onto 
 **Skipped on clean path (binding):** [Pre-worktree validation](#pre-worktree-validation-plan-completeness); [Worktree-open gate](#worktree-open-gate); [Spawned implementation lane](#spawned-implementation-lane); [Implementation continuation gate](#implementation-continuation-gate); [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy); Before deploy / After deploy **`deploy-walk`**; **`pre-pr-review`** spawn; [Post-create-pr handoff gate](#post-create-pr-handoff-gate); inline **`pr-review`** disposition; **`plan-reconcile`**.
 
 **Exceptions (developer-input or failure gates still apply):** bootstrap / attach failure; push or PR create failure; merge blocked by policy; merge proof missing after claimed merge — report **`failure`** / **`partial`** with **`errors`**.
+
+## Batch ship (Checkpoint — binding)
+
+When this session ships **more than one PR** (parallel independent PR rows, multi-repo worktrees with submodule gitlinks, or center source + hosting pin PRs), use the shared batch profile instead of per-PR [Post-create-pr handoff gate](#post-create-pr-handoff-gate) stop **1** and per-PR **`pr-review`** disposition stop **2**.
+
+Normative contract: [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md).
+
+| Condition | Behavior |
+|-----------|----------|
+| `openPrBatch.length === 1` | [Checkpoint three-stop model](#checkpoint-three-stop-model-binding) — per-PR gates |
+| `openPrBatch.length > 1` | Single **`approve-ship-batch`** gate; [auto-advance tail](#batch-ship-auto-advance-tail-binding) per shared doc |
+
+### `openPrBatch[]` tracking (binding)
+
+Populate **`outputs.openPrBatch[]`** using the shape in the shared doc. Append a row when inline **`create-pr`** completes for a worktree in this session. Set **`inputs.batchShipProfile: true`** when spawn handover names a multi-PR parallel scope; otherwise infer when a second row appends.
+
+**Parallel implementation:** When plan §5 marks PR rows **independent** and [Multi-repo flow](#multi-repo-flow-shared-worktree-name) applies, implement scoped edits **in parallel** across worktrees (one PR per worktree) before the batch ship tail — **forbidden** serializing independent rows without developer **`revise`** pick.
+
+### Batch ship authorization gate
+
+**When:** `openPrBatch.length > 1`, every row has **`prState: open`**, and not yet **`outputs.batchShipAuthorized`**.
+
+USER_CHECKPOINT — authorize batch ship tail for all open PRs on this lane.
+
+Render the [batch orientation table](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md) as the first block in **`displayMarkdown`**. Use **`modalTitle`**: *Coding session — approve ship batch*. Required options per shared doc (`approve-ship-batch`, `revise`, `pause`) plus universal trailer.
+
+**On `approve-ship-batch` (same turn):** set **`outputs.batchShipAuthorized: true`** and **`outputs.mergeDelegationAuthorized: true`** for every row; **Act** on [batch ship auto-advance tail](#batch-ship-auto-advance-tail-binding).
+
+**Forbidden when `openPrBatch.length > 1` and not `batchShipAuthorized`:** per-PR [Post-create-pr handoff gate](#post-create-pr-handoff-gate); per-PR **`pr-review`** Step **4** disposition modal; prose-only PR URL handoff between batch rows.
+
+### Batch ship auto-advance tail (binding)
+
+After **`batchShipAuthorized`**, follow [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md) § *Auto-advance tail*:
+
+**Phase A — per row (parallel Steps 1–2 where worktrees differ):** inline **`pr-review`** with **`batchShipAuthorized: true`**, CI/remediation loops, rebase/conflicts, inspect + merge per rule **6**.
+
+**Phase B — after all rows `prState: merged`:** extend [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding) across every **`worktreeRoot`** in the batch — cleanup each owned worktree, run [`.sedea/centers/sedea/scripts/batch-promote-submodule-pins.sh`](.sedea/centers/sedea/scripts/batch-promote-submodule-pins.sh) or inline **`promote-submodule-pin`** per center, then from **`HOSTING_ROOT`**:
+
+```bash
+.sedea/centers/sedea/scripts/run-sedea-node.sh \
+  .sedea/centers/software-development/missions/plan-and-deliver/scripts/post-merge-ship-mechanics.mjs \
+  --hosting-root "$HOSTING_ROOT" --pr-numbers "<comma-separated PR numbers>" --apply
+git submodule update --init --recursive
+```
+
+Then [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff) when plan-anchored — manual §7 steps remain Checkpoint stop **3**.
+
+**Checkpoint three-stop exception (binding):** while **`batchShipAuthorized`** tail is in progress on the clean path, **forbidden** re-opening stops **1–2** for individual batch rows. Manual After deploy remains stop **3**.
 
 ## Auto-authorize implementation (pr-plan spawn)
 
@@ -1140,7 +1194,7 @@ When the plan’s **Worktree setup** lists two or more repos, or the user asks f
 
 4. **Attach each worktree** with **`sedea_add_worktree_folder` only** (after each step-1 setup succeeds), then confirm **`outputs.bootstrapStatus: success`** from each setup hint before any implementation or prompt for that repo.
 
-5. **Branch** per [Execution mode after worktree attach](#execution-mode-after-worktree-attach) (spawned lane implements each repo’s scope in turn, or prompt-only emits **one session prompt per repo** with per-repo scope guards).
+5. **Branch** per [Execution mode after worktree attach](#execution-mode-after-worktree-attach). **Spawned lane:** when PR rows are **independent**, implement each repo’s scope **in parallel** (one PR per worktree) before the batch or per-PR ship tail; dependent rows stay sequential. **Prompt-only:** emit **one session prompt per repo** with per-repo scope guards.
 
 6. **Prompt-only:** **Stop** after prompts. **Spawned lane:** continue implementation per repo scope before the [ship chain](#ship-chain-after-implementation-coding-session-lane).
 
@@ -1892,6 +1946,8 @@ When [Gitlink-only hosting PR](#gitlink-only-hosting-pr-binding) applies on this
 
 When inline **`create-pr`** completes with a PR URL/number (or the developer returns to this lane with a confirmed open PR from the same ship chain):
 
+**Batch path (binding):** Append the row to **`outputs.openPrBatch[]`**. When **`openPrBatch.length > 1`**, **forbidden** this per-PR gate — open [Batch ship authorization gate](#batch-ship-authorization-gate) on the same turn when every batch row has **`prState: open`**, or defer the batch gate until the last row opens. When **`batchShipAuthorized`**, proceed to [batch ship auto-advance tail](#batch-ship-auto-advance-tail-binding) — **forbidden** re-opening this gate for individual rows.
+
 **Rule 6 supersession (binding):** While **`prState: open`**, option ordering, presence, and inspect-before-mutate for agent approve+merge on this gate follow [`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`](.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc) § *PR approve-merge structured choice* and § *Merge inspect procedure*, cross-referenced by [`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`](.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc) § *PR approve-merge and merge inspect*. This gate's option tables implement that contract — not a parallel vocabulary.
 
 **Binding — Checkpoint and non-Checkpoint:** When **`prState`** is **`open`** (or just created this turn) and **`prState`** is not **`merged`**, **same assistant turn** must close with **`mission_control_present_structured_choice`** post-create-pr **`options`** — not prose-only PR URL, *Next: inline pr-review*, or idle handoff. **`defaultOptionId: approve-merge-pr`** when agent merge is in scope, required CI is **`passing`** or **`pending`**, and the developer did not name **`defer-ship`**, **`submit-manual-review`**, **`rebase-onto-main-and-resolve-conflicts`**, or a review-only path in the **same** message.
@@ -2602,6 +2658,8 @@ When this skill runs as a spawned child, end with a child result containing at l
 - `outputs.submoduleGitlinksInScope` — repo-relative submodule paths in committed ship diff when gate applies
 - `outputs.hostingPinCompleteStatus` — `not-applicable` \| `required` \| `partial` \| `complete`
 - `outputs.promoteSubmodulePinOutcomes` — per-center promote results from submodule merge gate
+- `outputs.openPrBatch` — ordered PR rows for multi-PR ship sessions (see [Batch ship](#batch-ship-checkpoint--binding))
+- `outputs.batchShipAuthorized` — `true` after **`approve-ship-batch`** pick
 - `outputs.archivedSlugs` — when inline **`plan-reconcile`** archived the target
 - `outputs.prShipComplete` — `true` only when **`plan-reconcile`** finished with target archived, PR **merged**, **`mainPullStatus`** is **`success`** or **`skipped`**, and **`hostingPinCompleteStatus`** is **`complete`** or **`not-applicable`**
 - `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex` — echo spawn **`inputs`** when **`pr-plan`** (or upstream) supplied them; required on MCP result calls that set **`prShipComplete: true`**

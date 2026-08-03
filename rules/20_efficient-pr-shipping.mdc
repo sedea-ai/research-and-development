@@ -130,6 +130,10 @@ We work with **git worktrees** (one per PR) so we can have several PRs in flight
 - Do **not** stack worktrees or PRs unless the developer explicitly asks for it.
 - When a PR is done, open it for review; the next independent PR is already being worked on in another worktree.
 
+## Batch ship approval (Checkpoint)
+
+When **`coding-session`** tracks **`openPrBatch.length > 1`**, one **`approve-ship-batch`** gate authorizes review → CI remediation → rebase → merge → pin promotion → worktree cleanup → **`HOSTING_ROOT`** refresh for **all** rows — per [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md). **Forbidden** on the clean batch path: per-PR post-create-pr modals and per-PR **`pr-review`** disposition modals. Manual **After deploy** §7 steps remain a separate Checkpoint gate per **`coding-session`** three-stop model stop **3**.
+
 ## Review before commit
 
 After implementing changes, **stop**. Do not `git add`, `git commit`, or `git push` until the developer explicitly confirms that we are ready to move on to the next development stage.
