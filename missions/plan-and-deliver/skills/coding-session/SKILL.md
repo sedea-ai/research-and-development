@@ -1015,6 +1015,21 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Coding sess
 
 **Spawned lane — MCP structured choice (binding):** Same turn ends with **`mission_control_present_structured_choice`**; recap in **`displayMarkdown`** only.
 
+## §7 deploy authoring (binding — plan fill and deploy-walk handoff)
+
+When filling **`## 7. Deploy test plan`** during implementation (spawned lane step **4** or later §§ **5–8** work), follow **planning-mode-templates.md** § mode #3 § 7 **What NOT to include** and **development-process.md** § *§7 Deploy test plan — ship-chain boundary*.
+
+| Allowed in § 7 checklists | **Forbidden** — owned by this skill's ship chain |
+|---------------------------|--------------------------------------------------|
+| PR-specific verification beyond standing CI / § 6 | `plan-reconcile`, archive, **`pr-ship-complete`** |
+| Production smoke / monitors / rollback for **this change** | Pre-PR review, create PR, PR review, merge |
+| | Worktree setup, attach, cleanup; **`git pull`**; **`promote-submodule-pin`** |
+| | Dispatch resolution; generic mission-protocol step rows |
+
+**Modal and recap copy (binding):** **Forbidden** recommending *Skip step N — defer plan-reconcile to dispatch close* or any wording that defers **`plan-reconcile`** to after **`mission_control_propose_dispatch_resolution`**. **`plan-reconcile`** runs **inline on this lane while the dispatch is open** — auto-advanced on Checkpoint clean path after After deploy per [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding).
+
+When existing § 7 rows violate this boundary (for example ship-chain steps from an earlier **`pr-plan`** sketch), **revise the plan** in the same window — do not treat bad rows as manual deploy gates.
+
 ## Deploy test plan confirmations
 
 When the developer **confirms** a numbered step in the anchored PR plan’s **`## N. Deploy test plan`** (§7 **`### Before deploy`** or **`### After deploy`**), treat chat as **not** the system of record — same contract as **`deploy-walk`**: state lives in the plan file. Prefer loading **`deploy-walk`** **inline** for checklist walks — it auto-runs agent-executable steps; use this ad-hoc path only for one-off confirmations when a full inline walk is not running.

@@ -50,7 +50,7 @@ Detached **`coding-session`** lanes execute canonical plan-and-deliver repo-rule
 
 2. **Single PR plan** — Produce one PR plan under `.sedea/operations/` via minimal parent scaffold, **`new-plan`** (indexed child), and **`pr-plan`** inline (§§1–4 populated).
 
-3. **Standard ship** — Hand off to **`coding-session`** for implementation and the full plan-and-deliver ship chain (worktree, cut-point, deploy-walk, pre-pr-review, create-pr, pr-review, post-merge cleanup, optional plan-reconcile).
+3. **Standard ship** — Hand off to **`coding-session`** for implementation and the full plan-and-deliver ship chain (worktree, cut-point, deploy-walk, pre-pr-review, create-pr, pr-review, post-merge cleanup, optional plan-reconcile). PR plan § 7 lists PR-specific deploy verification only — not ship-chain rows (**development-process.md** § *§7 Deploy test plan — ship-chain boundary*).
 
 4. **Squad Leader oversight** — Track planning completion and detached ship progress; gate **`mission_control_propose_dispatch_resolution`**.
 
