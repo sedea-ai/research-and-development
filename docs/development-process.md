@@ -297,13 +297,28 @@ Normative skill procedures — not duplicated here. Read **`plan-and-deliver/pla
 | Ship chain (per PR) | **`coding-session/SKILL.md`** + **`docs/coding-session-ship-chain.md`** |
 | Feedback / Plan Updates | This doc § *Targeted plan updates* above; **`plan-reconcile/SKILL.md`** when reconcile is explicitly started |
 
+## §7 Deploy test plan — ship-chain boundary (binding)
+
+Per-PR **`## 7. Deploy test plan`** (**`### Before deploy`** / **`### After deploy`**) lists **PR-specific verification only** — not the mission ship chain. Full exclusion list: **planning-mode-templates.md** § mode #3 per-PR template § 7 **What NOT to include**.
+
+| Belongs in § 7 | Belongs in **`coding-session`** ship chain (not § 7) |
+|----------------|------------------------------------------------------|
+| PR-specific smoke, monitors, rollback triggers for **this change** | Worktree setup, attach, cleanup |
+| Production checks beyond standing CI / § 6 tests | Pre-PR review, create PR, PR review, merge |
+| Submodule attestation when **this PR** changes a gitlink | **`promote-submodule-pin`**, hosting **`git pull`** |
+| | **`plan-reconcile`**, **`pr-ship-complete`**, dispatch resolution |
+
+**`plan-reconcile` timing (binding):** Runs **inline on the active `coding-session` lane while the dispatch is open** — typically auto-advanced after After deploy on the Checkpoint clean path. **Forbidden:** § 7 After deploy steps or agent modal copy that defer reconcile to "when dispatch closes" or "after dispatch resolution" — closure ends all agent lanes.
+
 ## Plan reconcile triggers
 
 | Event | Starts **`plan-reconcile`?** |
 |-------|---------------------------|
-| **`deploy-walk`** completes (deploy checklist + capstone todo **done**) | **No** — use **AskQuestion** if the user wants reconcile next |
+| **`deploy-walk`** completes (deploy checklist + capstone todo **done**) | **No** — Checkpoint clean path may **auto-run** inline reconcile on **`coding-session`**; otherwise use structured choice if the user wants reconcile next |
 | **`coding-session`** after deploy; developer chooses reconcile | **Yes** (inline **`plan-reconcile`**; requires `deployStatus` / `deployTodoStatus` **done** when plan-anchored on ship chain) |
+| **`coding-session`** Checkpoint post–After deploy tail (clean path) | **Yes** (inline auto-advance — **before** terminal emit and **before** Squad Leader dispatch resolution) |
 | Developer says **plan reconcile** on active **`coding-session`** | **Yes** (inline) |
+| Squad Leader **`mission_control_propose_dispatch_resolution`** / dispatch closed | **No** — **forbidden** — all agent lanes ended |
 | Detached **`plan-reconcile`** dispatch | **Stop** — redirect to **`coding-session`** |
 
 Ship cadence detail: **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** § *deploy-walk vs plan-reconcile (not chained)*. Skill procedure: **`plan-reconcile/SKILL.md`** § *When this skill runs*.

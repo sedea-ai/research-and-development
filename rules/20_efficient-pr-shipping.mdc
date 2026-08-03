@@ -130,6 +130,10 @@ We work with **git worktrees** (one per PR) so we can have several PRs in flight
 - Do **not** stack worktrees or PRs unless the developer explicitly asks for it.
 - When a PR is done, open it for review; the next independent PR is already being worked on in another worktree.
 
+## Batch ship approval (Checkpoint)
+
+When **`coding-session`** tracks **`openPrBatch.length > 1`**, one **`approve-ship-batch`** gate authorizes review → CI remediation → rebase → merge → pin promotion → worktree cleanup → **`HOSTING_ROOT`** refresh for **all** rows — per [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md). **Forbidden** on the clean batch path: per-PR post-create-pr modals and per-PR **`pr-review`** disposition modals. Manual **After deploy** §7 steps remain a separate Checkpoint gate per **`coding-session`** three-stop model stop **3**.
+
 ## Review before commit
 
 After implementing changes, **stop**. Do not `git add`, `git commit`, or `git push` until the developer explicitly confirms that we are ready to move on to the next development stage.
@@ -293,6 +297,10 @@ Use **`origin/main`** as **`--base-ref`**, **not** local **`main`** — local **
 When changes under a **non-built-in** center submodule (for example **`.sedea/centers/software-development/`**) merge to that center's **`defaultBranch`**, agents **must** run [`.sedea/centers/sedea/skills/promote-submodule-pin/SKILL.md`](.sedea/centers/sedea/skills/promote-submodule-pin/SKILL.md) **inline** on the hosting-repo lane so **`origin/main`** records the new gitlink. Entry routing: [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Pin promotion routing* — **direct** invoke, or **cleanup-hint** only when post-merge **`worktree-cleanup.sh`** reports drift (`nextAction: promote-pin-required` with **`centerPinDriftPaths`**; host background when **`autoPromoteSubmodulePins: true`**). Local pointer drift on the primary clone is **not** enough for worktree bootstrap — see § *Dirty hosting repo before center setup* and [`.sedea/centers/software-development/docs/development-process.md`](../docs/development-process.md) § *Center submodule git (two repositories)*.
 
 Pin the center **`defaultBranch`** tip only. Git is **skill-owned** per [`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`](.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc) § *Submodule pin promotion (skill-owned)*. Canonical semantics: [`.sedea/centers/sedea/rules/3_center.mdc`](.sedea/centers/sedea/rules/3_center.mdc) § *Git repo semantics*.
+
+**Mandatory before ship row close (binding):** When the ship chain touched submodule gitlinks, **`prShipComplete: true`** is **forbidden** until hosting **`origin/main`** records merged tips and **`HOSTING_ROOT`** is refreshed. Pin promotion is **not** optional developer follow-up — see **`coding-session/SKILL.md`** § *Hosting-pin-complete gate (before prShipComplete)*. **Forbidden recap language:** *"if you want"*, *"optional follow-up"*, *"when you're ready"*, *"remains follow-up"*.
+
+**Calibration:** `incident_hosting_pin_promotion_treated_optional_2026-08-03.agent-incident-report.md`.
 
 **Launch from worktree (after bootstrap success — when hosting repo documents dev launcher):**
 

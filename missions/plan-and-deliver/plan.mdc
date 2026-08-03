@@ -15,7 +15,7 @@ The outcomes below span the **full cadence** (PRD → plans → implementation �
 
 ### Cadence reference (all branches — not Squad Leader protocol steps)
 
-**Planning** milestones below are logical — not strict spawn order. **`coding-session` ship chain** is **normative step order** on the implementation lane (inline · spawn · gate · procedure). **`pr-review`** runs **inline** after **`create-pr`** while the PR is open — developer selection of **`start-pr-review`** loads **`pr-review/SKILL.md`** and runs **`pr-review.mjs`** Step 1 before generic review/wait/merge options. Generic **`gh`** PR inspection is **not** a substitute for that cycle. **`plan-reconcile`** requires an **explicit start** — not auto after **`deploy-walk`** (rule **20** § *deploy-walk vs plan-reconcile*).
+**Planning** milestones below are logical — not strict spawn order. **`coding-session` ship chain** is **normative step order** on the implementation lane (inline · spawn · gate · procedure). **`pr-review`** runs **inline** after **`create-pr`** while the PR is open — developer selection of **`start-pr-review`** loads **`pr-review/SKILL.md`** and runs **`pr-review.mjs`** Step 1 before generic review/wait/merge options. Generic **`gh`** PR inspection is **not** a substitute for that cycle. **`plan-reconcile`** requires an **explicit start** — not auto after **`deploy-walk`** (rule **20** § *deploy-walk vs plan-reconcile*). PR plan § 7 **Before/After deploy** lists **PR-specific verification only** — not ship-chain steps (**development-process.md** § *§7 Deploy test plan — ship-chain boundary*).
 
 ```mermaid
 flowchart TB
