@@ -73,7 +73,7 @@ Derived index of **Checkpoint trust** turn behavior for **software-development**
 | **plan-reconcile** | Inline closure gate (inline on coding-session) | Preview dry-run, list-candidates | [`plan-reconcile/SKILL.md`](../missions/plan-and-deliver/skills/plan-reconcile/SKILL.md) § Checkpoint turn UX |
 | **hosting-repo-rules** | Worktree-open gate | Implement through review-ready | [`hosting-repo-rules/SKILL.md`](../missions/plan-and-deliver/skills/hosting-repo-rules/SKILL.md) § Checkpoint turn UX |
 | **worktree-bootstrap** | Step **1** validate gate (exception-only inline retry) | Prerequisites when parent completed setup | [`worktree-bootstrap/SKILL.md`](../missions/plan-and-deliver/skills/worktree-bootstrap/SKILL.md) § Checkpoint turn UX |
-| **pr-review** | *Pending calibration* | *Pending* | [`pr-review/SKILL.md`](../missions/plan-and-deliver/skills/pr-review/SKILL.md) |
+| **pr-review** | Step **4** disposition (single-PR); batch mode skips gate | Batch mode auto-advance when **`batchShipAuthorized`** | [`pr-review/SKILL.md`](../missions/plan-and-deliver/skills/pr-review/SKILL.md) § Batch mode |
 
 ### coding-session — key gates (detail)
 
@@ -86,6 +86,7 @@ Derived index of **Checkpoint trust** turn behavior for **software-development**
 | Implementation **5–6** | Auto-advance | exception: blocking stop |
 | Implementation continuation | Auto-advance when clean | **Gate** when criteria fail |
 | Ship cut-point | Auto-advance when clean | **Gate** when criteria fail |
+| Batch ship (`openPrBatch.length > 1`) | **`approve-ship-batch`** then auto-advance tail | Per [batch ship profile](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md) |
 | Post-merge tail | Auto-advance chain | exception: cleanup partial |
 | After deploy deploy-walk | **Gate** — sole post-merge USER_CHECKPOINT | Manual step await (deploy-walk) |
 
@@ -170,5 +171,6 @@ rg -l 'Checkpoint trust \(binding\)' .sedea/centers/software-development/**/plan
 3. At USER_CHECKPOINT, confirm structured choice opens.
 4. Replay skip paths (coding-session auto-authorize, pr-plan `skipPrPlanHandoffModal`).
 5. Record verdict in skill PR plan §7 After deploy.
+6. **Batch ship:** run one multi-PR **`coding-session`** through **`approve-ship-batch`** and verify Phase A + B auto-advance per [batch ship profile](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md).
 
 See [host governance](../../sedea/docs/checkpoint-ask-auto-advance-matrix.md) for platform StreamFinal behavior.

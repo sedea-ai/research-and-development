@@ -272,7 +272,11 @@ Under Checkpoint trust, **happy-path protocol steps may auto-advance when this l
 
 **Checkpoint auto-advance does not apply** when a row in § *Every developer-await turn* names a gate and no clean auto-advance criterion in the Checkpoint table passes — including **manual After deploy** presentation: auto-advance stops **at** presentation; the **same turn** must emit **`deploy-walk`** Manual step await gate.
 
-**Checkpoint three-stop model exception (binding):** [Release-note fragment ship profile](#release-note-fragment-ship-profile-checkpoint--binding) **does not** open stops **1–3** — parent **`approve-fragment`** is the sole developer consent surface for fragment promotion.
+**Checkpoint three-stop model exception (binding):** [Release-note fragment ship profile](#release-note-fragment-ship-profile-checkpoint--binding) **does not** open stops **1–3** — parent **`approve-fragment`** is the sole developer consent surface for fragment promotion. [Batch ship (Checkpoint — binding)](../skills/coding-session/SKILL.md#batch-ship-checkpoint--binding) **does not** open stops **1–2** when **`openPrBatch.length > 1`** — **`approve-ship-batch`** per [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md); stop **3** (manual deploy) unchanged.
+
+### Batch ship (Checkpoint — binding)
+
+When **`openPrBatch.length > 1`**, use **`approve-ship-batch`** instead of per-PR post-create-pr (stop **1**) and per-PR **`pr-review`** disposition (stop **2**). Normative contract: [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md). Skill detail: [`coding-session/SKILL.md`](../skills/coding-session/SKILL.md) § *Batch ship*.
 
 | Step | Checkpoint behavior | Gate |
 |------|---------------------|------|

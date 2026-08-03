@@ -161,6 +161,7 @@ Mission Control gate-surface detection for inline **`deploy-walk`** on Checkpoin
 | Agent mistake | Correct action |
 |---------------|----------------|
 | Treat deploy walk `done` as permission to archive the plan | Tell the developer to run **`plan-reconcile`** inline on **`coding-session`** when ready (phrase or stale-worktree / post-deploy choice) |
+| Paraphrase § 7 After deploy as *defer plan-reconcile to dispatch close* or recommend skipping a step until dispatch resolution | **Forbidden** — reconcile runs inline on active **`coding-session`** while dispatch is open; revise plan text or modal copy |
 | Emit **`mission_control_spawn_agent`** for **`plan-reconcile`** from this lane | **Forbidden** — hand off in prose only |
 
 Canonical: **`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`** § *deploy-walk vs plan-reconcile (not chained)*.
@@ -786,8 +787,9 @@ old_string:
  content: >-
  Mark done only when every Before-deploy and After-deploy step is checked
  (`[x]`) and the deploy section `**Status:**` reads `done` (walk via `deploy-walk`,
- or edit manually). Independent of PR merge; run `plan-reconcile` protocol branch when you want
- reconcile/archive after merges.
+ or edit manually). Independent of PR merge; run inline `plan-reconcile` on the active
+ `coding-session` lane while the dispatch is open when you want reconcile/archive after merges
+ — not after dispatch resolution.
  status: pending
 
 new_string:
@@ -795,8 +797,9 @@ new_string:
  content: >-
  Mark done only when every Before-deploy and After-deploy step is checked
  (`[x]`) and the deploy section `**Status:**` reads `done` (walk via `deploy-walk`,
- or edit manually). Independent of PR merge; run `plan-reconcile` protocol branch when you want
- reconcile/archive after merges.
+ or edit manually). Independent of PR merge; run inline `plan-reconcile` on the active
+ `coding-session` lane while the dispatch is open when you want reconcile/archive after merges
+ — not after dispatch resolution.
  status: done
 ```
 

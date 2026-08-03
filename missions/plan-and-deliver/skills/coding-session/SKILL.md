@@ -127,6 +127,12 @@ inputs:
       When true with upstreamSkill capture-release-note, run Release-note fragment ship profile
       — auto-advance commit through merge and cleanup without further developer gates.
     required: false
+  batchShipProfile:
+    type: boolean
+    description: >-
+      When true (from pr-plan / master-planner spawn when §5 PR list has ≥2 parallel rows with
+      submodule or cross-repo scope), track openPrBatch[] and use batch ship Checkpoint profile.
+    required: false
 laneRules:
   - ".sedea/centers/sedea/rules/2_ask-question-instructions.mdc"
   - ".sedea/centers/sedea/rules/6_git-commit-push-gate.mdc"
@@ -341,7 +347,8 @@ Give developers a **consistent state snapshot** at ship gates so they can re-ori
 | Code IO | `<absolute WORKTREE_ROOT>` or — |
 | Worktree | `<absolute WORKTREE_ROOT>` or — |
 | Branch | `<worktreeName>` or — |
-| PR | `<url>` (#N) or — |
+| PR | `<url>` (#N) · `pin-only (agent)` · — |
+| Source repo(s) | `<role>` · `<repo>` · `<branch/SHA>` · `<file summary>` or — |
 | Ship phase | `<shipPhase>` |
 | Deploy scope | Before deploy · After deploy · — |
 | CI | `passing` · `failing (N)` · `pending` · `deferred` — from **`pr-review`** Step 1b when in PR review |
@@ -354,9 +361,22 @@ Give developers a **consistent state snapshot** at ship gates so they can re-ori
 | No invention | Use `—` when unknown; never guess paths or PR numbers |
 | Plan IO host / Code IO | Set after worktree attach — **Plan IO host** = **`HOSTING_ROOT`**; **Code IO** = **`WORKTREE_ROOT`** (see § *Plan and sidecar IO (binding)*) |
 | Worktree row | Populated while session worktree exists; `—` after authorized cleanup |
-| PR row | Populated when `prUrl` or `prNumber` exists |
+| PR row | Populated when `prUrl` or `prNumber` exists; when [Gitlink-only hosting PR](#gitlink-only-hosting-pr-binding) applies, use `pin-only (agent)` — **forbidden** a hosting PR URL the developer is expected to open for content review |
+| Source repo(s) row | Populated when gitlink-only scope applies — role(s) per [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Three-repo submodule taxonomy*; list substantive changed paths |
 | Deploy scope | `Before deploy` during before-deploy-only walk; `After deploy` post-merge walk; `—` otherwise |
 | Review row | Pre-PR: `outputs.prePrReviewRecommendation`; during PR: `prReviewStatus` + GitHub `reviewState` when known |
+
+### Gitlink-only hosting PR (binding)
+
+When the **committed hosting diff** for this ship chain is **gitlink-only** — submodule pointer changes under **`.sedea/centers/`**, or root-level product / center-content gitlinks per [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Three-repo submodule taxonomy* — treat the **source repo** as the review surface, not the hosting gitlink diff.
+
+| Rule | Requirement |
+|------|-------------|
+| **Review surface** | Substantive review is always the **source repo** (center / product / center-content worktree or merged center PR content) — never the hosting gitlink stat lines alone |
+| **Recap lead** | Lead `displayMarkdown` with source-repo changed files and a short summary. One quiet line that the agent handles hosting gitlink pin promotion — **forbidden** leading with hosting PR URL/number, pin-promotion fanfare, or orientation copy framed as a ship milestone |
+| **Source repo(s) row** | Required on every mandatory gate when gitlink-only scope applies |
+| **PR row** | `pin-only (agent)` or `—` — not a link the developer must open for content review |
+| **Post-create-pr default** | When gitlink-only, set **`defaultOptionId`** to **`start-pr-review`** (or **`start-pr-review-delegate-merge`** when merge delegation is already authorized) — **not** **`approve-merge-pr`** until source-repo scope is visible in the same recap |
 
 **Mandatory gates (this skill):**
 
@@ -609,9 +629,9 @@ Under Checkpoint trust, **happy-path protocol steps may auto-advance when this l
 
 | Situation | Normative gate | Checkpoint |
 |-----------|----------------|------------|
-| PR opened — next ship action (review, merge check, defer) | [Post-create-pr handoff gate](#post-create-pr-handoff-gate) | **Checkpoint gate** — post-create-pr stop **1** |
+| PR opened — next ship action (review, merge check, defer) | [Post-create-pr handoff gate](#post-create-pr-handoff-gate) | **Checkpoint gate** — post-create-pr stop **1** (**skip** when `openPrBatch.length > 1` — [Batch ship authorization gate](#batch-ship-authorization-gate)) |
 | Developer submits own GitHub review — resume triage | [Manual review submission (developer-input)](#manual-review-submission-developer-input) | Auto-advance **`start-pr-review-delegate-merge`** when triage was requested |
-| Inline **`pr-review`** — triage disposition / fix scope | **`pr-review`** Step **3b** / Step **4** disposition gates | **Checkpoint gate** — PR review stop |
+| Inline **`pr-review`** — triage disposition / fix scope | **`pr-review`** Step **3b** / Step **4** disposition gates | **Checkpoint gate** — PR review stop (**skip** when **`batchShipAuthorized`**) |
 | Before / After deploy — manual §7 verification | **`deploy-walk`** [Manual step await gate](../deploy-walk/SKILL.md#manual-step-await-gate-binding) | **Checkpoint gate** — deploy manual stop |
 | After deploy checklist fully satisfied — Status `deployed → done` | **`deploy-walk`** [Deploy closure approval gate](../deploy-walk/SKILL.md#deploy-closure-approval-gate-binding) | Auto-advance **`approve-deploy-closure`** **same turn** — **no** modal on clean path |
 | Pre-PR findings after child returns | [Review feedback approval gate](#review-feedback-approval-gate) | Auto-advance **`fix-now-session`** **same turn** — **no** `USER_CHECKPOINT` / modal on clean path |
@@ -622,7 +642,7 @@ Under Checkpoint trust, **happy-path protocol steps may auto-advance when this l
 
 **Checkpoint auto-advance does not apply** when a row in § *Every developer-await turn* names a gate and no clean auto-advance criterion in the Checkpoint table passes — including **manual After deploy** presentation: auto-advance stops **at** presentation; the **same turn** must emit **`deploy-walk`** Manual step await gate.
 
-**Checkpoint three-stop model exception (binding):** [Release-note fragment ship profile](#release-note-fragment-ship-profile-checkpoint--binding) **does not** open stops **1–3** — parent **`approve-fragment`** is the sole developer consent surface for fragment promotion.
+**Checkpoint three-stop model exception (binding):** [Release-note fragment ship profile](#release-note-fragment-ship-profile-checkpoint--binding) **does not** open stops **1–3** — parent **`approve-fragment`** is the sole developer consent surface for fragment promotion. [Batch ship (Checkpoint — binding)](#batch-ship-checkpoint--binding) **does not** open stops **1–2** when **`openPrBatch.length > 1`** — **`approve-ship-batch`** is the consolidated consent surface; stop **3** (manual deploy) unchanged.
 
 | Step | Checkpoint behavior | Gate |
 |------|---------------------|------|
@@ -641,7 +661,8 @@ Under Checkpoint trust, **happy-path protocol steps may auto-advance when this l
 | **Post-create-pr handoff** | **Gate** — emit post-create-pr **`mission_control_present_structured_choice`** same turn as inline **`create-pr`** completion | [Post-create-pr handoff gate](#post-create-pr-handoff-gate) — **Checkpoint** stop **1** |
 | **Post-merge tail** (cleanup → promote-pin hint → After deploy walk entry) | **Auto-advance** — no turn-end modal between PR merge and first After deploy manual step | exception: cleanup partial / merge unconfirmed / promote-pin hard failure |
 | **After deploy deploy-walk** — manual §7 steps (Production Deploy Steps) | **Gate** — **sole** USER_CHECKPOINT surface **after PR merge** on this lane | [`deploy-walk` Manual step await gate](../deploy-walk/SKILL.md#manual-step-await-gate-binding) |
-| **Post-after-deploy tail** (plan-reconcile → **`prShipComplete`**) | **Auto-advance** — run remainder inventory without batch modal when clean | exception: reconcile flags requiring developer picks |
+| **Hosting-pin-complete gate** | **Auto-advance** when hosting **`origin/main`** records merged gitlink tips and **`HOSTING_ROOT`** refreshed | **Gate** when unpromoted pins remain or multi-repo hosting PR not merged |
+| **Post-after-deploy tail** (plan-reconcile → **`prShipComplete`**) | **Auto-advance** — run remainder inventory without batch modal when clean **and** [Hosting-pin-complete gate](#hosting-pin-complete-gate-before-prshipcomplete) passes | exception: reconcile flags requiring developer picks |
 | **Plan-change notification receive** | **Gate** — developer-input USER_CHECKPOINT after mandatory re-read | [Plan-change notification receive (child lane)](#plan-change-notification-receive-child-lane) — **not** external-wait |
 
 **Skip worktree-open modal (binding):** When [Auto-authorize implementation (pr-plan spawn)](#auto-authorize-implementation-pr-plan-spawn) applies, layer 2 is satisfied without opening [Worktree-open gate](#worktree-open-gate) — not a regression for this calibration.
@@ -658,7 +679,8 @@ Under Checkpoint trust, after **`outputs.prState: merged`** (or merge confirmed 
    **Built-in `sedea` promote fast-path (binding):** When inline **`promote-submodule-pin`** for built-in **`sedea`** exits terminal **`skipped` / `not-applicable`** with no drift and no cleanup **`promote-pin-required`** hint, Do **not** run gitlink, submodule, registry, remote-tip, or alignment inspection on this lane. Continue immediately to step **3** in the **same assistant turn**.
 
 3. [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff) — inline **`deploy-walk`** for **`### After deploy`** only.
-4. When **`deployStatus: done`** and **`deployTodoStatus: done`**, auto-run [Post–After deploy remainder inventory](#post-after-deploy-remainder-inventory) steps (**`plan-reconcile`** then **`pr-ship-complete`**) without [Post–After deploy remainder authorization](#post-after-deploy-remainder-authorization) batch modal when reconcile requires no developer picks.
+4. When **`deployStatus: done`** and **`deployTodoStatus: done`**, run [Hosting-pin-complete gate (before prShipComplete)](#hosting-pin-complete-gate-before-prshipcomplete) when gitlink scope applies — **before** [Post–After deploy remainder inventory](#post-after-deploy-remainder-inventory).
+5. Auto-run remainder inventory steps (**`plan-reconcile`** then **`pr-ship-complete`**) without [Post–After deploy remainder authorization](#post-after-deploy-remainder-authorization) batch modal when reconcile requires no developer picks **and** **`hostingPinCompleteStatus`** is **`complete`** or **`not-applicable`**.
 
 **Manual step presentation (binding):** When step **3** inline **`deploy-walk`** presents a **manual** After deploy step (Step 4 presentation), **same assistant turn** must close with **`deploy-walk`** [Manual step await gate](../deploy-walk/SKILL.md#manual-step-await-gate-binding). **Forbidden:** listing unchecked After deploy steps in recap and ending with *reply with results*, *run these spot-checks then tell me*, or *auto-advancing (no modal)* — that gate is the **allowed** USER_CHECKPOINT after merge, not an optional extra modal.
 
@@ -682,7 +704,7 @@ Under Checkpoint trust, after **`outputs.prState: merged`** (or merge confirmed 
 
 When inline **`deploy-walk`** sets **`deployStatus: done`** and **`deployTodoStatus: done`**, the agent **must not** call **`mission_control_send_agent_result`** with **`status: success`** and **`prShipComplete` absent** unless the developer explicitly picked **`defer-tail`** on this pass.
 
-**Required (Checkpoint clean path):** Same turn or **immediate next turn** — auto-run [Post–After deploy remainder inventory](#post-after-deploy-remainder-inventory) (**`plan-reconcile`** → **`pr-ship-complete`**) with **zero** turn-end modals between deploy closure and terminal emit. Inline **`plan-reconcile`** must honor its Checkpoint auto-advance rows — **forbidden:** stopping on *start reconcile now vs defer*, **`approve-reconcile-mutations`**, own-plan archive pick, or **`confirm-inline-closure`** modals when clean criteria pass.
+**Required (Checkpoint clean path):** Same turn or **immediate next turn** — run [Hosting-pin-complete gate (before prShipComplete)](#hosting-pin-complete-gate-before-prshipcomplete) when gitlink scope applies, then auto-run [Post–After deploy remainder inventory](#post-after-deploy-remainder-inventory) (**`plan-reconcile`** → **`pr-ship-complete`**) with **zero** turn-end modals between deploy closure and terminal emit. Inline **`plan-reconcile`** must honor its Checkpoint auto-advance rows — **forbidden:** stopping on *start reconcile now vs defer*, **`approve-reconcile-mutations`**, own-plan archive pick, or **`confirm-inline-closure`** modals when clean criteria pass.
 
 **Forbidden terminal shapes** on spawned **`pr-plan`** lanes:
 
@@ -695,10 +717,10 @@ When inline **`deploy-walk`** sets **`deployStatus: done`** and **`deployTodoSta
 
 | Precondition | Required output |
 |--------------|-----------------|
-| Deploy done + merged + reconcile complete | `prShipComplete: true`, `shipPhase: done`, `rowStatus: closed`, `parentPlanPath`, `parentPlanSlug`, `parentIndex` when spawn supplied them |
+| Deploy done + merged + hosting pins complete + reconcile complete | `prShipComplete: true`, `hostingPinCompleteStatus: complete` or `not-applicable`, `shipPhase: done`, `rowStatus: closed`, `parentPlanPath`, `parentPlanSlug`, `parentIndex` when spawn supplied them |
 | Deploy done only (tail pending) | `shipPhase: deploy-verified`, `continuationStatus: active` — **not** terminal |
 
-**Calibration reference:** `incident_pr_ship_complete_tail_skipped_2026-08-02.agent-incident-report.md` (post-after-deploy tail skipped — **`prShipComplete`** never set).
+**Calibration references:** `incident_pr_ship_complete_tail_skipped_2026-08-02.agent-incident-report.md` (post-after-deploy tail skipped — **`prShipComplete`** never set); `incident_hosting_pin_promotion_treated_optional_2026-08-03.agent-incident-report.md` (**`prShipComplete`** while hosting **`main`** gitlinks stale — optional pin framing).
 
 ## Pre-worktree validation (plan completeness)
 
@@ -767,6 +789,54 @@ Single-concern **docs-only** promotion of one approved unreleased fragment onto 
 **Skipped on clean path (binding):** [Pre-worktree validation](#pre-worktree-validation-plan-completeness); [Worktree-open gate](#worktree-open-gate); [Spawned implementation lane](#spawned-implementation-lane); [Implementation continuation gate](#implementation-continuation-gate); [Ship cut-point gate](#ship-cut-point-gate-approve-commit-before-deploy); Before deploy / After deploy **`deploy-walk`**; **`pre-pr-review`** spawn; [Post-create-pr handoff gate](#post-create-pr-handoff-gate); inline **`pr-review`** disposition; **`plan-reconcile`**.
 
 **Exceptions (developer-input or failure gates still apply):** bootstrap / attach failure; push or PR create failure; merge blocked by policy; merge proof missing after claimed merge — report **`failure`** / **`partial`** with **`errors`**.
+
+## Batch ship (Checkpoint — binding)
+
+When this session ships **more than one PR** (parallel independent PR rows, multi-repo worktrees with submodule gitlinks, or center source + hosting pin PRs), use the shared batch profile instead of per-PR [Post-create-pr handoff gate](#post-create-pr-handoff-gate) stop **1** and per-PR **`pr-review`** disposition stop **2**.
+
+Normative contract: [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md).
+
+| Condition | Behavior |
+|-----------|----------|
+| `openPrBatch.length === 1` | [Checkpoint three-stop model](#checkpoint-three-stop-model-binding) — per-PR gates |
+| `openPrBatch.length > 1` | Single **`approve-ship-batch`** gate; [auto-advance tail](#batch-ship-auto-advance-tail-binding) per shared doc |
+
+### `openPrBatch[]` tracking (binding)
+
+Populate **`outputs.openPrBatch[]`** using the shape in the shared doc. Append a row when inline **`create-pr`** completes for a worktree in this session. Set **`inputs.batchShipProfile: true`** when spawn handover names a multi-PR parallel scope; otherwise infer when a second row appends.
+
+**Parallel implementation:** When plan §5 marks PR rows **independent** and [Multi-repo flow](#multi-repo-flow-shared-worktree-name) applies, implement scoped edits **in parallel** across worktrees (one PR per worktree) before the batch ship tail — **forbidden** serializing independent rows without developer **`revise`** pick.
+
+### Batch ship authorization gate
+
+**When:** `openPrBatch.length > 1`, every row has **`prState: open`**, and not yet **`outputs.batchShipAuthorized`**.
+
+USER_CHECKPOINT — authorize batch ship tail for all open PRs on this lane.
+
+Render the [batch orientation table](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md) as the first block in **`displayMarkdown`**. Use **`modalTitle`**: *Coding session — approve ship batch*. Required options per shared doc (`approve-ship-batch`, `revise`, `pause`) plus universal trailer.
+
+**On `approve-ship-batch` (same turn):** set **`outputs.batchShipAuthorized: true`** and **`outputs.mergeDelegationAuthorized: true`** for every row; **Act** on [batch ship auto-advance tail](#batch-ship-auto-advance-tail-binding).
+
+**Forbidden when `openPrBatch.length > 1` and not `batchShipAuthorized`:** per-PR [Post-create-pr handoff gate](#post-create-pr-handoff-gate); per-PR **`pr-review`** Step **4** disposition modal; prose-only PR URL handoff between batch rows.
+
+### Batch ship auto-advance tail (binding)
+
+After **`batchShipAuthorized`**, follow [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md) § *Auto-advance tail*:
+
+**Phase A — per row (parallel Steps 1–2 where worktrees differ):** inline **`pr-review`** with **`batchShipAuthorized: true`**, CI/remediation loops, rebase/conflicts, inspect + merge per rule **6**.
+
+**Phase B — after all rows `prState: merged`:** extend [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding) across every **`worktreeRoot`** in the batch — cleanup each owned worktree, run [`.sedea/centers/sedea/scripts/batch-promote-submodule-pins.sh`](.sedea/centers/sedea/scripts/batch-promote-submodule-pins.sh) or inline **`promote-submodule-pin`** per center, then from **`HOSTING_ROOT`**:
+
+```bash
+.sedea/centers/sedea/scripts/run-sedea-node.sh \
+  .sedea/centers/software-development/missions/plan-and-deliver/scripts/post-merge-ship-mechanics.mjs \
+  --hosting-root "$HOSTING_ROOT" --pr-numbers "<comma-separated PR numbers>" --apply
+git submodule update --init --recursive
+```
+
+Then [After deploy deploy-walk handoff](#after-deploy-deploy-walk-handoff) when plan-anchored — manual §7 steps remain Checkpoint stop **3**.
+
+**Checkpoint three-stop exception (binding):** while **`batchShipAuthorized`** tail is in progress on the clean path, **forbidden** re-opening stops **1–2** for individual batch rows. Manual After deploy remains stop **3**.
 
 ## Auto-authorize implementation (pr-plan spawn)
 
@@ -944,6 +1014,21 @@ Call **`mission_control_present_structured_choice`** (`modalTitle`: *Coding sess
 **Block opening ship cut-point** when any **action** bullet lacks a worktree **`.mdc` diff** and §5 was not revised — offer **`revise-rules`** / **`more-changes`** only.
 
 **Spawned lane — MCP structured choice (binding):** Same turn ends with **`mission_control_present_structured_choice`**; recap in **`displayMarkdown`** only.
+
+## §7 deploy authoring (binding — plan fill and deploy-walk handoff)
+
+When filling **`## 7. Deploy test plan`** during implementation (spawned lane step **4** or later §§ **5–8** work), follow **planning-mode-templates.md** § mode #3 § 7 **What NOT to include** and **development-process.md** § *§7 Deploy test plan — ship-chain boundary*.
+
+| Allowed in § 7 checklists | **Forbidden** — owned by this skill's ship chain |
+|---------------------------|--------------------------------------------------|
+| PR-specific verification beyond standing CI / § 6 | `plan-reconcile`, archive, **`pr-ship-complete`** |
+| Production smoke / monitors / rollback for **this change** | Pre-PR review, create PR, PR review, merge |
+| | Worktree setup, attach, cleanup; **`git pull`**; **`promote-submodule-pin`** |
+| | Dispatch resolution; generic mission-protocol step rows |
+
+**Modal and recap copy (binding):** **Forbidden** recommending *Skip step N — defer plan-reconcile to dispatch close* or any wording that defers **`plan-reconcile`** to after **`mission_control_propose_dispatch_resolution`**. **`plan-reconcile`** runs **inline on this lane while the dispatch is open** — auto-advanced on Checkpoint clean path after After deploy per [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding).
+
+When existing § 7 rows violate this boundary (for example ship-chain steps from an earlier **`pr-plan`** sketch), **revise the plan** in the same window — do not treat bad rows as manual deploy gates.
 
 ## Deploy test plan confirmations
 
@@ -1124,7 +1209,7 @@ When the plan’s **Worktree setup** lists two or more repos, or the user asks f
 
 4. **Attach each worktree** with **`sedea_add_worktree_folder` only** (after each step-1 setup succeeds), then confirm **`outputs.bootstrapStatus: success`** from each setup hint before any implementation or prompt for that repo.
 
-5. **Branch** per [Execution mode after worktree attach](#execution-mode-after-worktree-attach) (spawned lane implements each repo’s scope in turn, or prompt-only emits **one session prompt per repo** with per-repo scope guards).
+5. **Branch** per [Execution mode after worktree attach](#execution-mode-after-worktree-attach). **Spawned lane:** when PR rows are **independent**, implement each repo’s scope **in parallel** (one PR per worktree) before the batch or per-PR ship tail; dependent rows stay sequential. **Prompt-only:** emit **one session prompt per repo** with per-repo scope guards.
 
 6. **Prompt-only:** **Stop** after prompts. **Spawned lane:** continue implementation per repo scope before the [ship chain](#ship-chain-after-implementation-coding-session-lane).
 
@@ -1690,9 +1775,10 @@ When the **committed hosting diff** for this PR touches a **submodule gitlink** 
 
 **Scope detection (binding):**
 
-1. From **`WORKTREE_ROOT`**, inspect the committed diff (`git diff origin/main...HEAD` or staged+committed tree vs integration base) for paths under **`.sedea/centers/<centerSlug>/`** that are **git submodules** (gitlink mode change or submodule pointer change).
-2. When **no** submodule gitlink is in scope, set `outputs.submoduleMergeGateStatus: not-applicable` and continue to [Inline create-pr (auto on clean go)](#inline-create-pr-auto-on-clean-go) on the **same turn**.
-3. When one or more submodule gitlinks are in scope, set `outputs.submoduleMergeGateStatus: required` and run the procedure below **before** **`create-pr`**.
+1. From **`WORKTREE_ROOT`**, inspect the committed diff (`git diff origin/main...HEAD` or staged+committed tree vs integration base) for **any** path that is a **git submodule** (gitlink mode change or submodule pointer change) — including **`.sedea/centers/<centerSlug>/`**, **`app`**, and other hosting-repo submodule paths.
+2. Record affected paths in `outputs.submoduleGitlinksInScope` (array of repo-relative submodule paths).
+3. When **no** submodule gitlink is in scope, set `outputs.submoduleMergeGateStatus: not-applicable`, `outputs.hostingPinCompleteStatus: not-applicable`, and continue to [Inline create-pr (auto on clean go)](#inline-create-pr-auto-on-clean-go) on the **same turn**.
+4. When one or more submodule gitlinks are in scope, set `outputs.submoduleMergeGateStatus: required`, `outputs.hostingPinCompleteStatus: required`, and run the procedure below **before** **`create-pr`**.
 
 **Procedure (per affected `centerSlug` — binding order):**
 
@@ -1728,6 +1814,34 @@ Call **`mission_control_present_structured_choice`** when source is not on **`de
 | `more-details` | More details for option _ | Elaborate; re-ask |
 
 **Honest attestation hook (binding):** Do **not** mark deploy steps complete or report submodule integration success when **`promote-submodule-pin`** was skipped, failed, or conflated with N/A. Record actual outcomes in `outputs.promoteSubmodulePinOutcomes` and pass them to inline **`deploy-walk`** — After deploy attestation uses **`verify-submodule-ship-attestation.mjs`** (strict SHA + outcome cross-check).
+
+### Hosting-pin-complete gate (before prShipComplete)
+
+When **`outputs.submoduleMergeGateStatus: required`** or **`outputs.submoduleGitlinksInScope`** is non-empty, **stop before** setting **`outputs.prShipComplete: true`**, inline **`plan-reconcile`** archive terminal, or **`mission_control_send_agent_result`** with row closed — even when the **product** PR (app, center source, or hosting feature branch) is already merged.
+
+**Purpose:** Submodule merge gate aligns gitlinks on the **worktree branch** before **`create-pr`**. Ship is **not complete** until hosting **`origin/main`** records merged gitlink tips and **`HOSTING_ROOT`** is refreshed. **Forbidden recap language:** *"if you want"*, *"optional follow-up"*, *"when you're ready"*, *"remains follow-up"* for pin promotion.
+
+**Calibration:** `incident_hosting_pin_promotion_treated_optional_2026-08-03.agent-incident-report.md`.
+
+**Procedure (binding order):**
+
+1. **Resolve in-scope gitlinks** — From **`outputs.submoduleGitlinksInScope`** or re-inspect the merged ship chain diff when outputs are missing.
+2. **Verify hosting `main`** — For each in-scope gitlink, confirm **`origin/main`** on the hosting repo records the intended SHA (not merely the session worktree branch tip). Use `git ls-remote origin main` and compare submodule entries.
+3. **Promote unpromoted pins** — When **`origin/main`** lags:
+   - **Center submodules** under **`.sedea/centers/`** — run inline **`promote-submodule-pin`** per affected **`centerSlug`** until hosting PR merges or skill reports aligned.
+   - **Other submodules** (for example **`app`**) — update gitlink on a hosting worktree branch, open hosting PR, merge to **`main`** (same multi-repo ship obligation — not optional developer follow-up).
+4. **Refresh `HOSTING_ROOT`** — After hosting **`main`** merge: `git pull origin main` and `git submodule update --init --recursive` on **`HOSTING_ROOT`**.
+5. **Record outputs** — Set `outputs.hostingPinCompleteStatus: complete` only when steps 2–4 pass for every in-scope gitlink. Set `partial` or keep `required` when promotion PR is open or merge pending.
+
+**Checkpoint — auto-advance (binding):** Under Checkpoint trust, auto-run this gate on the **same turn** as deploy closure when verification passes — no turn-end modal. **Gate** when hosting PR merge is pending, promote hard stop, or ambiguous scope.
+
+**Forbidden:**
+
+- **`prShipComplete: true`** while `hostingPinCompleteStatus` is **`required`** or **`partial`**.
+- Inline **`plan-reconcile`** terminal archive while **`HOSTING_ROOT`** gitlinks are stale relative to merged source tips.
+- Framing hosting gitlink PR as optional after product PR merge.
+
+**Relation to post-merge chain:** [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding) step **4** runs this gate before remainder inventory when gitlink scope applies.
 
 ### Inline create-pr (auto on clean go)
 
@@ -1837,7 +1951,17 @@ Use **only** for [Create-PR handoff after go](#create-pr-handoff-after-go) — *
 
 ### Post-create-pr handoff gate
 
+#### Gitlink-only handoff (binding)
+
+When [Gitlink-only hosting PR](#gitlink-only-hosting-pr-binding) applies on this turn:
+
+1. **Recap order in `displayMarkdown`:** (1) source-repo scope + changed files + SHA when known, (2) one line that hosting gitlink pin promotion is agent-owned — substantive review is source-repo only, (3) ship options.
+2. **Forbidden:** hosting PR URL as the first line; *review this PR on GitHub* when the hosting diff is gitlink-only; **`defaultOptionId: approve-merge-pr`** before source-repo recap is visible on the same turn.
+3. Include [Session orientation table (binding)](#session-orientation-table-binding) with **Source repo(s)** populated and **PR** row `pin-only (agent)` or `—`.
+
 When inline **`create-pr`** completes with a PR URL/number (or the developer returns to this lane with a confirmed open PR from the same ship chain):
+
+**Batch path (binding):** Append the row to **`outputs.openPrBatch[]`**. When **`openPrBatch.length > 1`**, **forbidden** this per-PR gate — open [Batch ship authorization gate](#batch-ship-authorization-gate) on the same turn when every batch row has **`prState: open`**, or defer the batch gate until the last row opens. When **`batchShipAuthorized`**, proceed to [batch ship auto-advance tail](#batch-ship-auto-advance-tail-binding) — **forbidden** re-opening this gate for individual rows.
 
 **Rule 6 supersession (binding):** While **`prState: open`**, option ordering, presence, and inspect-before-mutate for agent approve+merge on this gate follow [`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`](.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc) § *PR approve-merge structured choice* and § *Merge inspect procedure*, cross-referenced by [`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`](.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc) § *PR approve-merge and merge inspect*. This gate's option tables implement that contract — not a parallel vocabulary.
 
@@ -1847,7 +1971,7 @@ USER_CHECKPOINT — pick next ship action after PR creation on this lane.
 
 ### Checkpoint — default `approve-merge-pr` (binding)
 
-Under Checkpoint trust, set **`defaultOptionId: approve-merge-pr`** on the post-create-pr modal when **all** hold:
+Under Checkpoint trust, set **`defaultOptionId: approve-merge-pr`** on the post-create-pr modal when **all** hold — **except** when [Gitlink-only hosting PR](#gitlink-only-hosting-pr-binding) applies: then **`defaultOptionId`** is **`start-pr-review`** (or **`start-pr-review-delegate-merge`** when merge delegation is already authorized).
 
 1. `prState` is **`open`** (or just created this turn).
 2. Agent merge is in scope on this modal (rule **6** § *PR approve-merge structured choice* — **`approve-merge-pr`** listed).
@@ -2231,9 +2355,10 @@ Build a numbered list for the recap and modal (omit steps already satisfied):
 
 | Order | Step id | When included |
 |-------|---------|----------------|
-| 1 | `plan-reconcile` | Plan-anchored, `prState: merged`, deploy verification **done**, `targetPlanPath` or `targetPlanSlug` resolves, and reconcile not already completed on this lane |
+| 0 | `hosting-pin-complete` | [Hosting-pin-complete gate](#hosting-pin-complete-gate-before-prshipcomplete) applies (`hostingPinCompleteStatus: required` or `partial`) |
+| 1 | `plan-reconcile` | Plan-anchored, `prState: merged`, deploy verification **done**, hosting pins **complete** (or N/A), `targetPlanPath` or `targetPlanSlug` resolves, and reconcile not already completed on this lane |
 | 2 | `archive-followups` | Subsumed by **`plan-reconcile`** when step 1 runs — do **not** list separately unless reconcile is skipped and archive/follow-ups still pending |
-| 3 | `pr-ship-complete` | After reconcile (or when reconcile skipped with documented reason) — set **`outputs.prShipComplete: true`**, **`outputs.shipPhase: done`**, **`outputs.rowStatus: closed`** |
+| 3 | `pr-ship-complete` | After **`hosting-pin-complete`** (when required) and reconcile — set **`outputs.prShipComplete: true`**, **`outputs.shipPhase: done`**, **`outputs.rowStatus: closed`** |
 
 When only step 3 remains (reconcile already done), list step 3 alone. When nothing remains, **skip** this gate — under Checkpoint trust auto-run tail steps per [Post-merge Checkpoint chain](#post-merge-checkpoint-chain-binding); otherwise use [Post-create-pr handoff gate](#post-create-pr-handoff-gate) or [Plan-reconcile handoff (inline)](#plan-reconcile-handoff-inline) defer as today.
 
@@ -2275,8 +2400,9 @@ Run on the **developer's response turn** — **not** in the same assistant turn 
 
 | Step id | Procedure |
 |---------|-----------|
+| `hosting-pin-complete` | [Hosting-pin-complete gate (before prShipComplete)](#hosting-pin-complete-gate-before-prshipcomplete) — must pass before reconcile terminal when gitlink scope applies |
 | `plan-reconcile` | [Plan-reconcile handoff (inline)](#plan-reconcile-handoff-inline) — preconditions in that section must still hold |
-| `pr-ship-complete` | When reconcile completed (or skipped with dated note under **`## Follow-ups`** or §7): set **`outputs.prShipComplete: true`**, **`outputs.shipPhase: done`**, **`outputs.rowStatus: closed`**; include **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from spawn **`inputs`** when present |
+| `pr-ship-complete` | When **`hostingPinCompleteStatus`** is **`complete`** or **`not-applicable`**, and reconcile completed (or skipped with dated note under **`## Follow-ups`** or §7): set **`outputs.prShipComplete: true`**, **`outputs.shipPhase: done`**, **`outputs.rowStatus: closed`**; include **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from spawn **`inputs`** when present |
 
 #### Per-step continuation gate
 
@@ -2328,7 +2454,7 @@ If any precondition fails, report one line what is missing; offer defer or compl
 
 2. Follow **`plan-reconcile`** **Flow** (reconcile dry-run, archive candidates, follow-ups triage, §5 workspace cleanup when approved). Under Checkpoint trust, honor **`plan-reconcile`** auto-advance for **`approve-reconcile-mutations`**, **own-plan-only** archive, and **`confirm-inline-closure`** — do **not** re-emit those USER_CHECKPOINTs on this lane when clean. Merge **`## Completion (inline)`** into coding-session `outputs` (`archivedSlugs`, `shipPhase`, `rowStatus`, `cleanedWorktrees`, `mainPullStatus`, …).
 3. Do **not** wait for a child **`mission_control_send_agent_result`** — there is no **`plan-reconcile`** child lane.
-4. When reconcile completes with target archived and §5 **`mainPullStatus`** is **`success`** or **`skipped`** (workspace already on main): set **`outputs.prShipComplete: true`**, **`outputs.shipPhase: done`**, **`outputs.rowStatus: closed`**. Include **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from spawn **`inputs`** when present.
+4. When reconcile completes with target archived and §5 **`mainPullStatus`** is **`success`** or **`skipped`** (workspace already on main) **and** [Hosting-pin-complete gate (before prShipComplete)](#hosting-pin-complete-gate-before-prshipcomplete) is satisfied: set **`outputs.prShipComplete: true`**, **`outputs.shipPhase: done`**, **`outputs.rowStatus: closed`**. Include **`parentPlanPath`**, **`parentPlanSlug`**, **`parentIndex`** from spawn **`inputs`** when present.
 5. When reconcile completes or pauses on flagged/postponed follow-ups, keep `continuationStatus: "active"` until the developer defers or the target plan row is **`closed`**.
 
 ### Inline PR review after PR creation
@@ -2542,8 +2668,14 @@ When this skill runs as a spawned child, end with a child result containing at l
 - `outputs.postMergeCleanupStatus` — `success` \| `partial` \| `skipped` \| `skipped_no_stale` when post-merge cleanup ran or was bypassed
 - `outputs.postMergeHostRebuildStatus` — `success` \| `failed` \| `skipped_not_present` \| `dry-run` from post-merge cleanup (after **`mainPullStatus`** success)
 - `outputs.skippedWorktreeNames` — worktree name refs not dropped (PR merged but remote head still exists)
+- `outputs.submoduleMergeGateStatus` — `not-applicable` \| `required` \| `complete`
+- `outputs.submoduleGitlinksInScope` — repo-relative submodule paths in committed ship diff when gate applies
+- `outputs.hostingPinCompleteStatus` — `not-applicable` \| `required` \| `partial` \| `complete`
+- `outputs.promoteSubmodulePinOutcomes` — per-center promote results from submodule merge gate
+- `outputs.openPrBatch` — ordered PR rows for multi-PR ship sessions (see [Batch ship](#batch-ship-checkpoint--binding))
+- `outputs.batchShipAuthorized` — `true` after **`approve-ship-batch`** pick
 - `outputs.archivedSlugs` — when inline **`plan-reconcile`** archived the target
-- `outputs.prShipComplete` — `true` only when **`plan-reconcile`** finished with target archived, PR **merged**, and **`mainPullStatus`** is **`success`** or **`skipped`**
+- `outputs.prShipComplete` — `true` only when **`plan-reconcile`** finished with target archived, PR **merged**, **`mainPullStatus`** is **`success`** or **`skipped`**, and **`hostingPinCompleteStatus`** is **`complete`** or **`not-applicable`**
 - `outputs.parentPlanPath`, `outputs.parentPlanSlug`, `outputs.parentIndex` — echo spawn **`inputs`** when **`pr-plan`** (or upstream) supplied them; required on MCP result calls that set **`prShipComplete: true`**
 - `outputs.prReviewStatus`
 - `outputs.prReviewComments`

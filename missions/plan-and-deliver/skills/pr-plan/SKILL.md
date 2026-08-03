@@ -462,8 +462,9 @@ Otherwise append this list item **immediately before** `isProject:` (indentation
  content: >-
  Mark done only when every Before-deploy and After-deploy step is checked
  (`[x]`) and the deploy section `**Status:**` reads `done` (walk via `deploy-walk`,
- or edit manually). Independent of PR merge; run `plan-reconcile` protocol branch when you want
- reconcile/archive after merges.
+ or edit manually). Independent of PR merge; run inline `plan-reconcile` on the active
+ `coding-session` lane while the dispatch is open when you want reconcile/archive after merges
+ — not after dispatch resolution.
  status: pending
 ```
 
@@ -476,6 +477,21 @@ Echo: *"Inserted frontmatter todo `deploy-test-plan-verified` (per development-p
 ### What not to draft here
 
 Do **not** fully author §§ 5–8 as final text in the same turn as **4a** unless the **developer** explicitly chose a **fill** option in step 5 — those sections are usually best filled in **`coding-session`** once code paths exist. **`pre-pr-review`** treats missing or **`_TBD_`** § 5 / § 7 as hard problems and § 6 as under-documentation risk when the skill is run with strict gates — leaving **`_TBD_`** after **4a** is expected.
+
+### §7 deploy fill contract (binding — `prefill-sections` and §5–8 sketch)
+
+When the developer chooses **`prefill-sections`** or asks for a § 7 sketch on this lane, follow **planning-mode-templates.md** § mode #3 § 7 **What NOT to include** — especially **Ship-chain and mission-protocol steps**.
+
+| Allowed in **`### Before deploy`** / **`### After deploy`** | **Forbidden** (ship chain — owned by **`coding-session`**) |
+|---------------------------------------------------------------|--------------------------------------------------------------|
+| PR-specific verification beyond standing CI and § 6 tests | `plan-reconcile`, archive PR plan, **`pr-ship-complete`** |
+| Production smoke / monitor / rollback checks for **this change** | Pre-PR review, create PR, PR review, approve/merge PR |
+| Submodule attestation when **this PR** changes a gitlink | Worktree setup, attach, cleanup; **`git pull origin main`** |
+| | **`promote-submodule-pin`**, dispatch resolution, generic protocol-step rows |
+
+**`plan-reconcile` wording (binding):** **Forbidden** After deploy lines such as *Archive via plan-reconcile when dispatch closes* or *defer plan-reconcile to dispatch close*. Correct timing: inline on the **active `coding-session` lane while the dispatch is open**, before Squad Leader dispatch resolution — see **development-process.md** § *§7 Deploy test plan — ship-chain boundary*.
+
+Mark § 7 sketches explicitly as *sketch* in echo; **`coding-session`** owns substantive fill and may revise steps once code paths are known.
 
 ## Step 5 — Resolve implementation readiness
 

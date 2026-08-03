@@ -252,6 +252,18 @@ If there are zero commits ahead and no diff, stop with `failure`: there is nothi
 
 - **Next-step resolution:** Auto-advance to Step **6** when a committed diff exists — no `USER_CHECKPOINT` on this step.
 
+### Gitlink-only diff recap (binding)
+
+When `git diff <baseRef>...HEAD` under the review worktree is **only** submodule gitlink pointer changes — or substantive edits live in a linked center / product / center-content repo — the review artifact is the **source repo**, not hosting gitlink stat lines.
+
+| Rule | Requirement |
+|------|-------------|
+| **Handback** | Terminal `codingAgentHandback` and parent-facing recap must name the **source repo**, branch/SHA when known, and changed paths — not treat gitlink-only diff as the content to review |
+| **Before `go`** | When the downstream hosting PR would be gitlink-only, include source-repo file summary in `codingAgentHandback` so **`coding-session`** [Post-create-pr handoff gate](../coding-session/SKILL.md#post-create-pr-handoff-gate) can lead with it |
+| **Forbidden** | Hosting PR link as primary recap; achievement-style orientation tables; asking the developer to review gitlink pointer deltas as substantive content |
+
+Resolve affected submodule role(s) per [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Three-repo submodule taxonomy*.
+
 ## Pre-PR phase boundary (plan anchor)
 
 This skill runs **before** the PR is opened or merged. Scope is **pre-merge readiness** — not production deploy verification.

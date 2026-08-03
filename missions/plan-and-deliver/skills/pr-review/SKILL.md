@@ -69,6 +69,18 @@ Under Checkpoint trust, **happy-path** triage steps (Steps **0–3a**, **1b**, a
 
 **Implicit external-wait:** none on this inline skill — child **`pre-pr-review`** delivery and Squad Leader **`#external-wait`** resume are owned by **`coding-session`**, not **`pr-review`**.
 
+## Batch mode (`batchShipAuthorized` — binding)
+
+When **`coding-session`** or an **`implementation-session`** invoker sets **`batchShipAuthorized: true`** per [`.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md`](.sedea/centers/sedea/docs/batch-ship-checkpoint-profile.md):
+
+| Step | Batch behavior |
+|------|----------------|
+| **3b** / **4** disposition | **Skip gate** — auto **`apply-must-should`** when Must/Should/CI items exist |
+| Post-fix commit/push | **Skip gate** — auto commit + push when fixes landed |
+| External-wait cycle resume | **Skip** — re-triage until terminal or blocker |
+
+**Blockers** → stop with recap; invoker batch profile governs recovery. **Without **`batchShipAuthorized`**** — gates below apply unchanged.
+
 | Step | Checkpoint behavior | Gate |
 |------|---------------------|------|
 | **0** — Resolve PR + plan sidecar upsert | Auto-advance when PR identity known | exception: unresolvable PR → stop with recap |
@@ -77,9 +89,9 @@ Under Checkpoint trust, **happy-path** triage steps (Steps **0–3a**, **1b**, a
 | **2** — Filter handled comments | Auto-advance | — |
 | **3** — Validate and classify | Auto-advance — report prep only; no edits | — |
 | **3a** — Propose follow-ups | Auto-advance (handoff only; no plan mutation) | — |
-| **3b** / **4** — Report + disposition | **Gate** — mandatory developer pick before any Act | [Disposition gate](#step-4--report-and-disposition-gate) |
+| **3b** / **4** — Report + disposition | **Gate** — mandatory developer pick before any Act — **skip when **`batchShipAuthorized`** | [Disposition gate](#step-4--report-and-disposition-gate) |
 | **Approved fix pass** | Auto-advance through edits until commit/push required | exception: blocking tool/git failure |
-| **Post-fix commit/push** | **Gate** before `git commit` / `git push` when fixes landed | [Post-fix commit/push gate](#post-fix-commitpush-gate-binding) |
+| **Post-fix commit/push** | **Gate** before `git commit` / `git push` when fixes landed — **skip when **`batchShipAuthorized`** | [Post-fix commit/push gate](#post-fix-commitpush-gate-binding) |
 | **5** — GitHub reconciliation | Auto-advance **same turn** as push or skipped-only disposition pick | exception: stale Step **1** payloads → re-fetch first |
 | **Cycle resume** — wait for reviewers / new comments | Developer-input on **`coding-session`** — **not** external-wait prose | **`coding-session`** [Post-create-pr handoff gate](../coding-session/SKILL.md#post-create-pr-handoff-gate) |
 

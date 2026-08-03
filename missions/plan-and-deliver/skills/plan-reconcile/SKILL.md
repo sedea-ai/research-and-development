@@ -262,6 +262,16 @@ When the anchored PR plan sidecar has empty **`prs: []`**, dry-run **`reconcile`
 
 **Inline gate (ship chain):** if any required field is missing, stop with `partial`, keep `continuationStatus: "active"` on **`coding-session`**, and report what is missing. Do not archive before merge and deploy verification are complete.
 
+### Hosting-pin honesty precondition (binding)
+
+When inline context from **`coding-session`** includes **`submoduleMergeGateStatus: required`** or non-empty **`submoduleGitlinksInScope`**:
+
+1. Before archive mutations or inline closure that enables **`prShipComplete`**, verify **`HOSTING_ROOT`** gitlinks on **`origin/main`** match merged source tips (same bar as **`coding-session`** § *Hosting-pin-complete gate*).
+2. When **`HOSTING_ROOT`** pins are stale, **stop** — report blocker to upstream **`coding-session`**; do **not** archive with dishonest workspace state.
+3. **`mainPullStatus: success`** after §5 cleanup does **not** substitute for hosting gitlink promotion when gitlinks in scope were never merged to hosting **`main`**.
+
+**Calibration:** `incident_hosting_pin_promotion_treated_optional_2026-08-03.agent-incident-report.md`.
+
 ## Script CLI (hosting repo)
 
 All **`plan-state.mjs`** invocations run from **`HOSTING_ROOT`** (the hosting repo whose root contains **`.sedea/`**). Invoke through **`.sedea/centers/sedea/scripts/run-sedea-node.sh`** — **never** bare **`node`** — per rule **20** § *Node launcher (`plan-state.mjs` / `plan-ws-completeness.mjs`)* and § *Hosting repo cwd for scripts (canonical)*; retain [`.sedea/centers/software-development/rules/31_dispatch-scope.mdc`](../../../../rules/31_dispatch-scope.mdc) § *Legacy CLI (`plan-state.mjs`) — hybrid only* for hybrid-runtime context where still accurate.
