@@ -341,7 +341,8 @@ Give developers a **consistent state snapshot** at ship gates so they can re-ori
 | Code IO | `<absolute WORKTREE_ROOT>` or — |
 | Worktree | `<absolute WORKTREE_ROOT>` or — |
 | Branch | `<worktreeName>` or — |
-| PR | `<url>` (#N) or — |
+| PR | `<url>` (#N) · `pin-only (agent)` · — |
+| Source repo(s) | `<role>` · `<repo>` · `<branch/SHA>` · `<file summary>` or — |
 | Ship phase | `<shipPhase>` |
 | Deploy scope | Before deploy · After deploy · — |
 | CI | `passing` · `failing (N)` · `pending` · `deferred` — from **`pr-review`** Step 1b when in PR review |
@@ -354,9 +355,22 @@ Give developers a **consistent state snapshot** at ship gates so they can re-ori
 | No invention | Use `—` when unknown; never guess paths or PR numbers |
 | Plan IO host / Code IO | Set after worktree attach — **Plan IO host** = **`HOSTING_ROOT`**; **Code IO** = **`WORKTREE_ROOT`** (see § *Plan and sidecar IO (binding)*) |
 | Worktree row | Populated while session worktree exists; `—` after authorized cleanup |
-| PR row | Populated when `prUrl` or `prNumber` exists |
+| PR row | Populated when `prUrl` or `prNumber` exists; when [Gitlink-only hosting PR](#gitlink-only-hosting-pr-binding) applies, use `pin-only (agent)` — **forbidden** a hosting PR URL the developer is expected to open for content review |
+| Source repo(s) row | Populated when gitlink-only scope applies — role(s) per [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Three-repo submodule taxonomy*; list substantive changed paths |
 | Deploy scope | `Before deploy` during before-deploy-only walk; `After deploy` post-merge walk; `—` otherwise |
 | Review row | Pre-PR: `outputs.prePrReviewRecommendation`; during PR: `prReviewStatus` + GitHub `reviewState` when known |
+
+### Gitlink-only hosting PR (binding)
+
+When the **committed hosting diff** for this ship chain is **gitlink-only** — submodule pointer changes under **`.sedea/centers/`**, or root-level product / center-content gitlinks per [`.sedea/centers/sedea/rules/0_hosting-repo.mdc`](.sedea/centers/sedea/rules/0_hosting-repo.mdc) § *Three-repo submodule taxonomy* — treat the **source repo** as the review surface, not the hosting gitlink diff.
+
+| Rule | Requirement |
+|------|-------------|
+| **Review surface** | Substantive review is always the **source repo** (center / product / center-content worktree or merged center PR content) — never the hosting gitlink stat lines alone |
+| **Recap lead** | Lead `displayMarkdown` with source-repo changed files and a short summary. One quiet line that the agent handles hosting gitlink pin promotion — **forbidden** leading with hosting PR URL/number, pin-promotion fanfare, or orientation copy framed as a ship milestone |
+| **Source repo(s) row** | Required on every mandatory gate when gitlink-only scope applies |
+| **PR row** | `pin-only (agent)` or `—` — not a link the developer must open for content review |
+| **Post-create-pr default** | When gitlink-only, set **`defaultOptionId`** to **`start-pr-review`** (or **`start-pr-review-delegate-merge`** when merge delegation is already authorized) — **not** **`approve-merge-pr`** until source-repo scope is visible in the same recap |
 
 **Mandatory gates (this skill):**
 
@@ -1868,6 +1882,14 @@ Use **only** for [Create-PR handoff after go](#create-pr-handoff-after-go) — *
 
 ### Post-create-pr handoff gate
 
+#### Gitlink-only handoff (binding)
+
+When [Gitlink-only hosting PR](#gitlink-only-hosting-pr-binding) applies on this turn:
+
+1. **Recap order in `displayMarkdown`:** (1) source-repo scope + changed files + SHA when known, (2) one line that hosting gitlink pin promotion is agent-owned — substantive review is source-repo only, (3) ship options.
+2. **Forbidden:** hosting PR URL as the first line; *review this PR on GitHub* when the hosting diff is gitlink-only; **`defaultOptionId: approve-merge-pr`** before source-repo recap is visible on the same turn.
+3. Include [Session orientation table (binding)](#session-orientation-table-binding) with **Source repo(s)** populated and **PR** row `pin-only (agent)` or `—`.
+
 When inline **`create-pr`** completes with a PR URL/number (or the developer returns to this lane with a confirmed open PR from the same ship chain):
 
 **Rule 6 supersession (binding):** While **`prState: open`**, option ordering, presence, and inspect-before-mutate for agent approve+merge on this gate follow [`.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc`](.sedea/centers/sedea/rules/6_git-commit-push-gate.mdc) § *PR approve-merge structured choice* and § *Merge inspect procedure*, cross-referenced by [`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`](.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc) § *PR approve-merge and merge inspect*. This gate's option tables implement that contract — not a parallel vocabulary.
@@ -1878,7 +1900,7 @@ USER_CHECKPOINT — pick next ship action after PR creation on this lane.
 
 ### Checkpoint — default `approve-merge-pr` (binding)
 
-Under Checkpoint trust, set **`defaultOptionId: approve-merge-pr`** on the post-create-pr modal when **all** hold:
+Under Checkpoint trust, set **`defaultOptionId: approve-merge-pr`** on the post-create-pr modal when **all** hold — **except** when [Gitlink-only hosting PR](#gitlink-only-hosting-pr-binding) applies: then **`defaultOptionId`** is **`start-pr-review`** (or **`start-pr-review-delegate-merge`** when merge delegation is already authorized).
 
 1. `prState` is **`open`** (or just created this turn).
 2. Agent merge is in scope on this modal (rule **6** § *PR approve-merge structured choice* — **`approve-merge-pr`** listed).
