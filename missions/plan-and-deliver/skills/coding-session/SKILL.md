@@ -141,6 +141,7 @@ laneRules:
 warmUpRules:
   - ".sedea/centers/software-development/missions/plan-and-deliver/skills/README.md"
   - ".sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc"
+  - ".sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc"
 ---
 
 # Coding session
@@ -167,6 +168,7 @@ Per [`.sedea/centers/sedea/docs/lane-manifest-contract.md`](.sedea/centers/sedea
 |------|---------|
 | `.sedea/centers/software-development/missions/plan-and-deliver/skills/README.md` | Spawn contracts, terminal stop, cap exceptions |
 | `.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc` | Worktree naming, ship chain, bootstrap |
+| `.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc` | Normative `WORKTREES_DIR` / `WORKTREE_ROOT` path formula before setup |
 
 **Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):** `plan.mdc`, `development-process.md` — load via **`inputs.targetPlanPath`** and explicit **`Read`** when ship-chain or procedure steps require them.
 
@@ -1083,8 +1085,12 @@ Run only **after** [Pre-worktree validation](#pre-worktree-validation-plan-compl
 
  ```bash
  HOSTING_ROOT="<absolute-hosting-root>"   # spawn inputs.repoPath or walk-up to .sedea/centers/sedea/
- WORKTREE_ROOT="<absolute-sibling-path>"   # repo basename prefix per rule 20
- WORKTREE_NAME="<worktree-name>"           # rule 7 / rule 20
+ REPO_BASENAME="$(basename "$HOSTING_ROOT")"
+ WORKTREES_DIR="$(dirname "$HOSTING_ROOT")/${REPO_BASENAME}-worktrees"
+ WORKTREE_NAME="<worktree-name>"           # rule 7 § Worktree directory path (hosting repo)
+ WORKTREE_DIR="${REPO_BASENAME}-$(echo "$WORKTREE_NAME" | tr '/' '-')"
+ WORKTREE_ROOT="${WORKTREES_DIR}/${WORKTREE_DIR}"
+ mkdir -p "$WORKTREES_DIR"
  BASE_REF="${baseRef:-origin/main}"
 
  "$HOSTING_ROOT/.sedea/centers/sedea/scripts/worktree-setup.sh" \

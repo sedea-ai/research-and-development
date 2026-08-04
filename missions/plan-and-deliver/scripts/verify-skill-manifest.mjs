@@ -77,6 +77,16 @@ const PLANNING_MODE_TEMPLATES_REL = 'docs/planning-mode-templates.md';
 /** PRD C2 — slim development-process core warm-up target (bytes). */
 const DEV_PROCESS_BYTE_CAP = 60 * 1024;
 
+const CAP_EXCEPTION_OMITTED_HEADING =
+  '**Omitted from frontmatter (384 KiB spawn cap — runtime `Read`):**';
+const SEDEA_CENTER_PREFIX = '.sedea/centers/sedea/';
+
+const SD_OMITTED_PATH_ALIASES = {
+  'plan.mdc': `${SD_CENTER_PREFIX}missions/plan-and-deliver/plan.mdc`,
+  'development-process.md': `${SD_CENTER_PREFIX}${DEV_PROCESS_REL}`,
+  'planning-mode-templates.md': `${SD_CENTER_PREFIX}${PLANNING_MODE_TEMPLATES_REL}`,
+};
+
 const SKILL_WARMUP_HEADING = '### `skillWarmUp` — frontmatter `warmUpRules`';
 const LANE_RULES_HEADING = '### `laneRules` — frontmatter `laneRules`';
 /** Host spawn cap — `.sedea/centers/sedea/rules/4_mission.mdc` § Spawned execution */
@@ -844,6 +854,157 @@ async function validateNullableParentSpawnWire(hostingRoot, repoRelativePaths) {
   return errors;
 }
 
+function resolveOmittedPathToken(token) {
+  const trimmed = String(token).trim();
+  if (trimmed.startsWith('.sedea/') || trimmed.startsWith('.cursor/')) {
+    return normalizeRepoPath(trimmed);
+  }
+  if (SD_OMITTED_PATH_ALIASES[trimmed]) {
+    return SD_OMITTED_PATH_ALIASES[trimmed];
+  }
+  if (trimmed.startsWith('docs/')) {
+    return normalizeRepoPath(`${SEDEA_CENTER_PREFIX}${trimmed}`);
+  }
+  return normalizeRepoPath(trimmed);
+}
+
+function parseOmittedCapExceptionPaths(body) {
+  const idx = body.indexOf(CAP_EXCEPTION_OMITTED_HEADING);
+  if (idx === -1) return [];
+
+  const sectionStart = idx + CAP_EXCEPTION_OMITTED_HEADING.length;
+  const rest = body.slice(sectionStart);
+  const nextHeading = rest.search(/\n(?:#{2,3} |\*\*[A-Z][^*]+\*\*[^`])/);
+  const section = nextHeading === -1 ? rest : rest.slice(0, nextHeading);
+  const headingLine = body.slice(idx, body.indexOf('\n', idx));
+  const paths = [];
+
+  for (const line of [headingLine, ...section.split('\n')]) {
+    for (const m of line.matchAll(/`([^`]+)`/g)) {
+      const token = m[1].trim();
+      if (!token || token === 'Read') continue;
+      if (
+        token.includes('/') ||
+        token.endsWith('.mdc') ||
+        token.endsWith('.md') ||
+        SD_OMITTED_PATH_ALIASES[token]
+      ) {
+        paths.push(resolveOmittedPathToken(token));
+      }
+    }
+    const ruleMatch = line.match(/rule \*\*(\d+)\*\*/);
+    if (ruleMatch) {
+      paths.push(
+        normalizeRepoPath(
+          `${SEDEA_CENTER_PREFIX}rules/${ruleMatch[1]}_stacked-pr-worktree-naming.mdc`,
+        ),
+      );
+    }
+    const tableMatch = line.match(/^\|\s*`?(\.(?:sedea|cursor)\/[^|`]+)`?\s*\|/);
+    if (tableMatch) {
+      paths.push(normalizeRepoPath(tableMatch[1]));
+    }
+  }
+
+  return dedupeOrderedPaths(paths);
+}
+
+function bodyHasReadHookForPath(body, relPath) {
+  const normalized = normalizeRepoPath(relPath);
+  const basename = normalized.split('/').pop() ?? normalized;
+
+  if (body.includes(normalized)) return true;
+  if (body.includes(basename) && /\bRead\b/.test(body)) return true;
+  if (normalized.includes('7_stacked-pr-worktree-naming')) {
+    return body.includes('7_stacked-pr-worktree-naming') || body.includes('rule **7**');
+  }
+  if (normalized.includes('mission-three-lane-cadence')) {
+    return body.includes('mission-three-lane-cadence');
+  }
+  if (normalized.includes('-protocol-reference.md')) {
+    return body.includes('-protocol-reference');
+  }
+  return false;
+}
+
+async function listSedeaSpawnSkillFiles(hostingRoot) {
+  const out = [];
+  const sedeaMissions = path.join(hostingRoot, '.sedea/centers/sedea/missions');
+  let missions;
+  try {
+    missions = await fs.readdir(sedeaMissions, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const m of missions) {
+    if (!m.isDirectory()) continue;
+    const skillsDir = path.join(sedeaMissions, m.name, 'skills');
+    let entries;
+    try {
+      entries = await fs.readdir(skillsDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      if (!e.isDirectory()) continue;
+      const skillPath = path.join(skillsDir, e.name, 'SKILL.md');
+      try {
+        const st = await fs.stat(skillPath);
+        if (st.isFile()) {
+          out.push(
+            normalizeRepoPath(
+              path.relative(hostingRoot, skillPath).replace(/\\/g, '/'),
+            ),
+          );
+        }
+      } catch {
+        /* skip */
+      }
+    }
+  }
+  return out;
+}
+
+async function validateCapExceptionReadHooks(repoRelativePath, hostingRoot) {
+  const abs = hostingRoot
+    ? path.join(hostingRoot, repoRelativePath)
+    : path.join(CENTER_ROOT, repoRelativePath.replace(SD_CENTER_PREFIX, ''));
+  let raw;
+  try {
+    raw = await fs.readFile(abs, 'utf8');
+  } catch {
+    return [];
+  }
+  const omitted = parseOmittedCapExceptionPaths(raw);
+  if (!omitted.length) return [];
+
+  const errors = [];
+  for (const rel of omitted) {
+    if (!bodyHasReadHookForPath(raw, rel)) {
+      errors.push(
+        `${repoRelativePath}: cap-exception omitted path missing step-bound Read hook — ${rel}`,
+      );
+    }
+  }
+  return errors;
+}
+
+async function validateAllCapExceptionReadHooks(ctx) {
+  if (!ctx.hostingRoot) return [];
+
+  const diskSkills = [...(await listSkillFilesOnDisk())];
+  const paths = new Set([
+    ...diskSkills.map((rel) => normalizeRepoPath(`${SD_CENTER_PREFIX}${rel}`)),
+    ...(await listSedeaSpawnSkillFiles(ctx.hostingRoot)),
+  ]);
+
+  const errors = [];
+  for (const rel of paths) {
+    errors.push(...(await validateCapExceptionReadHooks(rel, ctx.hostingRoot)));
+  }
+  return errors;
+}
+
 async function main() {
   ({ enforceSpawnByteBudget } = parseMainArgs(process.argv));
   const ctx = await resolveGovernanceContext({ scriptDir: __dirname });
@@ -895,6 +1056,13 @@ async function main() {
     process.exit(1);
   }
 
+  const readHookErrors = await validateAllCapExceptionReadHooks(ctx);
+  if (readHookErrors.length) {
+    process.stderr.write('cap-exception Read-hook lint failed:\n');
+    for (const e of readHookErrors) process.stderr.write(`  ${e}\n`);
+    process.exit(1);
+  }
+
   const onlyYaml = [...listed].filter((p) => !disk.has(p)).sort();
   const onlyDisk = [...disk].filter((p) => !listed.has(p)).sort();
 
@@ -905,6 +1073,7 @@ async function main() {
         `frontmatter valid; warmUp/laneRules manifest parity passed on plan-and-deliver spawned skills; ` +
         `nullable-parent spawn wire lint passed on ${spawnWirePaths.length} master-planner skill path(s); ` +
         `notify emit/receive governance lint passed (${NOTIFY_EMIT_SKILL_NAMES.length} emit + ${NOTIFY_RECEIVE_SKILL_NAMES.length} receive skills); ` +
+        `cap-exception Read-hook lint passed; ` +
         `spawn byte budget smoke: ${overCap.length} skill(s) over ${WARM_UP_BYTE_CAP} bytes` +
         (enforceSpawnByteBudget ? ' (--enforce-spawn-byte-budget)' : '') +
         (ctx.mode === 'center' ? '; center-repo-only mode (sedea warm-up paths skipped)' : '') +

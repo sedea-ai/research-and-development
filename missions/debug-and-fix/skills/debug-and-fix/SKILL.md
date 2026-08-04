@@ -141,7 +141,7 @@ Give developers a **consistent state snapshot** during debug gates so they can r
 
 1. Set **`HOSTING_ROOT`** = `repoPath` or workspace root containing `.sedea/centers/sedea/` — used for **read-only diagnosis** until fix approval (steps **2**–**3**).
 2. Derive **`worktreeName`** per [`.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc`](.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc) — default non-stacked: `improve/debug-and-fix-<short-slug>` from issue summary.
-3. Choose sibling **`WORKTREE_ROOT`** path per team convention (outside **`HOSTING_ROOT`** checkout tree) — **planned only** until step **4** after fix approval.
+3. Resolve **`WORKTREE_ROOT`** per [`.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc`](.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc) § *Worktree directory path (hosting repo)* (`WORKTREES_DIR`, `WORKTREE_DIR`, `mkdir -p`) — **planned only** until step **4** after fix approval.
 
 - **Next-step resolution:** Auto-advance to step **2** — no `USER_CHECKPOINT` on this step.
 
