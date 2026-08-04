@@ -2164,6 +2164,7 @@ Run on the **developer's response turn** after they choose **`rebase-onto-main-a
 | *Please resolve conflicts* / *you resolve conflicts* / *tell me when* | Resolve lane-authorized conflicts; continue the rebase loop same pass |
 | Opening post-create-pr modal mid-conflict loop (Checkpoint) | Act through conflict steps; modal only at gate surfaces |
 | `git rebase --abort` without developer pick | Continue resolution or structured choice with **`defer-ship`** |
+
 4. **Success** — one-line recap (old/new base when useful). When the branch has an upstream (open PR):
 
 ### Checkpoint — auto-advance `rebase-push-force-with-lease` (binding)

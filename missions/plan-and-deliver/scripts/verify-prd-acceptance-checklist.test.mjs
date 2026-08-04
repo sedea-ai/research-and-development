@@ -20,7 +20,6 @@ const SCRIPTS = __dirname;
 const hostingRoot = process.env.HOSTING_ROOT
   ? path.resolve(process.env.HOSTING_ROOT)
   : path.resolve(SCRIPTS, '../../../../../..');
-const appRoot = path.join(hostingRoot, 'app');
 
 /** PRD §2 high-level acceptance → automated test mapping (traceability for phase 4 PR 3). */
 const PRD_ACCEPTANCE_MAP = [
@@ -54,28 +53,13 @@ const PRD_ACCEPTANCE_MAP = [
   },
 ];
 
-function resolveAppProductPath(relativePath) {
-  return path.join(appRoot, relativePath);
-}
-
 async function readUtf8(relPath) {
-  if (relPath.startsWith('.sedea/') || relPath.startsWith('./scripts/')) {
-    return fs.readFile(path.join(hostingRoot, relPath.replace(/^\.\//, '')), 'utf8');
-  }
-  return fs.readFile(resolveAppProductPath(relPath), 'utf8');
+  return fs.readFile(path.join(hostingRoot, relPath), 'utf8');
 }
 
 async function pathExists(relPath) {
-  if (relPath.startsWith('.sedea/') || relPath.startsWith('./scripts/')) {
-    try {
-      await fs.access(path.join(hostingRoot, relPath.replace(/^\.\//, '')));
-      return true;
-    } catch {
-      return false;
-    }
-  }
   try {
-    await fs.access(path.join(appRoot, relPath));
+    await fs.access(path.join(hostingRoot, relPath));
     return true;
   } catch {
     return false;
@@ -101,7 +85,7 @@ function runNpm(args, cwd) {
 }
 
 function runVitest(packageDir, testPattern) {
-  const pkgRoot = resolveAppProductPath(packageDir);
+  const pkgRoot = path.join(hostingRoot, packageDir);
   // CI center-governance workflow only npm ci's scripts/; install extension deps here.
   runNpm(['ci'], pkgRoot);
   runNpm(['test', '--', '--run', testPattern], pkgRoot);
