@@ -241,7 +241,9 @@ This rule covers **chat output**, not just tool calls. After `git push`, do **no
 
 ## Worktree setup in plans
 
-Every multi-PR plan must end with a **Worktree setup** section containing copy-pasteable commands. Use the repo's directory name as a prefix for sibling worktree directories.
+Every multi-PR plan must end with a **Worktree setup** section containing copy-pasteable commands. Resolve **`WORKTREE_ROOT`** per [`.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc`](.sedea/centers/sedea/rules/7_stacked-pr-worktree-naming.mdc) § *Worktree directory path (hosting repo)* — **do not substitute** paths directly under `dirname(HOSTING_ROOT)/` outside `{repo-basename}-worktrees/`.
+
+**Path formula is normative in rule 7 § *Worktree directory path (hosting repo)* — do not substitute.**
 
 **Normative path (Mission Control and `coding-session`):** center **`worktree-setup.sh`** from **`HOSTING_ROOT`**, then MCP attach when the setup JSON hint reports **`nextAction: attach-required`**. **Forbidden on the default path:** inline **`git worktree add`**, **`sedea_add_worktree_folder`** before setup exits **0**, and default-path inline **`worktree-bootstrap`**. See [`coding-session/SKILL.md`](../missions/plan-and-deliver/skills/coding-session/SKILL.md) § *Generic flow (single repo)* and § *Center worktree scripts (binding)*.
 
@@ -249,8 +251,12 @@ Canonical form for creating a worktree with a new worktree name:
 
 ```bash
 HOSTING_ROOT="<absolute-hosting-root>"
-WORKTREE_ROOT="<absolute-sibling-path>"   # repo basename prefix per rule 7
+REPO_BASENAME="$(basename "$HOSTING_ROOT")"
+WORKTREES_DIR="$(dirname "$HOSTING_ROOT")/${REPO_BASENAME}-worktrees"
 WORKTREE_NAME="<worktree-name>"           # rule 7 / this rule § *Worktree naming*
+WORKTREE_DIR="${REPO_BASENAME}-$(echo "$WORKTREE_NAME" | tr '/' '-')"
+WORKTREE_ROOT="${WORKTREES_DIR}/${WORKTREE_DIR}"
+mkdir -p "$WORKTREES_DIR"
 BASE_REF="origin/main"
 
 "$HOSTING_ROOT/.sedea/centers/sedea/scripts/worktree-setup.sh" \
@@ -412,20 +418,29 @@ Example A — **hosting repo** (root contains `.sedea/centers/sedea/`; stacked P
 From the hosting repo root (directory containing `.sedea/`):
 
 HOSTING_ROOT="$(pwd)"
+REPO_BASENAME="$(basename "$HOSTING_ROOT")"
+WORKTREES_DIR="$(dirname "$HOSTING_ROOT")/${REPO_BASENAME}-worktrees"
 BASE_REF="origin/main"
+mkdir -p "$WORKTREES_DIR"
 
 # Independent — start immediately (stack index + slug; default prefix feat)
+WORKTREE_NAME="feat/01-token-auth"
+WORKTREE_DIR="${REPO_BASENAME}-$(echo "$WORKTREE_NAME" | tr '/' '-')"
+WORKTREE_ROOT="${WORKTREES_DIR}/${WORKTREE_DIR}"
 "$HOSTING_ROOT/.sedea/centers/sedea/scripts/worktree-setup.sh" \
   --hosting-root "$HOSTING_ROOT" \
-  --worktree-path "$(cd .. && pwd)/app-feat-01-token-auth" \
-  --worktree-name "feat/01-token-auth" \
+  --worktree-path "$WORKTREE_ROOT" \
+  --worktree-name "$WORKTREE_NAME" \
   --base-ref "$BASE_REF"
 # Mission Control: sedea_add_worktree_folder — absolute path when attach-required
 
+WORKTREE_NAME="improve/02-logger"
+WORKTREE_DIR="${REPO_BASENAME}-$(echo "$WORKTREE_NAME" | tr '/' '-')"
+WORKTREE_ROOT="${WORKTREES_DIR}/${WORKTREE_DIR}"
 "$HOSTING_ROOT/.sedea/centers/sedea/scripts/worktree-setup.sh" \
   --hosting-root "$HOSTING_ROOT" \
-  --worktree-path "$(cd .. && pwd)/app-improve-02-logger" \
-  --worktree-name "improve/02-logger" \
+  --worktree-path "$WORKTREE_ROOT" \
+  --worktree-name "$WORKTREE_NAME" \
   --base-ref "$BASE_REF"
 
 # Depends on PR 1 — after feat/01-token-auth merges
@@ -442,30 +457,43 @@ Example B — **hosting repo** (e.g. `user-auth`; no two-digit stack index unles
 ## Worktree setup
 
 HOSTING_ROOT="$(pwd)"
+REPO_BASENAME="$(basename "$HOSTING_ROOT")"
+WORKTREES_DIR="$(dirname "$HOSTING_ROOT")/${REPO_BASENAME}-worktrees"
 BASE_REF="origin/main"
+mkdir -p "$WORKTREES_DIR"
 
+WORKTREE_NAME="improve/logger"
+WORKTREE_DIR="${REPO_BASENAME}-$(echo "$WORKTREE_NAME" | tr '/' '-')"
+WORKTREE_ROOT="${WORKTREES_DIR}/${WORKTREE_DIR}"
 "$HOSTING_ROOT/.sedea/centers/sedea/scripts/worktree-setup.sh" \
   --hosting-root "$HOSTING_ROOT" \
-  --worktree-path "$(cd .. && pwd)/user-auth-improve-logger" \
-  --worktree-name "improve/logger" \
+  --worktree-path "$WORKTREE_ROOT" \
+  --worktree-name "$WORKTREE_NAME" \
   --base-ref "$BASE_REF"
 # sedea_add_worktree_folder — absolute path when attach-required
 
+WORKTREE_NAME="feat/token-auth"
+WORKTREE_DIR="${REPO_BASENAME}-$(echo "$WORKTREE_NAME" | tr '/' '-')"
+WORKTREE_ROOT="${WORKTREES_DIR}/${WORKTREE_DIR}"
 "$HOSTING_ROOT/.sedea/centers/sedea/scripts/worktree-setup.sh" \
   --hosting-root "$HOSTING_ROOT" \
-  --worktree-path "$(cd .. && pwd)/user-auth-feat-token-auth" \
-  --worktree-name "feat/token-auth" \
+  --worktree-path "$WORKTREE_ROOT" \
+  --worktree-name "$WORKTREE_NAME" \
   --base-ref "$BASE_REF"
 ```
 
 ## New worktree from `origin/main`
 
-Do **not** use **`git checkout -b`** on the primary hosting clone for implementation. Create a sibling worktree from **`HOSTING_ROOT`** via center setup:
+Do **not** use **`git checkout -b`** on the primary hosting clone for implementation. Create a worktree from **`HOSTING_ROOT`** via center setup (Rule 7 path under `{repo-basename}-worktrees/` — not a direct sibling of **`HOSTING_ROOT`**):
 
 ```bash
 HOSTING_ROOT="<absolute-hosting-root>"
-WORKTREE_ROOT="<absolute-path>"
+REPO_BASENAME="$(basename "$HOSTING_ROOT")"
+WORKTREES_DIR="$(dirname "$HOSTING_ROOT")/${REPO_BASENAME}-worktrees"
 WORKTREE_NAME="<worktree-name>"
+WORKTREE_DIR="${REPO_BASENAME}-$(echo "$WORKTREE_NAME" | tr '/' '-')"
+WORKTREE_ROOT="${WORKTREES_DIR}/${WORKTREE_DIR}"
+mkdir -p "$WORKTREES_DIR"
 
 "$HOSTING_ROOT/.sedea/centers/sedea/scripts/worktree-setup.sh" \
   --hosting-root "$HOSTING_ROOT" \
