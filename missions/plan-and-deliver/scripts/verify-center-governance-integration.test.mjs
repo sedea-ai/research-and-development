@@ -45,6 +45,7 @@ test('verify-skill-manifest.mjs exits 0 with spawn byte-budget smoke line', () =
   assert.match(out, /OK:/);
   assert.match(out, /spawn byte budget smoke:/);
   assert.match(out, /notify emit\/receive governance lint passed/);
+  assert.match(out, /cap-exception Read-hook lint passed/);
 });
 
 test('verify-designation.mjs exits 0 on catalog SKILL.md and Pathfinder warm-up', () => {
@@ -78,16 +79,31 @@ test('verify-skill-manifest.mjs --enforce-spawn-byte-budget exits 0', () => {
   assert.equal(code, 0);
 });
 
-test('verify-warmup-bytes.mjs --table exits 0 with planning and ship role rows (D1)', () => {
+test('verify-warmup-bytes.mjs --table exits 0 with planning, ship, and sedea-native rows (D1/S5)', () => {
   const out = runScript('verify-warmup-bytes.mjs', [
     '--table',
     '--hosting-root',
     hostingRoot,
   ]);
   assert.match(out, /OK: spawn warm-up byte table/);
-  assert.match(out, /planning \d+, ship \d+/);
-  assert.match(out, /\| coding-session \| ship \|/);
-  assert.match(out, /\| master-planner \| planning \|/);
+  assert.match(out, /plan-and-deliver \d+: planning \d+, ship \d+/);
+  assert.match(out, /sedea-native \d+/);
+  assert.match(out, /over 327,680 bytes \(WARN\)/);
+  assert.match(out, /\| coding-session \| plan-and-deliver \| ship \|/);
+  assert.match(out, /\| squad-leader-mission-maintenance \| sedea-native \| sedea-leader \|/);
+});
+
+test('verify-warmup-bytes.mjs --table --bootstrap slim exits 0 with WARN summary (S5)', () => {
+  const out = runScript('verify-warmup-bytes.mjs', [
+    '--table',
+    '--hosting-root',
+    hostingRoot,
+    '--bootstrap',
+    'slim',
+  ]);
+  assert.match(out, /OK: spawn warm-up byte table/);
+  assert.match(out, /bootstrap=slim/);
+  assert.match(out, /over 327,680 bytes \(WARN\)/);
 });
 
 test('verify-warmup-bytes.mjs --table --enforce-spawn-byte-budget exits 0', () => {

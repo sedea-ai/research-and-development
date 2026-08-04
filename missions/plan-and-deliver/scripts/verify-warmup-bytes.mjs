@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 /**
- * Print per-role spawn warm-up byte totals for plan-and-deliver skills (PRD D1).
+ * Print per-role spawn warm-up byte totals for plan-and-deliver skills (PRD D1)
+ * and Sedea-native maintenance roles (PRD S5.1).
  *
- * Scope: roles under `missions/plan-and-deliver/skills/` only (planning + ship
- * categories in SPAWN_ROLE_CATEGORY). Optional spawn roles outside that tree
- * (for example `quick-fix-plan` under `missions/quick-fix/skills/`) are not
- * included in this table — attest separately when those roles change.
+ * Scope: roles under `missions/plan-and-deliver/skills/` (planning + ship
+ * categories in SPAWN_ROLE_CATEGORY) plus SEDEA_NATIVE_BYTE_ROLES.
  *
  * Run from hosting repo root or software-development center repo root:
  *
@@ -13,8 +12,8 @@
  *   node .../verify-warmup-bytes.mjs --table --hosting-root /path/to/hosting
  *   node .../verify-warmup-bytes.mjs --table --bootstrap slim
  *
- * Exit 0 after printing the table (informational — WARN rows do not fail unless
- * --enforce-spawn-byte-budget is passed).
+ * Exit 0 after printing the table (informational — WARN rows at 320 KiB do not fail
+ * unless --enforce-spawn-byte-budget is passed, which fails roles over 384 KiB).
  */
 
 import fs from 'node:fs/promises';
@@ -25,13 +24,20 @@ import { resolveGovernanceContext } from './resolve-governance-root.mjs';
 import {
   FRONTMATTER_RE,
   SPAWN_ROLE_CATEGORY,
+  SEDEA_BOOTSTRAP_RULE,
+  SEDEA_CENTER_PREFIX,
+  SEDEA_NATIVE_BYTE_ROLES,
   WARM_UP_BYTE_CAP,
+  WARM_UP_WARN_THRESHOLD,
   SKILL_PROSE_BYTE_CAP,
   assignedSkillBodyWarmUpPath,
   combinedWarmUpBytes,
   dedupeOrderedPaths,
   formatBytes,
+  isOverSpawnCap,
+  isOverWarnThreshold,
   normalizeRepoPath,
+  pathsForSedeaSpawnByteBudget,
   pathsForSpawnByteBudget,
   readSkillFrontmatterPaths,
   statusForBytes,
@@ -40,7 +46,6 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CENTER_ROOT = path.resolve(__dirname, '../../..');
 const SEDEA_RULES_DIR = '.sedea/centers/sedea/rules';
-const FUTURE_BOOTSTRAP_RULE = '.sedea/centers/sedea/rules/bootstrap.mdc';
 const SD_BOOTSTRAP_RULE = '.sedea/centers/software-development/rules/bootstrap.mdc';
 
 const PLAN_AND_DELIVER_PREFIX = 'missions/plan-and-deliver/skills/';
@@ -145,21 +150,33 @@ async function listSpawnSkillRelPaths() {
   return out.sort((a, b) => a.skillName.localeCompare(b.skillName));
 }
 
-async function bootstrapPaths(hostingRoot, bootstrap) {
+async function bootstrapPathsPlanAndDeliver(hostingRoot, bootstrap) {
   if (!hostingRoot) return [];
   if (bootstrap === 'slim') {
-    return dedupeOrderedPaths([FUTURE_BOOTSTRAP_RULE, SD_BOOTSTRAP_RULE]);
+    return dedupeOrderedPaths([SEDEA_BOOTSTRAP_RULE, SD_BOOTSTRAP_RULE]);
+  }
+  return scanSedeaAlwaysApply(hostingRoot);
+}
+
+async function bootstrapPathsSedeaNative(hostingRoot, bootstrap) {
+  if (!hostingRoot) return [];
+  if (bootstrap === 'slim') {
+    return [SEDEA_BOOTSTRAP_RULE];
   }
   return scanSedeaAlwaysApply(hostingRoot);
 }
 
 function printTable(rows, ctx, bootstrap, hostingRoot) {
   process.stdout.write('\n');
-  process.stdout.write('| Role | Category | Spawn warm-up (bytes) | Cap | Status |\n');
-  process.stdout.write('|------|----------|----------------------:|----:|--------|\n');
+  process.stdout.write(
+    '| Role | Scope | Category | Spawn warm-up (bytes) | Cap | Status |\n',
+  );
+  process.stdout.write(
+    '|------|-------|----------|----------------------:|----:|--------|\n',
+  );
   for (const row of rows) {
     process.stdout.write(
-      `| ${row.skillName} | ${row.category} | ${formatBytes(row.bytes)} | ${formatBytes(WARM_UP_BYTE_CAP)} | ${row.status} |\n`,
+      `| ${row.roleName} | ${row.scope} | ${row.category} | ${formatBytes(row.bytes)} | ${formatBytes(WARM_UP_BYTE_CAP)} | ${row.status} |\n`,
     );
   }
   process.stdout.write('\n');
@@ -167,21 +184,35 @@ function printTable(rows, ctx, bootstrap, hostingRoot) {
     ctx.mode === 'center' && !hostingRoot
       ? 'center-repo-only mode — sedea bootstrap paths omitted; pass --hosting-root for full totals'
       : `bootstrap=${bootstrap}${hostingRoot ? '' : ' (no hosting root — sedea paths omitted)'}`;
-  process.stdout.write(`Note: ${modeNote}. Assigned skill body excluded per lane-manifest-contract § Spawn cap.\n`);
+  process.stdout.write(
+    `Note: ${modeNote}. WARN at ${formatBytes(WARM_UP_WARN_THRESHOLD)} bytes (80% cap); OVER above ${formatBytes(WARM_UP_BYTE_CAP)}. Assigned skill body excluded per lane-manifest-contract § Spawn cap.\n`,
+  );
 }
 
-async function main() {
-  const { table, bootstrap, hostingRoot: hostingRootArg, enforceSpawnByteBudget } =
-    parseArgs(process.argv);
-  const ctx = await resolveGovernanceContext({ scriptDir: __dirname });
-  const hostingRoot = await resolveHostingRoot(hostingRootArg, ctx);
-  const bootstrapList = await bootstrapPaths(hostingRoot, bootstrap);
-  const skills = await listSpawnSkillRelPaths();
+async function readSedeaSkillFrontmatter(skillRelPath, sedeaCenterRoot) {
+  const abs = path.join(sedeaCenterRoot, skillRelPath);
+  const raw = await fs.readFile(abs, 'utf8');
+  const m = FRONTMATTER_RE.exec(raw);
+  if (!m) return { warmUpRules: [], laneRules: [], skillBodyBytes: raw.length };
+  let parsed;
+  try {
+    parsed = parseYaml(m[1]);
+  } catch {
+    return { warmUpRules: [], laneRules: [], skillBodyBytes: raw.length };
+  }
+  const warmUpRules = Array.isArray(parsed?.warmUpRules)
+    ? parsed.warmUpRules.map((p) => normalizeRepoPath(String(p)))
+    : [];
+  const laneRules = Array.isArray(parsed?.laneRules)
+    ? parsed.laneRules.map((p) => normalizeRepoPath(String(p)))
+    : [];
+  return { warmUpRules, laneRules, skillBodyBytes: raw.length };
+}
 
+async function scanPlanAndDeliverRoles(ctx, bootstrapList) {
+  const skills = await listSpawnSkillRelPaths();
   const rows = [];
-  let warnCount = 0;
   let proseWarnCount = 0;
-  const proseWarns = [];
 
   for (const { skillName, rel } of skills) {
     const { warmUpRules, laneRules, skillBodyBytes } = await readSkillFrontmatterPaths(
@@ -190,24 +221,90 @@ async function main() {
     );
     const merged = dedupeOrderedPaths([...bootstrapList, ...laneRules, ...warmUpRules]);
     const budgetPaths = pathsForSpawnByteBudget(skillName, merged);
-    const { bytes, skippedPaths } = await combinedWarmUpBytes(ctx, budgetPaths);
-    const status = statusForBytes(bytes);
-    if (status === 'WARN') warnCount += 1;
+    const { bytes } = await combinedWarmUpBytes(ctx, budgetPaths);
     rows.push({
-      skillName,
+      roleName: skillName,
+      scope: 'plan-and-deliver',
       category: SPAWN_ROLE_CATEGORY[skillName] ?? 'other',
       bytes,
-      skippedPaths,
-      status,
+      status: statusForBytes(bytes),
     });
 
     if (skillBodyBytes > SKILL_PROSE_BYTE_CAP) {
       proseWarnCount += 1;
-      proseWarns.push({ skillName, skillBodyBytes });
       process.stderr.write(
         `WARN: ${rel}: skill body is ${skillBodyBytes} bytes (>${SKILL_PROSE_BYTE_CAP}) — justify on-demand split in PR per rule 45_skill-authoring-hygiene.mdc\n`,
       );
     }
+  }
+
+  return { rows, proseWarnCount };
+}
+
+async function scanSedeaNativeRoles(ctx, bootstrapList, hostingRoot) {
+  if (!hostingRoot) return { rows: [], proseWarnCount: 0 };
+
+  const sedeaCenterRoot = path.join(hostingRoot, SEDEA_CENTER_PREFIX.slice(0, -1));
+  const rows = [];
+  let proseWarnCount = 0;
+
+  for (const [roleName, manifest] of Object.entries(SEDEA_NATIVE_BYTE_ROLES)) {
+    const laneRules = (manifest.laneRules ?? []).map(normalizeRepoPath);
+    let warmUpRules = [];
+    let skillRelPath = manifest.skillRelPath;
+    let skillBodyBytes = 0;
+
+    if (skillRelPath) {
+      const fm = await readSedeaSkillFrontmatter(skillRelPath, sedeaCenterRoot);
+      warmUpRules = fm.warmUpRules;
+      skillBodyBytes = fm.skillBodyBytes;
+      warmUpRules = warmUpRules.map((p) =>
+        p.startsWith(SEDEA_CENTER_PREFIX) ? p : normalizeRepoPath(`${SEDEA_CENTER_PREFIX}${p}`),
+      );
+    }
+
+    const merged = dedupeOrderedPaths([...bootstrapList, ...laneRules, ...warmUpRules]);
+    const budgetPaths = skillRelPath
+      ? pathsForSedeaSpawnByteBudget(skillRelPath, merged)
+      : merged;
+    const { bytes } = await combinedWarmUpBytes(ctx, budgetPaths);
+    rows.push({
+      roleName,
+      scope: 'sedea-native',
+      category: manifest.category ?? 'sedea',
+      bytes,
+      status: statusForBytes(bytes),
+    });
+
+    if (skillRelPath && skillBodyBytes > SKILL_PROSE_BYTE_CAP) {
+      proseWarnCount += 1;
+      const rel = normalizeRepoPath(`${SEDEA_CENTER_PREFIX}${skillRelPath}`);
+      process.stderr.write(
+        `WARN: ${rel}: skill body is ${skillBodyBytes} bytes (>${SKILL_PROSE_BYTE_CAP}) — justify on-demand split in PR per rule 45_skill-authoring-hygiene.mdc\n`,
+      );
+    }
+  }
+
+  return { rows, proseWarnCount };
+}
+
+async function main() {
+  const { table, bootstrap, hostingRoot: hostingRootArg, enforceSpawnByteBudget } =
+    parseArgs(process.argv);
+  const ctx = await resolveGovernanceContext({ scriptDir: __dirname });
+  const hostingRoot = await resolveHostingRoot(hostingRootArg, ctx);
+  const pdBootstrap = await bootstrapPathsPlanAndDeliver(hostingRoot, bootstrap);
+  const sedeaBootstrap = await bootstrapPathsSedeaNative(hostingRoot, bootstrap);
+
+  const pdScan = await scanPlanAndDeliverRoles(ctx, pdBootstrap);
+  const sedeaScan = await scanSedeaNativeRoles(ctx, sedeaBootstrap, hostingRoot);
+  const rows = [...pdScan.rows, ...sedeaScan.rows];
+
+  let warn320Count = 0;
+  let overCapCount = 0;
+  for (const row of rows) {
+    if (isOverWarnThreshold(row.bytes)) warn320Count += 1;
+    if (isOverSpawnCap(row.bytes)) overCapCount += 1;
   }
 
   if (table) {
@@ -216,16 +313,21 @@ async function main() {
 
   const planning = rows.filter((r) => r.category === 'planning');
   const ship = rows.filter((r) => r.category === 'ship');
+  const sedeaNative = rows.filter((r) => r.scope === 'sedea-native');
+  const proseWarnCount = pdScan.proseWarnCount + sedeaScan.proseWarnCount;
+
   process.stdout.write(
     `OK: spawn warm-up byte table — ${rows.length} role(s) ` +
-      `(planning ${planning.length}, ship ${ship.length}); ` +
-      `${warnCount} over ${WARM_UP_BYTE_CAP} bytes` +
+      `(plan-and-deliver ${pdScan.rows.length}: planning ${planning.length}, ship ${ship.length}; ` +
+      `sedea-native ${sedeaNative.length}); ` +
+      `${warn320Count} over ${formatBytes(WARM_UP_WARN_THRESHOLD)} bytes (WARN); ` +
+      `${overCapCount} over ${formatBytes(WARM_UP_BYTE_CAP)} bytes (OVER)` +
       (enforceSpawnByteBudget ? ' (--enforce-spawn-byte-budget)' : '') +
       `; skill prose WARN ${proseWarnCount}\n`,
   );
 
-  if (enforceSpawnByteBudget && warnCount > 0) {
-    die(`${warnCount} role(s) exceed spawn cap ${WARM_UP_BYTE_CAP}`, 1);
+  if (enforceSpawnByteBudget && overCapCount > 0) {
+    die(`${overCapCount} role(s) exceed spawn cap ${WARM_UP_BYTE_CAP}`, 1);
   }
 }
 
