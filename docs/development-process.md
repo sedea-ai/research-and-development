@@ -60,7 +60,7 @@ Subsections below are **indexes** — load linked rules, skills, or on-demand do
 
 | Topic | Load when |
 | --- | --- |
-| Center submodule git (two repos) | [`.sedea/centers/sedea/rules/3_center.mdc`](.sedea/centers/sedea/rules/3_center.mdc) § *Git repo semantics*; [`promote-submodule-pin`](.sedea/centers/sedea/skills/promote-submodule-pin/SKILL.md) after center merge |
+| Center submodule git (two repos) | [`.sedea/centers/sedea/rules/3_center.mdc`](.sedea/centers/sedea/rules/3_center.mdc) § *Git repo semantics*; [`promote-submodule-pin`](.sedea/centers/sedea/skills/promote-submodule-pin/SKILL.md) after center merge — **center-repo PR is the review surface**; hosting pin is **agent-owned background** (conduct **1** § **Reviewable delivery before pin promotion** / § **Pin transcript silence**) |
 | Git governance (worktree-only) | [`.sedea/centers/software-development/rules/20_efficient-pr-shipping.mdc`](../rules/20_efficient-pr-shipping.mdc); Sedea rules **0**, **6**, **7** |
 | Governance scripts / CI | `./scripts/verify-center-governance.sh` on hosting repo; [`.github/workflows/center-governance.yml`](../.github/workflows/center-governance.yml) on this center repo |
 | PRD routing | **`plan-and-deliver/plan.mdc`** §§2–3; **`author-prd/SKILL.md`** |

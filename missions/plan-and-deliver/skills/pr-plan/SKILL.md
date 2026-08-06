@@ -296,7 +296,9 @@ If the **new-plan** stub sections carry **non-stub user content**, merge it into
 
 Read the target plan's sidecar `<slug>.state.yaml` for `parent:`.
 
-- `parent: null` (or sidecar missing) → **stop:** PR plans require a parent under **`PR breakdown`**. Fix via **`plan-reconcile`** or by hand, or use **`master-planner`** if this file should be a Master Plan.
+- `parent: null` (or sidecar missing) → **default: stop** — PR plans require a parent under **`PR breakdown`**. Fix via **`plan-reconcile`** or by hand, or use **`master-planner`** if this file should be a Master Plan.
+- **Null-parent mode (binding):** When spawn **`inputs.allowNullParent: true`**, or the invoker documents a **standalone root PR plan** (no Master Plan body — for example **sedea-governed-repo-setup** single-PR flow), and the plan file has **`## 1. Single concern`** stub content (not a Master Plan body): set `outputs.parentTopologyStatus: null-parent-allowed`, acknowledge *"Parent: null (standalone PR plan); proceeding."*, and **skip** the hard-stop below.
+- When neither null-parent mode applies and `parent: null` (or sidecar missing) → **stop** as above.
 - `parent:` does not resolve to an existing `.plan.md` under the same `.sedea/operations/.../plans/` tree → **stop:** fix sidecar before drafting.
 - Parent is a **roadmap topic** grouping plan → **stop:** children should be Master Plans, not PR plans; fix sidecar or use **`master-planner`**.
 - Parent resolves; read parent's dual-title block (`## 6. …` Master, `## 5. …` Phase):
