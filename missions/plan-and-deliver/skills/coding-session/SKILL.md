@@ -376,6 +376,8 @@ When the **committed hosting diff** for this ship chain is **gitlink-only** — 
 |------|-------------|
 | **Review surface** | Substantive review is always the **source repo** (center / product / center-content worktree or merged center PR content) — never the hosting gitlink stat lines alone |
 | **Recap lead** | Lead `displayMarkdown` with source-repo changed files and a short summary. One quiet line that the agent handles hosting gitlink pin promotion — **forbidden** leading with hosting PR URL/number, pin-promotion fanfare, or orientation copy framed as a ship milestone |
+| **Invoker after inline promote** | **Auto-advance** — **forbidden** user-facing recap of pin PR on happy path; `promote-submodule-pin` completion fields are ledger-only — conduct **1** § **Pin transcript silence** |
+| **Pre-ship disclosure** | Before ship cut-point, list **reviewable paths** and **repository**; when hosting diff would be gitlink-only, state that explicitly — conduct **1** § **Reviewable delivery before pin promotion** |
 | **Source repo(s) row** | Required on every mandatory gate when gitlink-only scope applies |
 | **PR row** | `pin-only (agent)` or `—` — not a link the developer must open for content review |
 | **Post-create-pr default** | When gitlink-only, set **`defaultOptionId`** to **`start-pr-review`** (or **`start-pr-review-delegate-merge`** when merge delegation is already authorized) — **not** **`approve-merge-pr`** until source-repo scope is visible in the same recap |
